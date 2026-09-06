@@ -700,11 +700,45 @@ $('#talkSaif').onclick=()=>{saifDialog.showModal();setTimeout(()=>speak('مرح�
 let saifMuted=false;
 function pickSaifVoice(){
   if(!('speechSynthesis' in window)) return null;
-  const voices=speechSynthesis.getVoices()||[];
-  const ar=voices.filter(v=>(v.lang||'').toLowerCase().startsWith('ar'));
-  const preferred=['hamed','hamid','tarik','tariq','naayf','male','ahmed','omar','majid'];
-  return ar.find(v=>preferred.some(k=>(v.name||'').toLowerCase().includes(k))) ||
-         ar.find(v=>(v.lang||'').toLowerCase()==='ar-ae') || ar[0] || voices.find(v=>(v.lang||'').toLowerCase().startsWith('ar')) || null;
+
+  const voices = speechSynthesis.getVoices() || [];
+
+  const maleNames = [
+    'hamdan',
+    'hamid',
+    'tariq',
+    'naayf',
+    'majed',
+    'omar',
+    'hamed'
+  ];
+
+  const emiratiVoices = voices.filter(v =>
+    (v.lang || '').toLowerCase().replace('_','-').startsWith('ar-ae')
+  );
+
+  const emiratiMale = emiratiVoices.find(v =>
+    maleNames.some(name =>
+      (v.name || '').toLowerCase().includes(name)
+    )
+  );
+
+  if(emiratiMale) return emiratiMale;
+
+  if(emiratiVoices.length) return emiratiVoices[0];
+
+  const arabicMale = voices.find(v =>
+    (v.lang || '').toLowerCase().startsWith('ar') &&
+    maleNames.some(name =>
+      (v.name || '').toLowerCase().includes(name)
+    )
+  );
+
+  if(arabicMale) return arabicMale;
+
+  return voices.find(v =>
+    (v.lang || '').toLowerCase().startsWith('ar')
+  ) || null;
 }
 function speak(text){
   if(saifMuted || !('speechSynthesis' in window)) return;
