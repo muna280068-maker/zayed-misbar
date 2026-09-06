@@ -538,8 +538,19 @@ function isLeadership(){return ['مديرة المدرسة','نائبة المد
 let authMode='signup';
 function openSignup(){ authMode='signup'; $('#authTitle').textContent='إنشاء حساب جديد'; $('#signupFields').hidden=false; $('#loginFields').hidden=true; $('#authContinue').hidden=false; $('#authContinue').textContent='إنشاء الحساب'; $('#signupName').value=''; $('#signupEmail').value=''; $('#signupPassword').value=''; $('#roleSelect').value='معلم / معلمة'; $('#teacherFields').hidden=false; document.querySelectorAll('#subjectPicks input,#gradePicks input,#classPicks input').forEach(x=>x.checked=false); buildClassPicks(); updateRegSummary(); if(!authDialog.open) authDialog.showModal(); }
 function openLogin(){ authMode='login'; $('#authTitle').textContent='تسجيل الدخول'; $('#signupFields').hidden=true; $('#loginFields').hidden=false; $('#authContinue').hidden=true; $('#loginStatus').textContent=''; $('#loginEmail').value=localStorage.getItem(LAST_EMAIL_KEY)||''; $('#loginPassword').value=localStorage.getItem(SAVED_PASSWORD_KEY)||''; $('#rememberLogin').checked=true; if(!authDialog.open) authDialog.showModal(); setTimeout(()=>{ if($('#loginEmail').value && $('#loginPassword').value) $('#authContinue').focus(); else $('#loginEmail').focus(); },50); }
+function forceOpenLogin(){
+  authMode='login';
+  $('#authTitle').textContent='تسجيل الدخول';
+  $('#signupFields').hidden=true;
+  $('#loginFields').hidden=false;
+  $('#authContinue').hidden=false;
+  $('#authModal').classList.add('show');
+}
+$('#loginBtn') && ($('#loginBtn').onclick=forceOpenLogin);
 $('#signupBtn')&&($('#signupBtn').onclick=openSignup); $('#heroSignup')&&($('#heroSignup').onclick=openSignup); $('#loginBtn')&&($('#loginBtn').onclick=openLogin); $('#topSignupEntry')&&($('#topSignupEntry').onclick=openSignup); $('#topLoginEntry')&&($('#topLoginEntry').onclick=openLogin); $('#coverSignup')&&($('#coverSignup').onclick=openSignup); $('#coverHeroSignup')&&($('#coverHeroSignup').onclick=openSignup); $('#coverLogin')&&($('#coverLogin').onclick=openLogin); $('#coverHeroLogin')&&($('#coverHeroLogin').onclick=openLogin); $('#coverSaif')&&($('#coverSaif').onclick=()=>saifDialog.showModal()); $('#coverImpact')&&($('#coverImpact').onclick=()=>visitorDialog.showModal());
-
+// إصلاح زر تسجيل الدخول
+$('#loginBtn') && ($('#loginBtn').onclick = forceOpenLogin);
+$('#topLoginEntry') && ($('#topLoginEntry').onclick = forceOpenLogin);
 const GRADE_OPTIONS=[['4','الصف الرابع'],['5','الصف الخامس'],['6','الصف السادس'],['7','الصف السابع'],['8','الصف الثامن'],['9-general','الصف التاسع - عام'],['9-advanced','الصف التاسع - متقدم'],['10-general','الصف العاشر - عام'],['10-advanced','الصف العاشر - متقدم'],['11-general','الصف الحادي عشر - عام'],['11-advanced','الصف الحادي عشر - متقدم'],['12-general','الصف الثاني عشر - عام'],['12-advanced','الصف الثاني عشر - متقدم']];
 function checkedValues(id){return Array.from(document.querySelectorAll(`#${id} input:checked`)).map(x=>x.value)}
 function buildGradePicks(){ $('#gradePicks').innerHTML=GRADE_OPTIONS.map(([v,t])=>`<label><input type="checkbox" value="${v}"> ${t}</label>`).join(''); $('#gradePicks').addEventListener('change',()=>{buildClassPicks();updateRegSummary()}); }
