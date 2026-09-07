@@ -538,7 +538,7 @@ function isLeadership(){return ['مديرة المدرسة','نائبة المد
 let authMode='signup';
 function openSignup(){ authMode='signup'; $('#authTitle').textContent='إنشاء حساب جديد'; $('#signupFields').hidden=false; $('#loginFields').hidden=true; $('#authContinue').hidden=false; $('#authContinue').textContent='إنشاء الحساب'; $('#signupName').value=''; $('#signupEmail').value=''; $('#signupPassword').value=''; $('#roleSelect').value='معلم / معلمة'; $('#teacherFields').hidden=false; document.querySelectorAll('#subjectPicks input,#gradePicks input,#classPicks input').forEach(x=>x.checked=false); buildClassPicks(); updateRegSummary(); if(!authDialog.open) authDialog.showModal(); }
 function openLogin(){ authMode='login'; $('#authTitle').textContent='تسجيل الدخول'; $('#signupFields').hidden=true; $('#loginFields').hidden=false; $('#authContinue').hidden=true; $('#loginStatus').textContent=''; $('#loginEmail').value=localStorage.getItem(LAST_EMAIL_KEY)||''; $('#loginPassword').value=localStorage.getItem(SAVED_PASSWORD_KEY)||''; $('#rememberLogin').checked=true; if(!authDialog.open) authDialog.showModal(); setTimeout(()=>{ if($('#loginEmail').value && $('#loginPassword').value) $('#loginSubmit').focus(); else $('#loginEmail').focus(); },50); }
-$('#signupBtn')['signupBtn','heroSignup','topSignupEntry'].forEach(id=>{
+['signupBtn','heroSignup','topSignupEntry'].forEach(id=>{
   const el=document.getElementById(id);
   if(el) el.onclick=openSignup;
 });
