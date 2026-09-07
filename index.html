@@ -932,15 +932,17 @@ function startRemeasure(interventionId){
   if(scoreText===null) return;
 
   const score=Number(scoreText);
-  if(!Number.isFinite(score) || score<0 || score>100){
+
+if(!Number.isFinite(score) || score<0 || score>100){
     alert('أدخلي درجة صحيحة من 0 إلى 100');
     return;
-  }
+}
+  
 
   const assessmentId='R'+Date.now();
 
   const allScores=loadAllScores();
-  allScores[assessmentId]={
+  allScores[assessmentKey(assessmentId)]={
     id:assessmentId,
     type:'إعادة القياس',
     date:new Date().toISOString(),
