@@ -923,18 +923,18 @@ function renderRemeasure(){const box=$('#remeasureList');if(!box)return;const li
 
 
 function weeklyAssessments(){return currentContextAssessments().filter(a=>String(a.type).startsWith('Quiz أسبوعي')).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
-function nextWeeklyNumber(){const nums=weeklyAssessments().map(a=>{const m=String(a.type).match(/الأسبوع\s+(\d+)/);return m?+m[1]:0});return (nums.length?Math.max(...nums):0)+1}
-function addWeeklyQuizNow(){if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}const n=nextWeeklyNumber();if(n>10){alert('تم الوصول إلى الحد الأقصى: 10 اختبارات Quiz أسبوعية لهذه الشعبة.');return}$('#weeklyWeekNo').value=n;$('#weeklyMaxScore').value=10;$('#weeklyQuizDate').value=new Date().toISOString().slice(0,10);$('#weeklyQuizDialog').showModal()}
-$('#confirmWeeklyQuiz').onclick=()=>{const n=nextWeeklyNumber(),max=Number($('#weeklyMaxScore').value),date=$('#weeklyQuizDate').value||new Date().toISOString().slice(0,10);if(n>10){alert('تم الوصول إلى الحد الأقصى: 10 اختبارات.');return}if(!Number.isFinite(max)||max<=0){alert('أدخل/أدخلي درجة نهائية صحيحة أكبر من صفر.');return}const a={id:'W'+Date.now(),context:contextKey(),type:`Quiz أسبوعي • الأسبوع ${n}`,max,date,status:'draft',weekly:true,week:n};const all=loadAssessments();all.push(a);saveAssessments(all);activeAssessmentId=a.id;$('#weeklyQuizDialog').close();showView('scores');prepareScores()}
-function renderWeekly(){const box=$('#weeklyQuizList');if(!box)return;const list=weeklyAssessments(),scores=loadAllScores();$('#weeklyCount').textContent=list.length;if(!list.length){$('#weeklyLatest').textContent='—';$('#weeklyMastery').textContent='—';$('#weeklyTrend').textContent='—';box.innerHTML='<div class="assessment-empty">لا توجد اختبارات أسبوعية بعد. اضغط/اضغطي «إضافة Quiz أسبوعي» لبدء متابعة الإتقان.</div>';return}const stats=list.map(a=>{const sv=scores[assessmentKey(a.id)],rows=sv?.rows||[];const max=sv?.max||a.max||100;const pcts=rows.map(r=>r.score/max*100);const avg=pcts.length?Math.round(pcts.reduce((z,v)=>z+v,0)/pcts.length):null;const mastery=pcts.length?Math.round(pcts.filter(v=>v>=80).length/pcts.length*100):null;return {a,sv,avg,mastery,max}});const last=stats[stats.length-1],prev=stats.length>1?stats[stats.length-2]:null;$('#weeklyLatest').textContent=last.avg===null?'—':last.avg+'%';$('#weeklyMastery').textContent=last.mastery===null?'—':last.mastery+'%';$('#weeklyTrend').textContent=last.avg===null?'—':(!prev||prev.avg===null?'بداية المتابعة':last.avg>prev.avg?'↑ تحسن':last.avg<prev.avg?'↓ يحتاج متابعة':'→ ثابت');box.innerHTML=stats.slice().reverse().map(x=>`<article class="assessment-card"><div class="assessment-meta"><span>${subjectFilter.value}</span><span>${classFilter.value}</span><span>من ${x.a.max}</span></div><h4>${x.a.type}</h4><small>${x.a.date}</small><span class="assessment-status ${x.sv?'done':'draft'}">${x.sv?'مكتمل':'مسودة'}</span><div class="workflow-meta">${x.avg===null?'لم تُدخل النتائج بعد':`المتوسط ${x.avg}% • الإتقان ${x.mastery}%`}</div><div class="card-actions"><button class="btn primary small weekly-open" data-id="${x.a.id}">${x.sv?'عرض/تعديل النتائج':'إدخال النتائج'}</button></div></article>`).join('');$$('.weekly-open').forEach(b=>b.onclick=()=>{activeAssessmentId=b.dataset.id;showView('scores');prepareScores()})}
-function latestWeeklyMap(){const all=loadAllScores(),list=weeklyAssessments().slice().reverse();for(const a of list){const sv=all[assessmentKey(a.id)];if(sv){const m={};sv.rows.forEach(r=>m[r.name]=Math.round(r.score/(sv.max||100)*100));return m}}return {}}
-setTimeout(()=>{if($('#addWeeklyQuiz'))$('#addWeeklyQuiz').onclick=addWeeklyQuizNow},0);
-function baselineMapForIntervention(i){
-  const all=loadAllScores();
-  const candidates=currentContextAssessments().filter(a=>a.type!=='إعادة القياس'&&!String(a.type).startsWith('Quiz أسبوعي')).map(a=>({a,s:all[assessmentKey(a.id)]})).filter(x=>x.s).sort((x,y)=>String(y.s.savedAt).localeCompare(String(x.s.savedAt)));
-  if(!candidates.length)return {};
-  const x=candidates[0], map={}; x.s.rows.forEach(r=>map[r.name]=Math.round(r.score/x.s.max*100)); return map;
+function startRemeasure(interventionId){
+  const all=loadInterventions();
+  const item=all.find(i=>String(i.id)===String(interventionId));
+  if(!item) return;
+
+  item.status='done';
+  saveInterventions(all);
+
+  showView('remeasure');
+  renderRemeasure();
 }
+
 function afterMapForIntervention(i){
   if(!i.remeasureAssessmentId)return {};
   const s=loadAllScores()[assessmentKey(i.remeasureAssessmentId)]; if(!s)return {};
