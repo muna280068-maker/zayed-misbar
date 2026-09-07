@@ -988,13 +988,13 @@ function afterMapForIntervention(i){
 
   return map;
 }
-  
+  function openFollowupIntervention(student){
 interventionSourceLevel='danger';
   $('#interventionContext').innerHTML=`<span>${subjectFilter.value}</span><span>الصف ${gradeArabicName(gradeFilter.value)}</span><span>${classFilter.value}</span><span>متابعة ثانية</span>`;
   $('#interventionStudents').innerHTML=`<label><input type="checkbox" value="${student.replace(/"/g,'&quot;')}" checked> <span>${student}</span><small>تدخل ثانٍ</small></label>`;
   $('#supportLevelChoices button').forEach(b=>b.classList.toggle('selected',b.textContent==='تدخل علاجي'));
   $('#interventionDialog').showModal();
-
+}
 function renderImpact(){
   const body=$('#impactTableBody'); if(!body)return;
   const list=contextInterventions(),weekly=latestWeeklyMap(); let rows=[],closed=0,improved=0,follow=0;
