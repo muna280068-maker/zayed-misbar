@@ -705,9 +705,11 @@ function cycleForGrade(v){const n=parseInt(v);return n<=5?'الحلقة الأو
 function classesForGrade(v){const n=parseInt(v), track=v.includes('advanced')?'متقدم':v.includes('general')?'عام':'';return [1,2,3,4,5,6,7].map(i=>`${n}G${i}${track?' - '+track:''}`);}
 function syncGradeFilters(){const v=gradeFilter.value;currentUser.subject=subjectFilter.value||currentUser.subject;let opts=classesForGrade(v);if(isTeacher()&&currentUser.classes.length){opts=opts.filter(x=>currentUser.classes.includes(x));}if(!opts.length&&isTeacher())opts=['لا توجد شعبة مسندة'];classFilter.innerHTML=opts.map(x=>`<option>${x}</option>`).join('');$('#workspaceEyebrow').textContent=isTeacher()?`معلم/معلمة ${currentUser.subject} • ${cycleForGrade(v)}`:currentUser.role; if(isTeacher())$('#sideSubject').textContent=currentUser.subject; refreshAssessmentUI();}
 gradeFilter.addEventListener('change',syncGradeFilters); subjectFilter.addEventListener('change',()=>{currentUser.subject=subjectFilter.value;syncSubjectPopup();refreshAssessmentUI();}); ('change',refreshAssessmentUI);
+
 classFilter.addEventListener('change',()=>{
   refreshAssessmentUI();
   renderRemeasure();
+  renderImpact();
 });
 $('#askSaif').onclick=()=>saifDialog.showModal(); $('#sideSaif').onclick=()=>saifDialog.showModal();
 $('#talkSaif').onclick=()=>{saifDialog.showModal();setTimeout(()=>speak('مرحبًا، أنا سيف. كيف أستطيع مساعدتك في مِسبار زايد؟'),200)};
