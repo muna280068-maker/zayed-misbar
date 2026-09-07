@@ -964,18 +964,31 @@ if(!Number.isFinite(score) || score<0 || score>100){
 }
 
 function afterMapForIntervention(i){
-  if(!i.remeasureAssessmentId)return {};
-  const s=loadAllScores()[assessmentKey(i.remeasureAssessmentId)]; if(!s)return {};
-  const map={}; s.rows.forEach(r=>map[r.name]=Math.round(r.score/s.max*100)); return map;
+  if(!i.remeasureAssessmentId) return {};
+
+  const allScores = loadAllScores();
+
+  const s =
+    allScores[assessmentKey(i.remeasureAssessmentId)] ||
+    allScores[i.remeasureAssessmentId];
+
+  if(!s || !Array.isArray(s.rows)) return {};
+
+  const map = {};
+
+  s.rows.forEach(r => {
+    const max = Number(r.max || s.max || 100);
+    const score = Number(r.score);
+
+    if(Number.isFinite(score) && Number.isFinite(max) && max > 0){
+      map[r.name] = Math.round(score / max * 100);
+    }
+  });
+
+  return map;
 }
-function impactState(after){
-  if(after===undefined||after===null)return {label:'بانتظار إعادة القياس',cls:'boost'};
-  if(after>=80)return {label:'أُغلقت الفجوة ✓',cls:'closed'};
-  if(after>=60)return {label:'تحسن • يحتاج تعزيزًا',cls:'boost'};
-  return {label:'يحتاج تدخلًا ثانيًا',cls:'follow'};
-}
-function openFollowupIntervention(student){
-  interventionSourceLevel='danger';
+  function openFollowupIntervention(student){
+interventionSourceLevel='danger';
   $('#interventionContext').innerHTML=`<span>${subjectFilter.value}</span><span>الصف ${gradeArabicName(gradeFilter.value)}</span><span>${classFilter.value}</span><span>متابعة ثانية</span>`;
   $('#interventionStudents').innerHTML=`<label><input type="checkbox" value="${student.replace(/"/g,'&quot;')}" checked> <span>${student}</span><small>تدخل ثانٍ</small></label>`;
   $('#supportLevelChoices button').forEach(b=>b.classList.toggle('selected',b.textContent==='تدخل علاجي'));
