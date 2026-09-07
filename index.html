@@ -924,6 +924,39 @@ function renderEvidence(){const grid=$('#evidenceGrid');if(!grid)return;const in
 $('#evidenceTypeFilter')?.addEventListener('change',renderEvidence);$('#evidencePrivacyFilter')?.addEventListener('change',renderEvidence);
 
 function interventionBaseline(i){const all=loadAllScores();const candidates=currentContextAssessments().filter(a=>a.type!=='إعادة القياس'&&!String(a.type).startsWith('Quiz أسبوعي')).map(a=>({a,s:all[assessmentKey(a.id)]})).filter(x=>x.s).sort((x,y)=>String(y.s.savedAt).localeCompare(String(x.s.savedAt)));if(!candidates.length)return 0;const x=candidates[0],map=Object.fromEntries(x.s.rows.map(r=>[r.name,r.score]));const vals=i.students.filter(n=>map[n]!==undefined).map(n=>map[n]/x.s.max*100);return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0}
+function baselineMapForIntervention(i){
+  const all = loadAllScores();
+
+  const candidates = currentContextAssessments()
+    .filter(a =>
+      a.type !== 'إعادة القياس' &&
+      String(a.type).startsWith('Quiz أسبوعي')
+    )
+    .map(a => ({
+      a,
+      s: all[assessmentKey(a.id)]
+    }))
+    .filter(x => x.s && Array.isArray(x.s.rows))
+    .sort((x,y) =>
+      String(y.s.savedAt || '').localeCompare(String(x.s.savedAt || ''))
+    );
+
+  if(!candidates.length) return {};
+
+  const s = candidates[0].s;
+  const max = Number(s.max || 100);
+  const map = {};
+
+  s.rows.forEach(r => {
+    const score = Number(r.score);
+
+    if(Number.isFinite(score) && max > 0){
+      map[r.name] = Math.round(score / max * 100);
+    }
+  });
+
+  return map;
+}
 function interventionAfter(i){if(!i.remeasureAssessmentId)return null;const s=loadAllScores()[assessmentKey(i.remeasureAssessmentId)];if(!s)return null;const vals=s.rows.map(r=>r.score/s.max*100);return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null}
 function renderRemeasure(){const box=$('#remeasureList');if(!box)return;const list=contextInterventions();if(!list.length){box.innerHTML='<div class="empty-inline">لا توجد تدخلات بعد.</div>';return}box.innerHTML=list.map(i=>{const before=interventionBaseline(i),after=interventionAfter(i),delta=after===null?null:after-before;return `<article class="remeasure-card"><div><h4>${i.action}</h4><div class="workflow-meta">${i.students.length} طالب/طالبة • ${i.className}</div><div class="impact-mini"><span>قبل</span><strong>${before}%</strong><span class="impact-arrow">←</span><span>بعد</span><strong>${after===null?'—':after+'%'}</strong>${delta===null?'':`<span class="status-dot ${delta>=0?'done':'wait'}">${delta>=0?'+':''}${delta} نقطة</span>`}</div></div><button class="btn ${after===null?'primary':'ghost'} small remeasure-action" data-id="${i.id}">${after===null?'بدء/استكمال إعادة القياس':'عرض النتيجة'}</button></article>`}).join('');$$('.remeasure-action').forEach(b=>b.onclick=()=>startRemeasure(b.dataset.id))}
 
