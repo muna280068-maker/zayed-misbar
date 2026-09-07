@@ -928,10 +928,36 @@ function startRemeasure(interventionId){
   const item=all.find(i=>String(i.id)===String(interventionId));
   if(!item) return;
 
+  const scoreText=prompt('أدخلي درجة إعادة القياس من 100');
+  if(scoreText===null) return;
+
+  const score=Number(scoreText);
+  if(!Number.isFinite(score) || score<0 || score>100){
+    alert('أدخلي درجة صحيحة من 0 إلى 100');
+    return;
+  }
+
+  const assessmentId='R'+Date.now();
+
+  const allScores=loadAllScores();
+  allScores[assessmentId]={
+    id:assessmentId,
+    type:'إعادة القياس',
+    date:new Date().toISOString(),
+    max:100,
+    rows:(item.students||[]).map(name=>({
+      name:name,
+      score:score,
+      max:100
+    }))
+  };
+
+  saveAllScores(allScores);
+
+  item.remeasureAssessmentId=assessmentId;
   item.status='done';
   saveInterventions(all);
 
-  showView('remeasure');
   renderRemeasure();
 }
 
