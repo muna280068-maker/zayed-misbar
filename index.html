@@ -926,7 +926,7 @@ function weeklyAssessments(){return currentContextAssessments().filter(a=>String
 function startRemeasure(interventionId){
   const all=loadInterventions();
   const item=all.find(i=>String(i.id)===String(interventionId));
-  if(!item) return;
+  if(!item){alert('لم يتم العثور على الإجراء');return;}
 
   const scoreText=prompt('أدخلي درجة إعادة القياس من 100');
   if(scoreText===null) return;
