@@ -925,6 +925,7 @@ $('#evidenceTypeFilter')?.addEventListener('change',renderEvidence);$('#evidence
 
 function baselineMapForIntervention(i){
   const all = loadAllScores();
+  const map = {};
 
   const candidates = currentContextAssessments()
     .filter(a => a.type !== 'إعادة القياس')
@@ -933,25 +934,29 @@ function baselineMapForIntervention(i){
       s: all[assessmentKey(a.id)]
     }))
     .filter(x => x.s && Array.isArray(x.s.rows))
-    .sort((x, y) =>
+    .sort((x,y) =>
       String(y.s.savedAt || '').localeCompare(String(x.s.savedAt || ''))
     );
 
-  if(!candidates.length) return {};
+  i.students.forEach(student => {
+    for(const x of candidates){
+      const row = x.s.rows.find(r => r.name === student);
 
-  const s = candidates[0].s;
-  const max = Number(s.max || 100);
-  const map = {};
+      if(row){
+        const score = Number(row.score);
+        const max = Number(x.s.max || x.a.max || 100);
 
-  s.rows.forEach(r => {
-    const score = Number(r.score);
-    if(Number.isFinite(score) && max > 0){
-      map[r.name] = Math.round(score / max * 100);
+        if(Number.isFinite(score) && max > 0){
+          map[student] = Math.round(score / max * 100);
+          break;
+        }
+      }
     }
   });
 
   return map;
 }
+  
 
 function latestWeeklyMap(){
   const all = loadAllScores();
