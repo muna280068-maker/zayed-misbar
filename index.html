@@ -1123,7 +1123,65 @@ let activeStudentName='';
 function studentNamesForContext(){return roster.slice()}
 function populateStudentProfileSelect(){const s=$('#studentProfileSelect');if(!s)return;const names=studentNamesForContext();s.innerHTML=names.map(n=>`<option value="${n.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" ${n===activeStudentName?'selected':''}>${n}</option>`).join('');if(!activeStudentName&&names.length)activeStudentName=names[0];s.value=activeStudentName||''}
 function openStudentProfile(name){activeStudentName=name;showView('student');setTimeout(renderStudentProfile,0)}
-function studentSeries(name){const all=loadAllScores(),ass=currentContextAssessments();const diagnostic=ass.filter(a=>!a.weekly&&!String(a.type).startsWith('Quiz أسبوعي')&&a.type!=='إعادة القياس').map(a=>({a,s:all[assessmentKey(a.id)]})).filter(x=>x.s).sort((x,y)=>String(x.s.savedAt||'').localeCompare(String(y.s.savedAt||'')))[0];const points=[];if(diagnostic){const r=(diagnostic.s.rows||[]).find(x=>x.name===name);if(r)points.push({label:'التشخيص',pct:Math.round(r.score/(diagnostic.s.max||100)*100),raw:`${r.score}/${diagnostic.s.max||100}`})}weeklyAssessments().forEach((a,idx)=>{const s=all[assessmentKey(a.id)],r=s?.rows?.find(x=>x.name===name);if(r)points.push({label:`Quiz ${idx+1}`,pct:Math.round(r.score/(s.max||a.max||100)*100),raw:`${r.score}/${s.max||a.max||100}`})});return points}
+function studentSeries(name){
+  const all = loadAllScores();
+  const ass = currentContextAssessments();
+  const points = [];
+
+  // التشخيص
+  const diagnostic = ass
+    .filter(a => !a.weekly && !String(a.type || '').startsWith('Quiz أسبوعي') && a.type !== 'إعادة القياس')
+    .map(a => ({a, s: all[assessmentKey(a.id)]}))
+    .filter(x => x.s)
+    .sort((x,y) => String(x.s.savedAt || '').localeCompare(String(y.s.savedAt || '')))[0];
+
+  if(diagnostic){
+    const r = (diagnostic.s.rows || []).find(x => x.name === name);
+    if(r){
+      points.push({
+        label: 'التشخيص',
+        pct: Math.round(r.score / (diagnostic.s.max || 100) * 100),
+        raw: `${r.score}/${diagnostic.s.max || 100}`
+      });
+    }
+  }
+
+  // الاختبارات الأسبوعية
+  weeklyAssessments().forEach((a, idx) => {
+    const s = all[assessmentKey(a.id)];
+    const r = s?.rows?.find(x => x.name === name);
+
+    if(r){
+      points.push({
+        label: `Quiz ${idx + 1}`,
+        pct: Math.round(r.score / (s.max || a.max || 100) * 100),
+        raw: `${r.score}/${s.max || a.max || 100}`
+      });
+    }
+  });
+
+  // إعادة القياس
+  const interventions = contextInterventions()
+    .filter(i => (i.students || []).includes(name) && i.remeasureAssessmentId);
+
+  interventions.forEach((i, idx) => {
+    const s =
+      all[assessmentKey(i.remeasureAssessmentId)] ||
+      all[i.remeasureAssessmentId];
+
+    const r = s?.rows?.find(x => x.name === name);
+
+    if(r){
+      points.push({
+        label: interventions.length > 1 ? `إعادة القياس ${idx + 1}` : 'إعادة القياس',
+        pct: Math.round(Number(r.score) / Number(s.max || 100) * 100),
+        raw: `${r.score}/${s.max || 100}`
+      });
+    }
+  });
+
+  return points;
+}
 function studentInterventionsFor(name){return contextInterventions().filter(i=>(i.students||[]).includes(name))}
 function drawStudentProgress(points){const box=$('#studentProgressChart');if(!box)return;if(!points.length){box.innerHTML='<div class="empty-inline">لا توجد نتائج محفوظة لهذا الطالب/الطالبة بعد.</div>';return}const W=760,H=270,pad=48,maxX=Math.max(points.length-1,1),x=i=>pad+i*(W-pad*2)/maxX,y=v=>H-pad-(v/100)*(H-pad*2);let grid='';[0,20,40,60,80,100].forEach(v=>{grid+=`<line x1="${pad}" y1="${y(v)}" x2="${W-pad}" y2="${y(v)}" stroke="#dce9ee"/><text x="${pad-10}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="#6a7d86">${v}%</text>`});const poly=points.map((p,i)=>`${x(i)},${y(p.pct)}`).join(' ');const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.pct)}" r="6" fill="#0b6070"/><text x="${x(i)}" y="${y(p.pct)-12}" text-anchor="middle" font-size="12" font-weight="700" fill="#0b6070">${p.pct}%</text><text x="${x(i)}" y="${H-18}" text-anchor="middle" font-size="12" fill="#506974">${p.label}</text><title>${p.label}: ${p.raw} = ${p.pct}%</title>`).join('');box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="منحنى المستوى الأكاديمي">${grid}<line x1="${pad}" y1="${y(80)}" x2="${W-pad}" y2="${y(80)}" stroke="#9ebf8c" stroke-dasharray="6 6"/><polyline points="${poly}" fill="none" stroke="#0b6070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`}
 const SUPPORT_KEY='misbarZayedSupportPlansV36';
