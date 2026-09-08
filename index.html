@@ -1034,7 +1034,23 @@ interventionSourceLevel='danger';
   $('#supportLevelChoices button').forEach(b=>b.classList.toggle('selected',b.textContent==='تدخل علاجي'));
   $('#interventionDialog').showModal();
 }
-function renderImpact(){
+function renderImpact(){function impactState(score){
+  const n = Number(score);
+
+  if(!Number.isFinite(n)){
+    return {cls:'follow', label:'بانتظار إعادة القياس'};
+  }
+
+  if(n >= 80){
+    return {cls:'closed', label:'فجوة أُغلقت'};
+  }
+
+  if(n >= 60){
+    return {cls:'boost', label:'تحسن يحتاج تعزيزًا'};
+  }
+
+  return {cls:'follow', label:'يحتاج تدخلاً ثانيًا'};
+}
   const body=$('#impactTableBody'); if(!body)return;
   const list=contextInterventions(),weekly=latestWeeklyMap(); let rows=[],closed=0,improved=0,follow=0;
   list.forEach(i=>{const before=baselineMapForIntervention(i),after=afterMapForIntervention(i); i.students.forEach(student=>{const b=before[student],a=after[student],state=impactState(a); if(state.cls==='closed')closed++;else if(a!==undefined&&state.cls==='boost')improved++;else if(state.cls==='follow')follow++; rows.push({i,student,b,a,w:weekly[student],state});});});
