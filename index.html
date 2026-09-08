@@ -923,21 +923,17 @@ $('#confirmEvidence').onclick=()=>{const f=$('#evidenceFile').files[0],iid=$('#e
 function renderEvidence(){const grid=$('#evidenceGrid');if(!grid)return;const ints=Object.fromEntries(loadInterventions().map(i=>[i.id,i]));let list=visibleEvidence();const tf=$('#evidenceTypeFilter')?.value||'all',pf=$('#evidencePrivacyFilter')?.value||'all';if(tf!=='all')list=list.filter(e=>(e.type||'أخرى')===tf);if(pf!=='all')list=list.filter(e=>e.privacy===pf);const base=visibleEvidence();$('#evTotal').textContent=base.length;$('#evLeadership').textContent=base.filter(e=>['متاح للقيادة','معتمد للزوار'].includes(e.privacy)).length;$('#evVisitors').textContent=base.filter(e=>e.privacy==='معتمد للزوار').length;$('#evStudents').textContent=new Set(base.filter(e=>e.student).map(e=>e.student)).size;if(!list.length){grid.innerHTML='<div class="empty-state">لا توجد أدلة مطابقة للعرض الحالي.</div>';return}grid.innerHTML=list.map(e=>{const i=ints[e.interventionId];const icon=(e.fileType||'').startsWith('image/')?'ص':'ملف';return `<div class="evidence-card"><div class="evidence-thumb">${icon}</div><div><b>${e.fileName}</b><span class="evidence-type">${e.type||'أخرى'}</span><span>${e.subject||subjectFilter.value} • الصف ${gradeArabicName(e.grade||gradeFilter.value)} • ${e.className||classFilter.value}</span><small>${e.student?'مرتبط: '+e.student:'دليل عام للشعبة'} • ${i?i.action:'بدون إجراء مرتبط'}</small><small>${e.privacy} • ${new Date(e.createdAt).toLocaleDateString('ar-AE')}</small></div><div class="e-actions"><span class="status-dot done">موثق ✓</span></div></div>`}).join('')}
 $('#evidenceTypeFilter')?.addEventListener('change',renderEvidence);$('#evidencePrivacyFilter')?.addEventListener('change',renderEvidence);
 
-function interventionBaseline(i){const all=loadAllScores();const candidates=currentContextAssessments().filter(a=>a.type!=='إعادة القياس'&&!String(a.type).startsWith('Quiz أسبوعي')).map(a=>({a,s:all[assessmentKey(a.id)]})).filter(x=>x.s).sort((x,y)=>String(y.s.savedAt).localeCompare(String(x.s.savedAt)));if(!candidates.length)return 0;const x=candidates[0],map=Object.fromEntries(x.s.rows.map(r=>[r.name,r.score]));const vals=i.students.filter(n=>map[n]!==undefined).map(n=>map[n]/x.s.max*100);return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0}
 function baselineMapForIntervention(i){
   const all = loadAllScores();
 
   const candidates = currentContextAssessments()
-    .filter(a =>
-      a.type !== 'إعادة القياس' &&
-      String(a.type).startsWith('Quiz أسبوعي')
-    )
+    .filter(a => a.type !== 'إعادة القياس')
     .map(a => ({
       a,
       s: all[assessmentKey(a.id)]
     }))
     .filter(x => x.s && Array.isArray(x.s.rows))
-    .sort((x,y) =>
+    .sort((x, y) =>
       String(y.s.savedAt || '').localeCompare(String(x.s.savedAt || ''))
     );
 
@@ -949,7 +945,6 @@ function baselineMapForIntervention(i){
 
   s.rows.forEach(r => {
     const score = Number(r.score);
-
     if(Number.isFinite(score) && max > 0){
       map[r.name] = Math.round(score / max * 100);
     }
@@ -957,9 +952,6 @@ function baselineMapForIntervention(i){
 
   return map;
 }
-function interventionAfter(i){if(!i.remeasureAssessmentId)return null;const s=loadAllScores()[assessmentKey(i.remeasureAssessmentId)];if(!s)return null;const vals=s.rows.map(r=>r.score/s.max*100);return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null}
-function renderRemeasure(){const box=$('#remeasureList');if(!box)return;const list=contextInterventions();if(!list.length){box.innerHTML='<div class="empty-inline">لا توجد تدخلات بعد.</div>';return}box.innerHTML=list.map(i=>{const before=interventionBaseline(i),after=interventionAfter(i),delta=after===null?null:after-before;return `<article class="remeasure-card"><div><h4>${i.action}</h4><div class="workflow-meta">${i.students.length} طالب/طالبة • ${i.className}</div><div class="impact-mini"><span>قبل</span><strong>${before}%</strong><span class="impact-arrow">←</span><span>بعد</span><strong>${after===null?'—':after+'%'}</strong>${delta===null?'':`<span class="status-dot ${delta>=0?'done':'wait'}">${delta>=0?'+':''}${delta} نقطة</span>`}</div></div><button class="btn ${after===null?'primary':'ghost'} small remeasure-action" data-id="${i.id}">${after===null?'بدء/استكمال إعادة القياس':'عرض النتيجة'}</button></article>`}).join('');$$('.remeasure-action').forEach(b=>b.onclick=()=>startRemeasure(b.dataset.id))}
-
 
 function latestWeeklyMap(){
   const all = loadAllScores();
