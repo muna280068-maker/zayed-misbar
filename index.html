@@ -5,7 +5,6 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>مِسبار زايد | ZAYED MISBAR</title>
-<meta name="misbar-build" content="V12-2026-09-09-full-audit">
 <!-- V53: final login fix for GitHub Pages -->
 <style>
 :root{--navy:#173653;--blue:#477da6;--sky:#dcebf4;--cream:#f7f2e8;--gold:#c6a35f;--ink:#17324a;--muted:#698095;--white:#fff;--line:#d9e5ec;--shadow:0 18px 50px rgba(23,54,83,.12)}
@@ -953,7 +952,7 @@ function persistCurrentRoster(){const o=loadRosterOverrides();o[rosterClassKey()
 function renderRosterManager(){const box=$('#rosterManageList');if(!box)return;$('#rosterDialogTitle').textContent=`طالبات ${classFilter.value} • ${roster.length} طالبة`;box.innerHTML=roster.length?roster.map((n,i)=>`<div style="display:grid;grid-template-columns:42px 1fr auto;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #edf3f7"><b>${i+1}</b><span>${n}</span><span style="display:flex;gap:6px"><button class="btn ghost small roster-edit" data-i="${i}">تعديل</button><button class="btn ghost small roster-delete" data-i="${i}">حذف</button></span></div>`).join(''):'<div class="empty-inline">لا توجد أسماء لهذه الشعبة في الملف المرفوع. يمكنك إضافة الطالبات يدويًا.</div>';$$('.roster-edit').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,n=prompt('عدّلي اسم الطالبة:',roster[i]);if(n&&n.trim()){roster[i]=n.trim();persistCurrentRoster();renderRosterManager();renderScores();updateOverviewStudentCount()}});$$('.roster-delete').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(confirm(`حذف ${roster[i]} من هذه الشعبة؟`)){roster.splice(i,1);persistCurrentRoster();renderRosterManager();renderScores();updateOverviewStudentCount()}})}
 
 let activeAssessmentId='';
-function loadAssessments(){try{const v=JSON.parse(localStorage.getItem(ASSESSMENTS_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return[]}}
+function loadAssessments(){try{return JSON.parse(localStorage.getItem(ASSESSMENTS_KEY)||'[]')}catch{return[]}}
 function saveAssessments(v){localStorage.setItem(ASSESSMENTS_KEY,JSON.stringify(v))}
 function loadAllScores(){try{return JSON.parse(localStorage.getItem(SCORES_KEY)||'{}')}catch{return{}}}
 function saveAllScores(v){localStorage.setItem(SCORES_KEY,JSON.stringify(v))}
@@ -972,8 +971,8 @@ function assessmentSkillsForSubject(subject){
     'التربية الإسلامية':['القرآن الكريم','الحديث الشريف','العقيدة','الفقه والعبادات','السيرة والقيم الإسلامية']
   }; return map[subject]||['المهارة 1','المهارة 2','المهارة 3'];
 }
-function renderAssessmentSkillChoices(selected=[]){const box=$('#assessmentSkillChoices');if(!box)return;const chosen=Array.isArray(selected)?selected:[];const skills=assessmentSkillsForSubject(subjectFilter?.value||'');box.innerHTML=Array.from(skills).map(s=>`<button type="button" class="${chosen.indexOf(s)>=0?'selected':''}" data-skill="${s}">${s}</button>`).join('');Array.from(document.querySelectorAll('#assessmentSkillChoices button')).forEach(b=>b.onclick=()=>b.classList.toggle('selected'))}
-function selectedAssessmentSkills(){return Array.from(document.querySelectorAll('#assessmentSkillChoices button.selected')).reduce((out,b)=>{const v=b&&b.dataset?b.dataset.skill:'';if(v)out.push(v);return out;},[])}
+function renderAssessmentSkillChoices(selected=[]){const box=$('#assessmentSkillChoices');if(!box)return;box.innerHTML=assessmentSkillsForSubject(subjectFilter.value).map(s=>`<button type="button" class="${selected.includes(s)?'selected':''}" data-skill="${s}">${s}</button>`).join('');$$('#assessmentSkillChoices button').forEach(b=>b.onclick=()=>b.classList.toggle('selected'))}
+function selectedAssessmentSkills(){return $$('#assessmentSkillChoices button.selected').map(b=>b.dataset.skill)}
 function assessmentSignature(a){return [a.context,a.type,a.date||'',a.interventionId||'',a.week||''].join('||')}
 function cleanupDuplicateAssessments(){
   const all=loadAssessments(),scores=loadAllScores(),seen=new Map(),kept=[];
@@ -1030,26 +1029,47 @@ window.createDiagnosticAssessmentNow=function(event){
   if(event){event.preventDefault();event.stopPropagation();}
   const btn=document.getElementById('confirmAssessment');
   try{
-    const sf=document.getElementById('subjectFilter'), cf=document.getElementById('classFilter');
-    const subject=String(sf?.value||'').trim(), className=String(cf?.value||'').trim();
-    const type=String(document.getElementById('newAssessmentType')?.value||'التشخيص الأول').trim();
-    const date=String(document.getElementById('newAssessmentDate')?.value||new Date().toISOString().slice(0,10));
-    if(!subject||!className||className==='لا توجد شعبة مسندة'){alert('اختاري المادة والشعبة أولاً.');return false;}
+    const sf=document.getElementById('subjectFilter');
+    const cf=document.getElementById('classFilter');
+    const type=document.getElementById('newAssessmentType')?.value||'التشخيص الأول';
+    const date=document.getElementById('newAssessmentDate')?.value||new Date().toISOString().slice(0,10);
+    if(!sf?.value||!cf?.value||cf.value==='لا توجد شعبة مسندة'){
+      alert('اختاري المادة والشعبة أولاً.'); return false;
+    }
     let skills=selectedAssessmentSkills();
-    if(!Array.isArray(skills)||skills.length===0) skills=Array.from(assessmentSkillsForSubject(subject));
+    if(!skills.length){
+      skills=assessmentSkillsForSubject(sf.value);
+      renderAssessmentSkillChoices(skills);
+    }
     const ctx=contextKey();
-    const existing=loadAssessments();
-    const dup=existing.find(a=>a&&a.context===ctx&&String(a.type||'')===type&&String(a.date||'')===date);
-    if(dup){activeAssessmentId=dup.id;document.getElementById('assessmentDialog')?.close();showView('scores');prepareScores();return false;}
-    const a={id:'A'+Date.now(),context:ctx,subject,grade:String(gradeFilter?.value||''),className,type,max:100,date,status:'not_started',skills:Array.from(skills),locked:false};
-    const next=Array.from(existing);next.push(a);saveAssessments(next);
-    const verify=loadAssessments();if(!verify.some(x=>x&&x.id===a.id))throw new Error('تعذر حفظ الاختبار في المتصفح');
+    const dup=currentContextAssessments().find(a=>a.type===type&&String(a.date||'')===String(date||''));
+    if(dup){
+      activeAssessmentId=dup.id;
+      document.getElementById('assessmentDialog')?.close();
+      showView('scores');
+      prepareScores();
+      return false;
+    }
+    const a={id:'A'+Date.now(),context:ctx,type:type,max:100,date:date,status:'not_started',skills:skills,locked:false};
+    const all=loadAssessments();
+    all.push(a);
+    saveAssessments(all);
+    // verify the save before leaving the dialog
+    const saved=loadAssessments().find(x=>x.id===a.id);
+    if(!saved) throw new Error('Assessment was not persisted');
     activeAssessmentId=a.id;
+    if(btn){btn.disabled=true;btn.textContent='تم إنشاء الاختبار ✓';}
     document.getElementById('assessmentDialog')?.close();
-    renderAssessmentCards();showView('scores');prepareScores();
-    return false;
-  }catch(err){console.error('Assessment creation failed',err);alert('تعذر إنشاء الاختبار: '+String(err?.message||err||'خطأ غير معروف'));return false;}
-  finally{if(btn){btn.disabled=false;btn.textContent='إنشاء الاختبار';}}
+    renderAssessmentCards();
+    showView('scores');
+    prepareScores();
+    setTimeout(()=>{if(btn){btn.disabled=false;btn.textContent='إنشاء الاختبار';}},700);
+  }catch(err){
+    console.error('Assessment creation failed',err);
+    if(btn){btn.disabled=false;btn.textContent='إنشاء الاختبار';}
+    alert('تعذر إنشاء الاختبار: '+(err?.message||'خطأ غير معروف'));
+  }
+  return false;
 };
 
 $('#goScoresBtn').onclick=()=>{showView('scores');prepareScores()};
@@ -1062,9 +1082,9 @@ $('#closeRosterDialog').onclick=()=>$('#rosterDialog').close();
 $('#addStudentBtn').onclick=()=>{const n=prompt('اكتب/اكتبي اسم الطالب/الطالبة:');if(n&&n.trim()){roster.push(n.trim());persistCurrentRoster();renderRosterManager();renderScores();updateOverviewStudentCount()}};
 $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استعادة القائمة الأصلية لهذه الشعبة؟'))return;const o=loadRosterOverrides();delete o[k];saveRosterOverrides(o);roster=rosterForCurrentClass();renderRosterManager();renderScores();updateOverviewStudentCount()};
 $('#saveScores').onclick=()=>{if(!activeAssessmentId)populateAssessmentSelect();let ass=loadAssessments(),idx=ass.findIndex(a=>a.id===activeAssessmentId);if(idx<0)return;const a=ass[idx];if(a.locked){if(!confirm('النتائج معتمدة. هل تريد/تريدين فتح الاختبار للتعديل؟ سيتم تسجيل حالة فتح التعديل.'))return;a.locked=false;a.status='in_progress';a.reopenedAt=new Date().toISOString();saveAssessments(ass);renderScores();renderAssessmentCards();return}const rows=[];$$('#scoreTable tbody tr').forEach(tr=>{const name=tr.children[1].textContent.trim(),raw=tr.querySelector('select').value;if(raw!=='')rows.push({name,score:+raw})});if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return}const total=roster.length;if(!confirm(`سيتم حفظ واعتماد ${rows.length} نتيجة من أصل ${total}. ${rows.length<total?'الطلبة دون درجة سيبقون «بانتظار التشخيص».':''}\nهل تريد/تريدين المتابعة؟`))return;const all=loadAllScores();all[assessmentKey(activeAssessmentId)]={rows,max:a.max||100,savedAt:new Date().toISOString(),subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,skills:a.skills||[]};saveAllScores(all);a.status=rows.length===total?'completed':'in_progress';a.locked=true;a.approvedAt=new Date().toISOString();saveAssessments(ass);$('#savedNote').textContent=`تم الحفظ والاعتماد • ${rows.length} نتيجة`;renderAssessmentCards();renderScores();setTimeout(()=>showView('gaps'),450)};
-function loadInterventions(){try{const v=JSON.parse(localStorage.getItem(INTERVENTIONS_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return[]}}
+function loadInterventions(){try{return JSON.parse(localStorage.getItem(INTERVENTIONS_KEY)||'[]')}catch{return[]}}
 function saveInterventions(v){localStorage.setItem(INTERVENTIONS_KEY,JSON.stringify(v))}
-function loadEvidence(){try{const v=JSON.parse(localStorage.getItem(EVIDENCE_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return[]}}
+function loadEvidence(){try{return JSON.parse(localStorage.getItem(EVIDENCE_KEY)||'[]')}catch{return[]}}
 function saveEvidence(v){localStorage.setItem(EVIDENCE_KEY,JSON.stringify(v))}
 function latestSavedAssessment(){const list=currentContextAssessments();const all=loadAllScores();const saved=list.map(a=>({a,s:all[assessmentKey(a.id)]})).filter(x=>x.s).sort((x,y)=>String(y.s.savedAt).localeCompare(String(x.s.savedAt)));return saved[0]||null}
 function studentLevelsFromLatest(){const x=latestSavedAssessment();if(!x)return {good:[],medium:[],danger:[],all:[],assessment:null};const max=x.s.max||x.a.max||subjectMaxScore(subjectFilter.value);const out={good:[],medium:[],danger:[],all:[],assessment:x.a};x.s.rows.forEach(r=>{const pct=Math.round(r.score/max*100),[,cls]=scoreLevel(r.score,max);const item={name:r.name,score:r.score,pct};out[cls].push(item);out.all.push({...item,level:cls})});return out}
