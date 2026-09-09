@@ -375,8 +375,8 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 </select><select id="classFilter"><option>7G1</option><option>7G2</option><option selected="">7G3</option></select></div>
 </div>
 <div class="view active" id="view-overview">
-<div class="kpi-grid"><div class="kpi"><span>الطالبات</span><strong>34</strong><small>في الشعبة المحددة</small></div><div class="kpi"><span>تم التشخيص</span><strong>31</strong><small>91% مكتمل</small></div><div class="kpi"><span>الإتقان</span><strong>68%</strong><small>النتيجة الأولية</small></div><div class="kpi warn"><span>يحتاجن تدخلًا</span><strong>7</strong><small>أولوية متابعة</small></div></div>
-<div class="dashboard-grid"><div class="panel"><div class="panel-head"><h3>نبض شعبتي</h3><button class="btn ghost small" id="explainChart">اشرحه لي يا سيف</button></div><div class="bar-chart"><div><span>مهارة 1</span><i style="--v:84%"></i><b>—</b></div><div><span>مهارة 2</span><i style="--v:61%"></i><b>—</b></div><div><span>مهارة 3</span><i style="--v:47%"></i><b>—</b></div><div><span>مهارة 4</span><i style="--v:76%"></i><b>—</b></div></div></div><div class="panel alert-panel"><span class="eyebrow">سيف لاحظ</span><h3>فجوة ذات أولوية</h3><p>مهارة 3 هي الأقل إتقانًا حاليًا، و7 طالبات يحتجن دعمًا مباشرًا.</p><button class="btn primary" id="quickIntervention" onclick="openIntervention('all')" type="button">اختيار إجراء علاجي</button></div></div>
+<div class="kpi-grid"><div class="kpi"><span>الطالبات</span><strong id="overviewStudents">0</strong><small>في الشعبة المحددة</small></div><div class="kpi"><span>تم التشخيص</span><strong id="overviewDiagnosed">0</strong><small id="overviewCompletion">لا توجد نتائج بعد</small></div><div class="kpi"><span>الإتقان</span><strong id="overviewMastery">—</strong><small>النتيجة الأولية</small></div><div class="kpi warn"><span>يحتاجن تدخلًا</span><strong id="overviewNeed">0</strong><small>أولوية متابعة</small></div></div>
+<div class="dashboard-grid"><div class="panel"><div class="panel-head"><h3>نبض شعبتي</h3><button class="btn ghost small" id="explainChart">اشرحه لي يا سيف</button></div><div class="bar-chart"><div><span>مهارة 1</span><i style="--v:0%"></i><b>—</b></div><div><span>مهارة 2</span><i style="--v:0%"></i><b>—</b></div><div><span>مهارة 3</span><i style="--v:0%"></i><b>—</b></div><div><span>مهارة 4</span><i style="--v:0%"></i><b>—</b></div></div></div><div class="panel alert-panel"><span class="eyebrow">سيف لاحظ</span><h3 id="overviewPriorityTitle">بانتظار النتائج الحقيقية</h3><p id="overviewPriorityText">بعد إدخال واعتماد نتائج الاختبار التشخيصي سيظهر هنا ملخص الفجوة ذات الأولوية.</p><button class="btn primary" id="quickIntervention" onclick="openIntervention('all')" type="button">اختيار إجراء علاجي</button></div></div>
 <div class="quick-actions"><button data-view="scores">إدخال الدرجات</button><button data-view="gaps">عرض الفجوات</button><button data-view="interventions">اختيار إجراء</button><button data-view="evidence">إرفاق دليل</button><button data-view="reports">إنشاء تقرير</button></div>
 </div>
 <div class="view" id="view-assessments">
@@ -782,7 +782,7 @@ function routeFromSaif(t){
   const map=[['درجات','scores'],['فج','gaps'],['إجراء','interventions'],['علاج','interventions'],['دليل','evidence'],['شواهد','evidence'],['إعادة','remeasure'],['أثر','impact'],['تحسن','impact'],['تقرير','reports'],['شهاد','recognition'],['اختبار','assessments']];
   for(const [k,v] of map) if(t.includes(k)){ if(!appShell.hidden)showView(v); return v; } return null;
 }
-function demoSaifAnswer(q){const t=q.trim();if(!t)return'اكتب أو قل طلبك.'; const v=routeFromSaif(t); if(v==='gaps')return'فتحت فجوات التعلّم. أولوية شعبتك الحالية هي مهارة 3 بنسبة إتقان 47%.'; if(v==='interventions')return'فتحت الإجراءات العلاجية. يمكنك اختيار الإجراء من القائمة دون أي كتابة.'; if(v==='scores')return'فتحت إدخال الدرجات، وكل طالبة لها قائمة درجات جاهزة.'; if(v==='evidence')return'فتحت الأدلة والشواهد. ارفعي الملف أو الصورة فقط، ومِسبار يتولى بقية التوثيق.'; if(v==='weekly')return'فتحت المتابعة الأسبوعية. يمكنك إضافة Quiz أسبوعي بدرجة نهائية مفتوحة وتتبع الإتقان أسبوعًا بعد أسبوع.'; if(v==='impact')return'فتحت سجل الأثر. ستجدين رحلة كل طالب من التشخيص إلى التدخل والدليل وإعادة القياس وحالة إغلاق الفجوة.'; if(v==='reports')return'فتحت التقارير. يمكن إنشاء تقرير النتائج أو الفجوات أو الأثر بضغطة واحدة.'; if(t.includes('اشرح')||t.includes('نبض'))return'أعلى إتقان في مهارة 1 بنسبة 84%، وأولوية التدخل في مهارة 3 بنسبة 47%.'; if(t.includes('اسبوع')||t.includes('أسبوع')||t.includes('quiz')||t.includes('كويز')){showView('weekly');return 'فتحت المتابعة الأسبوعية.';} if(t.includes('علوم'))return isTeacher()?'قسم العلوم هو مساحتك الحالية، وسأعرض فقط الصفوف والشعب المسندة لك.':'يمكنني عرض نتائج العلوم على مستوى المدرسة وفق صلاحيتك.'; return'فهمت طلبك. يمكنني التنقل والتحليل وشرح النتائج ضمن صلاحيتك.';}
+function demoSaifAnswer(q){const t=q.trim();if(!t)return'اكتب أو قل طلبك.'; const v=routeFromSaif(t); if(v==='gaps')return'فتحت فجوات التعلّم. ستظهر الأولويات وفق النتائج الحقيقية المعتمدة.'; if(v==='interventions')return'فتحت الإجراءات العلاجية. يمكنك اختيار الإجراء من القائمة دون أي كتابة.'; if(v==='scores')return'فتحت إدخال الدرجات، وكل طالبة لها قائمة درجات جاهزة.'; if(v==='evidence')return'فتحت الأدلة والشواهد. ارفعي الملف أو الصورة فقط، ومِسبار يتولى بقية التوثيق.'; if(v==='weekly')return'فتحت المتابعة الأسبوعية. يمكنك إضافة Quiz أسبوعي بدرجة نهائية مفتوحة وتتبع الإتقان أسبوعًا بعد أسبوع.'; if(v==='impact')return'فتحت سجل الأثر. ستجدين رحلة كل طالب من التشخيص إلى التدخل والدليل وإعادة القياس وحالة إغلاق الفجوة.'; if(v==='reports')return'فتحت التقارير. يمكن إنشاء تقرير النتائج أو الفجوات أو الأثر بضغطة واحدة.'; if(t.includes('اشرح')||t.includes('نبض'))return'سيظهر تحليل نبض الشعبة بعد إدخال واعتماد النتائج الحقيقية.'; if(t.includes('اسبوع')||t.includes('أسبوع')||t.includes('quiz')||t.includes('كويز')){showView('weekly');return 'فتحت المتابعة الأسبوعية.';} if(t.includes('علوم'))return isTeacher()?'قسم العلوم هو مساحتك الحالية، وسأعرض فقط الصفوف والشعب المسندة لك.':'يمكنني عرض نتائج العلوم على مستوى المدرسة وفق صلاحيتك.'; return'فهمت طلبك. يمكنني التنقل والتحليل وشرح النتائج ضمن صلاحيتك.';}
 $('#sendSaif').onclick=()=>{const ans=demoSaifAnswer($('#saifInput').value);$('#saifResponse').textContent=ans;speak(ans)};
 let saifRecognition=null, saifListening=false;
 function setVoiceStatus(message,type=''){
@@ -837,7 +837,42 @@ function rosterClassKey(){return classFilter?.value||''}
 function rosterForCurrentClass(){const k=rosterClassKey(),o=loadRosterOverrides();if(Array.isArray(o[k]))return [...o[k]];if(Array.isArray(BUILTIN_ROSTERS[k]))return [...BUILTIN_ROSTERS[k]];return []}
 let roster=[];
 function syncRosterFromClass(){roster=rosterForCurrentClass();if($('#view-scores')?.classList.contains('active'))renderScores();updateOverviewStudentCount()}
-function updateOverviewStudentCount(){const el=$('#view-overview .kpi-grid .kpi strong');if(el)el.textContent=roster.length||'—'}
+function updateOverviewStudentCount(){
+  const students=roster.length||0;
+  const st=$('#overviewStudents'); if(st)st.textContent=students;
+  let rows=[];
+  try{
+    const assessments=currentContextAssessments().filter(a=>!a.weekly&&!String(a.type||'').startsWith('Quiz أسبوعي'));
+    const all=loadAllScores();
+    assessments.forEach(a=>{
+      const s=all[assessmentKey(a.id)];
+      if(s?.rows?.length){
+        const max=Number(s.max||a.max||100)||100;
+        s.rows.forEach(r=>{
+          const score=Number(r.score);
+          if(Number.isFinite(score))rows.push({score,max});
+        });
+      }
+    });
+  }catch(e){}
+  const diagnosed=rows.length;
+  const pcts=rows.map(r=>r.max?r.score/r.max*100:0);
+  const mastery=diagnosed?Math.round(pcts.reduce((a,b)=>a+b,0)/diagnosed):null;
+  const need=pcts.filter(p=>p<60).length;
+  const d=$('#overviewDiagnosed'),m=$('#overviewMastery'),n=$('#overviewNeed'),c=$('#overviewCompletion');
+  if(d)d.textContent=diagnosed;
+  if(m)m.textContent=mastery===null?'—':mastery+'%';
+  if(n)n.textContent=need;
+  if(c)c.textContent=diagnosed?(students?Math.min(100,Math.round(diagnosed/students*100))+'% مكتمل':'تم إدخال النتائج'):'لا توجد نتائج بعد';
+  const title=$('#overviewPriorityTitle'),body=$('#overviewPriorityText');
+  if(!diagnosed){
+    if(title)title.textContent='بانتظار النتائج الحقيقية';
+    if(body)body.textContent='بعد إدخال واعتماد نتائج الاختبار التشخيصي سيظهر هنا ملخص الفجوة ذات الأولوية.';
+  }else{
+    if(title)title.textContent=need?'توجد حالات تحتاج تدخلًا':'لا توجد أولوية تدخل حاليًا';
+    if(body)body.textContent=need?`${need} من الطالبات/الطلاب أقل من 60% ويحتاجون متابعة.`:'النتائج الحالية لا تتضمن حالات أقل من 60%.';
+  }
+}
 function persistCurrentRoster(){const o=loadRosterOverrides();o[rosterClassKey()]=[...roster];saveRosterOverrides(o)}
 function renderRosterManager(){const box=$('#rosterManageList');if(!box)return;$('#rosterDialogTitle').textContent=`طالبات ${classFilter.value} • ${roster.length} طالبة`;box.innerHTML=roster.length?roster.map((n,i)=>`<div style="display:grid;grid-template-columns:42px 1fr auto;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #edf3f7"><b>${i+1}</b><span>${n}</span><span style="display:flex;gap:6px"><button class="btn ghost small roster-edit" data-i="${i}">تعديل</button><button class="btn ghost small roster-delete" data-i="${i}">حذف</button></span></div>`).join(''):'<div class="empty-inline">لا توجد أسماء لهذه الشعبة في الملف المرفوع. يمكنك إضافة الطالبات يدويًا.</div>';$$('.roster-edit').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,n=prompt('عدّلي اسم الطالبة:',roster[i]);if(n&&n.trim()){roster[i]=n.trim();persistCurrentRoster();renderRosterManager();renderScores();updateOverviewStudentCount()}});$$('.roster-delete').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(confirm(`حذف ${roster[i]} من هذه الشعبة؟`)){roster.splice(i,1);persistCurrentRoster();renderRosterManager();renderScores();updateOverviewStudentCount()}})}
 
