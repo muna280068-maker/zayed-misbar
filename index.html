@@ -1474,153 +1474,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 }
 </style>
 </head><body><table border="1"><thead><tr><th>المادة</th><th>الحلقة</th><th>الصف</th><th>الشعبة</th><th>الطالب/الطالبة</th><th>النسبة</th></tr></thead><tbody>${rows}</tbody></table>
-<script id="v4-final-functional-patch">
-(function(){
-  function ensureAboutView(){
-    if(document.getElementById('view-about')) return;
-    const workspace=document.querySelector('.workspace');
-    if(!workspace) return;
-    const v=document.createElement('div');
-    v.className='view';
-    v.id='view-about';
-    v.innerHTML=`
-      <div class="panel">
-        <div class="panel-head"><div><span class="eyebrow">عن المبادرة</span><h3>مِسبار زايد | ZAYED MISBAR</h3></div></div>
-        <p>منصة تعليمية لمتابعة رحلة التعلّم من التشخيص إلى تحديد الفجوات، واختيار الإجراء، والمتابعة، وإعادة القياس، وتوثيق الأثر.</p>
-        <div class="journey">
-          <div class="step"><b>1</b><span>التشخيص</span></div><div class="arrow">←</div>
-          <div class="step"><b>2</b><span>فجوات التعلّم</span></div><div class="arrow">←</div>
-          <div class="step"><b>3</b><span>الإجراء</span></div><div class="arrow">←</div>
-          <div class="step"><b>4</b><span>المتابعة</span></div><div class="arrow">←</div>
-          <div class="step"><b>5</b><span>إعادة القياس</span></div><div class="arrow">←</div>
-          <div class="step"><b>6</b><span>الأثر</span></div>
-        </div>
-        <div class="access-banner">المواد المدرجة: العلوم، الرياضيات، اللغة العربية، اللغة الإنجليزية، الدراسات الاجتماعية، التربية الإسلامية.</div>
-      </div>`;
-    workspace.appendChild(v);
-  }
 
-  ensureAboutView();
-
-  // Fix top navigation while logged in.
-  document.querySelectorAll('#publicNav a').forEach(a=>{
-    a.addEventListener('click',function(e){
-      if(!document.body.classList.contains('app-mode')) return;
-      e.preventDefault();
-      const href=(this.getAttribute('href')||'').replace('#','');
-      if(href==='about'){
-        ensureAboutView();
-        showView('about');
-        const wt=document.getElementById('workspaceTitle'); if(wt)wt.textContent='عن المنصة';
-      }else if(href==='subjects'){
-        showView('assessments');
-      }else if(href==='impact'){
-        showView('impact');
-      }else if(href==='saif'){
-        if(!saifDialog.open)saifDialog.showModal();
-      }
-    },true);
-  });
-
-  // Improve Saif routing and real-data answers.
-  window.routeFromSaif=function(raw){
-    const t=String(raw||'').toLowerCase();
-    const map=[
-      [['درجة','درجات','إدخال الدرجات'],'scores'],
-      [['فجوة','فجوات'],'gaps'],
-      [['إجراء','علاجي','علاج'],'interventions'],
-      [['دليل','أدلة','شواهد'],'evidence'],
-      [['إعادة القياس'],'remeasure'],
-      [['متابعة','كويز','quiz','اختبار قصير'],'weekly'],
-      [['سجل الأثر','الأثر'],'impact'],
-      [['تقرير','تقارير'],'reports'],
-      [['شهادة','شهادات','تميز','تقدير'],'recognition'],
-      [['اختبار تشخيصي','الاختبارات التشخيصية','تشخيص'],'assessments'],
-      [['ملف الطالب','ملف الطالبة'],'student']
-    ];
-    for(const [keys,v] of map){
-      if(keys.some(k=>t.includes(k))){
-        if(saifDialog?.open)saifDialog.close();
-        setTimeout(()=>showView(v),40);
-        return v;
-      }
-    }
-    return null;
-  };
-
-  window.demoSaifAnswer=function(q){
-    const t=String(q||'').trim();
-    if(!t)return'اكتب أو قل طلبك.';
-    const low=t.toLowerCase();
-
-    if(low.includes('حالة')&&(low.includes('شعبة')||low.includes('6g')||low.includes('صف'))){
-      const total=(typeof rosterForCurrentClass==='function'?rosterForCurrentClass().length:roster.length)||0;
-      const lv=typeof studentLevelsFromLatest==='function'?studentLevelsFromLatest():{all:[],good:[],medium:[],danger:[],assessment:null};
-      if(!lv.assessment){
-        return `الشعبة الحالية تضم ${total} طالبًا/طالبة. لا توجد نتائج تشخيصية معتمدة بعد، لذلك الإتقان والفجوات ما زالت بانتظار إدخال النتائج.`;
-      }
-      const entered=lv.all.length, mastery=entered?Math.round(lv.good.length/entered*100):0;
-      return `في الشعبة الحالية ${total} طالبًا/طالبة، وتم تشخيص ${entered}. نسبة الإتقان ${mastery}%. يحتاج ${lv.medium.length} إلى تعزيز و${lv.danger.length} إلى تدخل علاجي.`;
-    }
-
-    const v=routeFromSaif(t);
-    const replies={
-      scores:'فتحت إدخال الدرجات.',
-      gaps:'فتحت فجوات التعلّم.',
-      interventions:'فتحت الإجراءات العلاجية.',
-      evidence:'فتحت الأدلة والشواهد.',
-      remeasure:'فتحت إعادة القياس.',
-      weekly:'فتحت الاختبارات القصيرة Quiz.',
-      impact:'فتحت سجل الأثر.',
-      reports:'فتحت التقارير.',
-      recognition:'فتحت التميز والتقدير.',
-      assessments:'فتحت الاختبارات التشخيصية.',
-      student:'فتحت ملف الطالب/الطالبة.'
-    };
-    if(v)return replies[v]||'تم تنفيذ طلبك.';
-    if(low.includes('اشرح')||low.includes('نبض'))return 'سيظهر تحليل الشعبة اعتمادًا على النتائج الحقيقية المحفوظة في المنصة.';
-    return 'يمكنني عرض حالة الشعبة أو فتح الاختبارات والدرجات والفجوات والإجراءات والأدلة وإعادة القياس والمتابعة والتقارير.';
-  };
-
-  const send=document.getElementById('sendSaif');
-  if(send) send.onclick=()=>{
-    const ans=demoSaifAnswer(document.getElementById('saifInput').value);
-    document.getElementById('saifResponse').textContent=ans;
-    if(typeof speak==='function')speak(ans);
-  };
-
-  // Make impact refresh visibly respond.
-  const refresh=document.getElementById('refreshImpact');
-  if(refresh){
-    refresh.addEventListener('click',()=>{
-      try{renderImpact()}catch(e){}
-      const old=refresh.textContent;
-      refresh.textContent='تم التحديث ✓';
-      setTimeout(()=>refresh.textContent=old,1200);
-    });
-  }
-
-  // Close open dialogs when browser Back/Forward is used so the page never remains trapped.
-  window.addEventListener('popstate',()=>{
-    document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
-  });
-
-  // Remove old empty auto-created diagnostic assessments once, but preserve any assessment with saved scores.
-  try{
-    const migration='misbarCleanupEmptyAutoDiagnosticV2';
-    if(!localStorage.getItem(migration) && typeof loadAssessments==='function' && typeof loadAllScores==='function'){
-      const all=loadAssessments(), scores=loadAllScores();
-      const kept=all.filter(a=>{
-        const saved=scores[(a.context||'')+'|'+a.id];
-        return a.weekly || saved?.rows?.length || a.status!=='not_started';
-      });
-      if(kept.length!==all.length)saveAssessments(kept);
-      localStorage.setItem(migration,'1');
-      setTimeout(()=>{try{refreshAssessmentUI()}catch(e){}},80);
-    }
-  }catch(e){}
-})();
-</script>
 
 </body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -2013,8 +1867,154 @@ body:not(.app-mode) .cover-saif{top:35.5%!important;left:68.4%!important;width:1
 body:not(.app-mode) .cover-impact{top:1.7%!important;left:59.1%!important;width:9.0%!important;height:4.7%!important}
 @media(max-width:760px){body:not(.app-mode) .approved-cover{width:100%!important}body:not(.app-mode) .approved-cover img{width:100%!important;max-width:none!important}}
 </style>
-</body>
-</html>
+
+<script id="v4-final-functional-patch">
+(function(){
+  function ensureAboutView(){
+    if(document.getElementById('view-about')) return;
+    const workspace=document.querySelector('.workspace');
+    if(!workspace) return;
+    const v=document.createElement('div');
+    v.className='view';
+    v.id='view-about';
+    v.innerHTML=`
+      <div class="panel">
+        <div class="panel-head"><div><span class="eyebrow">عن المبادرة</span><h3>مِسبار زايد | ZAYED MISBAR</h3></div></div>
+        <p>منصة تعليمية لمتابعة رحلة التعلّم من التشخيص إلى تحديد الفجوات، واختيار الإجراء، والمتابعة، وإعادة القياس، وتوثيق الأثر.</p>
+        <div class="journey">
+          <div class="step"><b>1</b><span>التشخيص</span></div><div class="arrow">←</div>
+          <div class="step"><b>2</b><span>فجوات التعلّم</span></div><div class="arrow">←</div>
+          <div class="step"><b>3</b><span>الإجراء</span></div><div class="arrow">←</div>
+          <div class="step"><b>4</b><span>المتابعة</span></div><div class="arrow">←</div>
+          <div class="step"><b>5</b><span>إعادة القياس</span></div><div class="arrow">←</div>
+          <div class="step"><b>6</b><span>الأثر</span></div>
+        </div>
+        <div class="access-banner">المواد المدرجة: العلوم، الرياضيات، اللغة العربية، اللغة الإنجليزية، الدراسات الاجتماعية، التربية الإسلامية.</div>
+      </div>`;
+    workspace.appendChild(v);
+  }
+
+  ensureAboutView();
+
+  // Fix top navigation while logged in.
+  document.querySelectorAll('#publicNav a').forEach(a=>{
+    a.addEventListener('click',function(e){
+      if(!document.body.classList.contains('app-mode')) return;
+      e.preventDefault();
+      const href=(this.getAttribute('href')||'').replace('#','');
+      if(href==='about'){
+        ensureAboutView();
+        showView('about');
+        const wt=document.getElementById('workspaceTitle'); if(wt)wt.textContent='عن المنصة';
+      }else if(href==='subjects'){
+        showView('assessments');
+      }else if(href==='impact'){
+        showView('impact');
+      }else if(href==='saif'){
+        if(!saifDialog.open)saifDialog.showModal();
+      }
+    },true);
+  });
+
+  // Improve Saif routing and real-data answers.
+  window.routeFromSaif=function(raw){
+    const t=String(raw||'').toLowerCase();
+    const map=[
+      [['درجة','درجات','إدخال الدرجات'],'scores'],
+      [['فجوة','فجوات'],'gaps'],
+      [['إجراء','علاجي','علاج'],'interventions'],
+      [['دليل','أدلة','شواهد'],'evidence'],
+      [['إعادة القياس'],'remeasure'],
+      [['متابعة','كويز','quiz','اختبار قصير'],'weekly'],
+      [['سجل الأثر','الأثر'],'impact'],
+      [['تقرير','تقارير'],'reports'],
+      [['شهادة','شهادات','تميز','تقدير'],'recognition'],
+      [['اختبار تشخيصي','الاختبارات التشخيصية','تشخيص'],'assessments'],
+      [['ملف الطالب','ملف الطالبة'],'student']
+    ];
+    for(const [keys,v] of map){
+      if(keys.some(k=>t.includes(k))){
+        if(saifDialog?.open)saifDialog.close();
+        setTimeout(()=>showView(v),40);
+        return v;
+      }
+    }
+    return null;
+  };
+
+  window.demoSaifAnswer=function(q){
+    const t=String(q||'').trim();
+    if(!t)return'اكتب أو قل طلبك.';
+    const low=t.toLowerCase();
+
+    if(low.includes('حالة')&&(low.includes('شعبة')||low.includes('6g')||low.includes('صف'))){
+      const total=(typeof rosterForCurrentClass==='function'?rosterForCurrentClass().length:roster.length)||0;
+      const lv=typeof studentLevelsFromLatest==='function'?studentLevelsFromLatest():{all:[],good:[],medium:[],danger:[],assessment:null};
+      if(!lv.assessment){
+        return `الشعبة الحالية تضم ${total} طالبًا/طالبة. لا توجد نتائج تشخيصية معتمدة بعد، لذلك الإتقان والفجوات ما زالت بانتظار إدخال النتائج.`;
+      }
+      const entered=lv.all.length, mastery=entered?Math.round(lv.good.length/entered*100):0;
+      return `في الشعبة الحالية ${total} طالبًا/طالبة، وتم تشخيص ${entered}. نسبة الإتقان ${mastery}%. يحتاج ${lv.medium.length} إلى تعزيز و${lv.danger.length} إلى تدخل علاجي.`;
+    }
+
+    const v=routeFromSaif(t);
+    const replies={
+      scores:'فتحت إدخال الدرجات.',
+      gaps:'فتحت فجوات التعلّم.',
+      interventions:'فتحت الإجراءات العلاجية.',
+      evidence:'فتحت الأدلة والشواهد.',
+      remeasure:'فتحت إعادة القياس.',
+      weekly:'فتحت الاختبارات القصيرة Quiz.',
+      impact:'فتحت سجل الأثر.',
+      reports:'فتحت التقارير.',
+      recognition:'فتحت التميز والتقدير.',
+      assessments:'فتحت الاختبارات التشخيصية.',
+      student:'فتحت ملف الطالب/الطالبة.'
+    };
+    if(v)return replies[v]||'تم تنفيذ طلبك.';
+    if(low.includes('اشرح')||low.includes('نبض'))return 'سيظهر تحليل الشعبة اعتمادًا على النتائج الحقيقية المحفوظة في المنصة.';
+    return 'يمكنني عرض حالة الشعبة أو فتح الاختبارات والدرجات والفجوات والإجراءات والأدلة وإعادة القياس والمتابعة والتقارير.';
+  };
+
+  const send=document.getElementById('sendSaif');
+  if(send) send.onclick=()=>{
+    const ans=demoSaifAnswer(document.getElementById('saifInput').value);
+    document.getElementById('saifResponse').textContent=ans;
+    if(typeof speak==='function')speak(ans);
+  };
+
+  // Make impact refresh visibly respond.
+  const refresh=document.getElementById('refreshImpact');
+  if(refresh){
+    refresh.addEventListener('click',()=>{
+      try{renderImpact()}catch(e){}
+      const old=refresh.textContent;
+      refresh.textContent='تم التحديث ✓';
+      setTimeout(()=>refresh.textContent=old,1200);
+    });
+  }
+
+  // Close open dialogs when browser Back/Forward is used so the page never remains trapped.
+  window.addEventListener('popstate',()=>{
+    document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
+  });
+
+  // Remove old empty auto-created diagnostic assessments once, but preserve any assessment with saved scores.
+  try{
+    const migration='misbarCleanupEmptyAutoDiagnosticV2';
+    if(!localStorage.getItem(migration) && typeof loadAssessments==='function' && typeof loadAllScores==='function'){
+      const all=loadAssessments(), scores=loadAllScores();
+      const kept=all.filter(a=>{
+        const saved=scores[(a.context||'')+'|'+a.id];
+        return a.weekly || saved?.rows?.length || a.status!=='not_started';
+      });
+      if(kept.length!==all.length)saveAssessments(kept);
+      localStorage.setItem(migration,'1');
+      setTimeout(()=>{try{refreshAssessmentUI()}catch(e){}},80);
+    }
+  }catch(e){}
+})();
+</script>
 <style id="v43-soft-blue-theme">
 :root{--navy:#367fb7;--blue:#69a9d4;--ink:#164f78;--muted:#6d8ba2;--line:#d7e8f3;--sky:#eef8fe}
 .workspace-shell,.app-shell{background:#f7fbfe!important}.sidebar{background:linear-gradient(180deg,#4b93c6,#347cae)!important}.ticker{background:#397fae!important}.brand-mark{background:linear-gradient(135deg,#4b92c5,#7ab6da)!important}
@@ -2023,3 +2023,6 @@ body:not(.app-mode) .cover-impact{top:1.7%!important;left:59.1%!important;width:
 .saif-side{background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.22)!important}.step b{background:linear-gradient(135deg,#4b91c5,#76b4d9)!important}
 button{transition:.18s ease}button:hover{filter:brightness(1.035)}
 </style>
+</body>
+</html>
+
