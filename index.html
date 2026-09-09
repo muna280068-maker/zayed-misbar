@@ -681,6 +681,7 @@ function showView(name,opts={}){
   if(name==='impact')setTimeout(renderImpact,0);
   if(name==='student')setTimeout(renderStudentProfile,0);
   if(name==='leadership')setTimeout(renderLeadership,0);
+  if(name==='reports')setTimeout(renderReports,0);
   $$('.view').forEach(v=>v.classList.remove('active'));
   $(`#view-${name}`)?.classList.add('active');
   $$('.side-link').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
