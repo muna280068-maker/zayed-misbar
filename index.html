@@ -406,7 +406,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 </div>
 </div>
 <div class="view" id="view-evidence">
-<div class="panel"><div class="panel-head"><div><span class="eyebrow">مركز الأدلة والشواهد</span><h3>توثيق رحلة الأثر</h3><p class="hint">يربط مِسبار الدليل تلقائيًا بالمادة والصف والشعبة والطالب/الطالبة والإجراء والتاريخ. المعلم/المعلمة يرى أدلته، <button class="btn primary" id="uploadEvidenceBtn" type="button" onclick="openEvidenceDialog()">إرفاق دليل</button>دليل</button></div>
+<div class="panel"><div class="panel-head"><div><span class="eyebrow">مركز الأدلة والشواهد</span><h3>توثيق رحلة الأثر</h3><p class="hint">يربط مِسبار الدليل تلقائيًا بالمادة والصف والشعبة والطالب/الطالبة والإجراء والتاريخ. المعلم/المعلمة يرى أدلته.</p></div><button class="btn primary" id="uploadEvidenceBtn" type="button" onclick="openEvidenceDialog()">إرفاق دليل</button></div>
 <div class="evidence-kpis"><article><strong id="evTotal">0</strong><span>إجمالي الأدلة</span></article><article><strong id="evLeadership">0</strong><span>متاح للقيادة</span></article><article><strong id="evVisitors">0</strong><span>معتمد للزوار</span></article><article><strong id="evStudents">0</strong><span>طلبة موثقون</span></article></div>
 <div class="evidence-toolbar"><select id="evidenceTypeFilter"><option value="all">كل أنواع الأدلة</option><option>الاختبار التشخيصي</option><option>تحليل النتائج</option><option>إجراء علاجي</option><option>نشاط علاجي/إثرائي</option><option>صورة تنفيذ</option><option>ورقة عمل</option><option>نتائج Quiz أسبوعي</option><option>إعادة القياس</option><option>أخرى</option></select><select id="evidencePrivacyFilter"><option value="all">كل مستويات الإتاحة</option><option>خاص</option><option>متاح للقيادة</option><option>معتمد للزوار</option></select></div>
 <div class="evidence-grid" id="evidenceGrid"><div class="empty-state">لا توجد أدلة مرفوعة بعد.</div></div>
@@ -463,7 +463,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <div class="panel"><div class="panel-head"><div><span class="eyebrow">المقارنة الشاملة للمجمع</span><h3>المواد الأربع × الحلقات الثلاث</h3></div></div><div class="table-wrap"><table class="matrix-table"><thead><tr><th>المادة</th><th>الحلقة الأولى</th><th>الحلقة الثانية</th><th>الحلقة الثالثة</th></tr></thead><tbody id="leaderMatrixBody"></tbody></table></div></div>
 </div>
 </div>
-</div><div class="view" id="view-reports">
+<div class="view" id="view-reports">
 <div class="report-center">
 <div class="panel">
 <div class="panel-head"><div><span class="eyebrow">مركز التقارير والتصدير</span><h3>تقارير جاهزة للقيادة والمعلم/المعلمة</h3><p class="hint">تُطبق الصلاحيات تلقائيًا: المعلم/المعلمة يصدّر بيانات شعبه فقط، والقيادة تصدّر بيانات المدرسة المصرح بها.</p></div><div class="export-actions"><button class="btn primary small" id="exportFullExcel">تصدير Excel شامل</button><button class="btn ghost small" id="printFullReport">طباعة / PDF</button></div></div>
@@ -474,7 +474,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <label>الشعبة<select id="reportClass"><option value="all">جميع الشعب المسموح بها</option></select></label>
 </div>
 </div>
-<div class="report-kpis"><article><strong id="reportStudents">0</strong><span>طلبة في التقرير</span></article><article><strong id="reportAssessments">0</strong><span>اختبارات تشخيصية</span></article><article><strong id="reportInterventions">0</strong><span>إجراءات موثقة</span></article><article><strong id="reportEvidence">0</strong><span>أدلة وشواهد</span></article></div>
+<div class="report-kpis"><article><strong id="reportStudents">0</strong><span>طلبة في التقرير</span></article><article><strong id="reportAssessments">0</strong><span>نتائج تشخيصية</span></article><article><strong id="reportInterventions">0</strong><span>إجراءات موثقة</span></article><article><strong id="reportEvidence">0</strong><span>أدلة وشواهد</span></article></div>
 <div class="panel" id="printableReportArea"><div class="panel-head"><div><span class="eyebrow">معاينة التقرير</span><h3 id="reportPreviewTitle">ملف أثر كامل</h3></div></div><div class="report-preview" id="reportPreview"></div></div>
 </div>
 </div>
@@ -649,8 +649,20 @@ $('#rememberLogin').addEventListener('change',()=>{
 $('#logoutBtn').onclick=()=>{clearPersistentSession();appShell.hidden=true;appShell.style.display='none';userChip.hidden=true;$('#appTopbar').style.display='none';restorePublicLanding();publicSite.hidden=false;publicSite.style.display='';publicNav.hidden=false;publicActions.hidden=false;document.documentElement.classList.remove('app-open');document.body.classList.remove('app-mode');document.body.style.overflow='';history.replaceState({},'',location.pathname);window.scrollTo({top:0,behavior:'auto'});};
 
 function prepareRememberedLogin(){
-  // Always show the public landing page first.
-  // Remembered credentials are only prefilled when the user explicitly opens “تسجيل الدخول”.
+  // Restore an existing remembered account without asking the user to create it again.
+  try{
+    const session=loadPersistentSession();
+    if(session?.email){
+      const email=String(session.email).trim().toLowerCase();
+      const user=loadUsers().find(u=>String(u.email||'').trim().toLowerCase()===email);
+      if(user){
+        enterApp(user);
+        return;
+      }
+    }
+  }catch(err){ console.error('Session restore failed',err); }
+
+  // No valid remembered session: show the public landing page normally.
   restorePublicLanding();
   publicSite.hidden=false;
   publicSite.style.display='';
@@ -865,7 +877,28 @@ function populateAssessmentSelect(){const list=ensureDefaultAssessment(),sel=$('
 function scoreLevel(score,max){const pct=max?score/max*100:0;if(pct>=80)return['متقن','good'];if(pct>=60)return['يحتاج تعزيزًا','medium'];return['يحتاج تدخلًا','danger']}
 function renderScores(){const tb=$('#scoreTable tbody');if(!tb)return;const max=+$('#maxScoreSelect').value;const all=loadAllScores();const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);const locked=!!a?.locked;const saved=activeAssessmentId?all[assessmentKey(activeAssessmentId)]:null;const savedMap=saved?Object.fromEntries(saved.rows.map(r=>[r.name,r.score])):{};tb.innerHTML='';roster.forEach((name,i)=>{const val=savedMap[name]??'';const opts=['<option value="">—</option>'].concat(Array.from({length:max+1},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');const tr=document.createElement('tr');tr.innerHTML=`<td class="student-index">${i+1}</td><td><button type="button" class="student-name-link" data-student="${name.replace(/&/g,'&amp;').replace(/\"/g,'&quot;')}">${name}</button></td><td><select class="score-select" ${locked?'disabled':''}>${opts}</select></td><td class="pct-cell">—</td><td class="level-cell">—</td>`;tb.appendChild(tr)});$$('#scoreTable .score-select').forEach(x=>x.addEventListener('change',updateLevels));$$('#scoreTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));updateLevels();if($('#saveScores')){$('#saveScores').textContent=locked?'فتح للتعديل':'حفظ واعتماد';$('#saveScores').classList.toggle('warn',locked)}if($('#savedNote'))$('#savedNote').innerHTML=locked?'<span class="locked-note">النتائج معتمدة ومقفلة ضد التعديل غير المقصود.</span>':''}
 function updateLevels(){const max=+$('#maxScoreSelect').value;let g=0,m=0,d=0,entered=0;$$('#scoreTable tbody tr').forEach(tr=>{const raw=tr.querySelector('select').value,pct=tr.querySelector('.pct-cell'),cell=tr.querySelector('.level-cell');if(raw===''){pct.textContent='—';cell.textContent='—';cell.className='level-cell';return}entered++;const score=+raw,p=Math.round(score/max*100),[txt,cls]=scoreLevel(score,max);pct.textContent=p+'%';cell.innerHTML=`<span class="level-chip ${cls}">${txt}</span>`;if(cls==='good')g++;else if(cls==='medium')m++;else d++});$('#sumCount').textContent=roster.length;$('#sumGood').textContent=g;$('#sumMedium').textContent=m;$('#sumDanger').textContent=d;if($('#kpiEntered'))$('#kpiEntered').textContent=entered;if($('#kpiMastery'))$('#kpiMastery').textContent=(entered?Math.round(g/entered*100):0)+'%';if($('#kpiBoost'))$('#kpiBoost').textContent=m;if($('#kpiPriority'))$('#kpiPriority').textContent=d;if($('#kpiOpenGaps'))$('#kpiOpenGaps').textContent=(m>0?1:0)+(d>0?1:0)}
-function prepareScores(){populateAssessmentSelect();const expected=100;const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);if(a&&a.max!==expected&&!a.weekly){a.max=expected;const all=loadAssessments();const idx=all.findIndex(x=>x.id===a.id);if(idx>=0){all[idx].max=expected;saveAssessments(all)}}$('#scoreSubject').value=subjectFilter.value;$('#scoreClass').value=classFilter.value;renderScores()}
+function prepareScores(){
+  populateAssessmentSelect();
+  const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);
+  if(a){
+    if(a.weekly||String(a.type||'').startsWith('Quiz أسبوعي')){
+      $('#maxScoreSelect').innerHTML=`<option value="${Number(a.max)||10}">${Number(a.max)||10}</option>`;
+      $('#maxScoreSelect').value=String(Number(a.max)||10);
+    }else{
+      const expected=100;
+      if(a.max!==expected){
+        a.max=expected;
+        const all=loadAssessments(),idx=all.findIndex(x=>x.id===a.id);
+        if(idx>=0){all[idx].max=expected;saveAssessments(all)}
+      }
+      $('#maxScoreSelect').innerHTML='<option value="100">100</option>';
+      $('#maxScoreSelect').value='100';
+    }
+  }
+  $('#scoreSubject').value=subjectFilter.value;
+  $('#scoreClass').value=classFilter.value;
+  renderScores();
+}
 function refreshAssessmentUI(){if(!subjectFilter||!gradeFilter||!classFilter)return;currentUser.subject=subjectFilter.value||currentUser.subject;syncRosterFromClass();syncSubjectMaxUI();cleanupDuplicateAssessments();renderAssessmentCards();if($('#view-scores').classList.contains('active'))prepareScores()}
 $('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);$('#newAssessmentMax').value='100';const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';renderAssessmentSkillChoices();$('#assessmentDialog').showModal()};
 $('#confirmAssessment').onclick=()=>{const type=$('#newAssessmentType').value,date=$('#newAssessmentDate').value,skills=selectedAssessmentSkills();if(!skills.length){alert('اختاري مهارة مستهدفة واحدة على الأقل.');return}const candidate={context:contextKey(),type,date};const dup=currentContextAssessments().find(a=>a.type===type&&String(a.date||'')===String(date||''));if(dup){activeAssessmentId=dup.id;$('#assessmentDialog').close();alert('هذا الاختبار موجود بالفعل. تم فتحه بدل إنشاء نسخة مكررة.');showView('scores');prepareScores();return}const a={id:'A'+Date.now(),context:contextKey(),type,max:100,date,status:'not_started',skills,locked:false};const all=loadAssessments();all.push(a);saveAssessments(all);activeAssessmentId=a.id;$('#assessmentDialog').close();renderAssessmentCards();showView('scores');prepareScores()};
@@ -1018,6 +1051,93 @@ function latestWeeklyMap(){
   return map;
 }
 function weeklyAssessments(){return currentContextAssessments().filter(a=>String(a.type).startsWith('Quiz أسبوعي')).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
+function renderWeekly(){
+  const box=$('#weeklyQuizList');
+  if(!box)return;
+  const list=weeklyAssessments();
+  const allScores=loadAllScores();
+  $('#weeklyCount').textContent=list.length;
+
+  let latestAvg=null, latestMastery=null, previousAvg=null;
+  const summaries=list.map(a=>{
+    const s=allScores[assessmentKey(a.id)];
+    const rows=s?.rows||[];
+    const max=Number(s?.max||a.max||10);
+    const pcts=rows.map(r=>max?Number(r.score)/max*100:0).filter(Number.isFinite);
+    const avg=pcts.length?Math.round(pcts.reduce((x,y)=>x+y,0)/pcts.length):null;
+    const mastery=pcts.length?Math.round(pcts.filter(p=>p>=80).length/pcts.length*100):null;
+    return {a,s,rows,max,avg,mastery};
+  });
+  if(summaries.length){
+    const last=summaries[summaries.length-1];
+    latestAvg=last.avg; latestMastery=last.mastery;
+    if(summaries.length>1) previousAvg=summaries[summaries.length-2].avg;
+  }
+  $('#weeklyLatest').textContent=latestAvg===null?'—':latestAvg+'%';
+  $('#weeklyMastery').textContent=latestMastery===null?'—':latestMastery+'%';
+  $('#weeklyTrend').textContent=(latestAvg===null||previousAvg===null)?'—':latestAvg>previousAvg?'صاعد ↑':latestAvg<previousAvg?'متراجع ↓':'مستقر';
+
+  if(!list.length){
+    box.innerHTML='<div class="assessment-empty" style="grid-column:1/-1">لا يوجد Quiz أسبوعي بعد. اضغطي «إضافة Quiz أسبوعي» للبدء.</div>';
+    return;
+  }
+  box.innerHTML=summaries.map((x,i)=>`
+    <article class="assessment-card">
+      <h4>${x.a.type}</h4>
+      <div class="assessment-meta">
+        <span>${x.a.date||'بدون تاريخ'}</span>
+        <span>من ${x.max}</span>
+        <span>${x.rows.length} نتيجة</span>
+      </div>
+      <p class="hint">${x.avg===null?'بانتظار إدخال الدرجات':`المتوسط ${x.avg}% • الإتقان ${x.mastery}%`}</p>
+      <div class="card-actions">
+        <button class="btn primary small weekly-enter" data-id="${x.a.id}">${x.rows.length?'عرض / تعديل الدرجات':'إدخال الدرجات'}</button>
+      </div>
+    </article>`).join('');
+  $$('.weekly-enter').forEach(b=>b.onclick=()=>{
+    activeAssessmentId=b.dataset.id;
+    showView('scores');
+    prepareScores();
+  });
+}
+function openWeeklyQuizDialog(){
+  if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}
+  const list=weeklyAssessments();
+  if(list.length>=10){alert('تم الوصول إلى الحد الأقصى: 10 اختبارات أسبوعية لهذه المادة/الصف/الشعبة.');return}
+  $('#weeklyWeekNo').value=String(list.length+1);
+  $('#weeklyMaxScore').value='10';
+  $('#weeklyQuizDate').value=new Date().toISOString().slice(0,10);
+  $('#weeklyQuizDialog').showModal();
+}
+function createWeeklyQuiz(){
+  const list=weeklyAssessments();
+  if(list.length>=10){alert('تم الوصول إلى الحد الأقصى: 10 اختبارات أسبوعية.');return}
+  const max=Number($('#weeklyMaxScore').value);
+  const date=$('#weeklyQuizDate').value||new Date().toISOString().slice(0,10);
+  if(!Number.isFinite(max)||max<1){alert('أدخلي درجة نهائية صحيحة للاختبار.');return}
+  const week=list.length+1;
+  const a={
+    id:'W'+Date.now(),
+    context:contextKey(),
+    type:`Quiz أسبوعي ${week}`,
+    weekly:true,
+    max,
+    date,
+    status:'not_started',
+    skills:[],
+    locked:false
+  };
+  const all=loadAssessments();
+  all.push(a); saveAssessments(all);
+  activeAssessmentId=a.id;
+  $('#weeklyQuizDialog').close();
+  renderWeekly();
+  showView('scores');
+  prepareScores();
+}
+$('#addWeeklyQuiz').onclick=openWeeklyQuizDialog;
+$('#confirmWeeklyQuiz').onclick=createWeeklyQuiz;
+
 function startRemeasure(interventionId){
   const all=loadInterventions();
   const item=all.find(i=>String(i.id)===String(interventionId));
@@ -1340,7 +1460,7 @@ function weeklyRowsForReport(){
 }
 function renderReports(){
   if(!$('#view-reports'))return; syncReportClassOptions(); const rows=filteredDiagnosticRows(),ass=reportAssessments(),ints=reportInterventions(),ev=reportEvidence(),weekly=weeklyRowsForReport(),f=reportFilters();
-  const names=[...new Set(rows.map(r=>r.name))]; $('#reportStudents').textContent=names.length;$('#reportAssessments').textContent=ass.length;$('#reportInterventions').textContent=ints.length;$('#reportEvidence').textContent=ev.length;
+  const names=[...new Set(rows.map(r=>r.name))]; $('#reportStudents').textContent=names.length;$('#reportAssessments').textContent=rows.length;$('#reportInterventions').textContent=ints.length;$('#reportEvidence').textContent=ev.length;
   const labels={full:'ملف أثر كامل',results:'نتائج الاختبارات التشخيصية',skills:'المهارات والفجوات',interventions:'الإجراءات العلاجية والإثرائية',weekly:'Quiz الأسبوعي',evidence:'الأدلة والشواهد'};$('#reportPreviewTitle').textContent=labels[f.type]||'تقرير';
   const avg=aggregateRecords(rows); let blocks=[];
   if(f.type==='full'||f.type==='results'){blocks.push(`<section class="report-section"><h4>ملخص النتائج التشخيصية</h4><p>عدد النتائج: <b>${rows.length}</b> • متوسط الأداء: <b>${avg.avg===null?'—':avg.avg+'%'}</b> • الإتقان: <b>${avg.mastery===null?'—':avg.mastery+'%'}</b> • أولوية التدخل: <b>${avg.priority===null?'—':avg.priority+'%'}</b></p><table class="report-mini-table"><thead><tr><th>المادة</th><th>الحلقة</th><th>الصف</th><th>الشعبة</th><th>الطالب/الطالبة</th><th>النسبة</th></tr></thead><tbody>${rows.slice(0,80).map(r=>`<tr><td>${r.subject}</td><td>${cycleLabel(r.cycle)}</td><td>${r.grade}</td><td>${r.className}</td><td>${r.name}</td><td>${r.pct}%</td></tr>`).join('')||'<tr><td colspan="6">لا توجد بيانات</td></tr>'}</tbody></table></section>`)}
@@ -1636,6 +1756,11 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
     if(print){e.preventDefault();e.stopPropagation();safePrintCertificate();return;}
   });
 })();
+
+// Keep weekly dashboard synchronized when context filters change.
+[subjectFilter,gradeFilter,classFilter].forEach(el=>{
+  if(el) el.addEventListener('change',()=>{ if($('#view-weekly')?.classList.contains('active')) setTimeout(renderWeekly,0); });
+});
 </script>
 
 <style id="v50-crisp-approved-landing">
