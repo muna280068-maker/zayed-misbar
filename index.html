@@ -309,6 +309,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
  body:not(.app-mode) #coverVisitorQr>span{display:none!important;}
 }
 </style>
+<!-- ZAYED MISBAR V10 assessment-create hard-fix -->
 </head>
 <body>
 <!-- ZAYED MISBAR V6 FINAL FRONT-END FIX: logout/session + 6 subjects + visible visitor QR -->
@@ -547,7 +548,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <div hidden="" id="loginFields"><label>البريد الإلكتروني<input autocomplete="username" id="loginEmail" placeholder="name@school.ae" type="email"/></label><label>كلمة المرور<input autocomplete="current-password" id="loginPassword" placeholder="••••••••" type="password"/></label><label style="display:flex;align-items:center;gap:9px;margin-top:12px;font-weight:700"><input checked="" id="rememberLogin" style="width:auto;margin:0" type="checkbox"/> حفظ البريد وكلمة المرور والبقاء مسجّلًا على هذا الجهاز</label><div class="note" style="margin-top:4px">عند تفعيل الخيار، يحتفظ مِسبار ببيانات الدخول على هذا الجهاز لتوفير الوقت. استخدم «خروج» على الأجهزة المشتركة.</div><div class="note" id="loginStatus" style="margin-top:8px;color:#8a3b12"></div><button class="btn primary full" id="loginSubmit" style="margin-top:12px" type="button">دخول المنصة</button></div>
 <button class="btn primary full" id="authContinue" type="button">متابعة</button><p class="note">كل مستخدم ينشئ حسابه بنفسه. في هذه النسخة التجريبية تُحفظ الحسابات محليًا على هذا الجهاز فقط، وسيتم ربطها بقاعدة بيانات آمنة عند النشر الفعلي.</p></form></dialog>
 <dialog id="subjectDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('subjectDialog').close()">×</button><span class="eyebrow">المواد المسندة لك</span><h3>اختيار المادة</h3><p class="subject-dialog-note">تظهر للمعلم/المعلمة المواد المسجلة في الحساب فقط، بينما تظهر للقيادة جميع المواد الست.</p><div class="subject-choice-grid" id="subjectChoiceGrid"></div></div></dialog>
-<dialog id="assessmentDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('assessmentDialog').close()">×</button><span class="eyebrow">إضافة اختبار تشخيصي</span><h3>إعداد الاختبار</h3><div class="modal-grid"><label>نوع الاختبار<select id="newAssessmentType"><option>التشخيص الأول</option><option>التشخيص الثاني</option><option>تشخيص مهارة</option><option>إعادة القياس</option></select></label><label>الدرجة النهائية <small style="display:block;color:#6b7f8f;font-weight:500">جميع المواد من 100</small><select disabled="" id="newAssessmentMax"><option value="100">100</option></select></label><label>المادة<input disabled="" id="newAssessmentSubject"/></label><label>الشعبة<input disabled="" id="newAssessmentClass"/></label><label class="full-span">التاريخ<input id="newAssessmentDate" type="date"/></label><div class="full-span"><span class="field-label">المهارات المستهدفة</span><div class="choice-grid" id="assessmentSkillChoices"></div><small class="hint">اختاري مهارة واحدة أو أكثر. يمكن تعديلها قبل اعتماد النتائج.</small></div></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('assessmentDialog').close()">إلغاء</button><button class="btn primary" id="confirmAssessment">إنشاء الاختبار</button></div></div></dialog>
+<dialog id="assessmentDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('assessmentDialog').close()">×</button><span class="eyebrow">إضافة اختبار تشخيصي</span><h3>إعداد الاختبار</h3><div class="modal-grid"><label>نوع الاختبار<select id="newAssessmentType"><option>التشخيص الأول</option><option>التشخيص الثاني</option><option>تشخيص مهارة</option><option>إعادة القياس</option></select></label><label>الدرجة النهائية <small style="display:block;color:#6b7f8f;font-weight:500">جميع المواد من 100</small><select disabled="" id="newAssessmentMax"><option value="100">100</option></select></label><label>المادة<input disabled="" id="newAssessmentSubject"/></label><label>الشعبة<input disabled="" id="newAssessmentClass"/></label><label class="full-span">التاريخ<input id="newAssessmentDate" type="date"/></label><div class="full-span"><span class="field-label">المهارات المستهدفة</span><div class="choice-grid" id="assessmentSkillChoices"></div><small class="hint">اختاري مهارة واحدة أو أكثر. يمكن تعديلها قبل اعتماد النتائج.</small></div></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('assessmentDialog').close()">إلغاء</button><button class="btn primary" id="confirmAssessment" type="button" onclick="return window.createDiagnosticAssessmentNow(event)">إنشاء الاختبار</button></div></div></dialog>
 <dialog id="saifDialog"><div class="saif-chat"><button class="close" onclick="document.getElementById('saifDialog').close()">×</button><div class="saif-avatar big">س</div><h3>اسأل سيف</h3><p>أجيب صوتيًا ونصيًا، وأتنقل داخل مِسبار وفق صلاحيتك.</p><div class="voice-status" id="voiceStatus">جاهز للمحادثة • اضغطي 🎙️ واسمحي باستخدام الميكروفون عند الطلب</div><div class="saif-input-row"><input id="saifInput" placeholder="مثال: افتح فجوات التعلّم" type="text"><button class="btn primary" id="sendSaif">إرسال</button><button class="btn ghost" id="micSaif">🎙️</button></input></div><div class="saif-response" id="saifResponse">مرحبًا، أنا سيف. كيف أساعدك؟</div></div></dialog>
 <dialog id="interventionDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('interventionDialog').close()">×</button><span class="eyebrow">اختيار فقط • بدون كتابة</span><h3>اختيار الإجراء العلاجي</h3><div class="context-strip" id="interventionContext"></div><div class="choice-block"><div class="select-all-row"><b>الطلبة المستهدفون</b><button id="toggleAllStudents" type="button">تحديد الكل</button></div><div class="student-pick-grid" id="interventionStudents"></div></div><div class="choice-block"><b>نوع الدعم</b><div class="chips single" id="supportLevelChoices"><button class="selected">تدخل علاجي</button><button>تعزيز</button></div></div><div class="choice-block"><div class="select-all-row"><b>الإجراءات (يمكن اختيار أكثر من إجراء)</b><button id="saifSuggestActions" type="button">✨ اقتراح سيف</button></div><div class="chips action-option-grid" id="actionChoices"><button class="selected">إعادة شرح المهارة بأسلوب مبسط</button><button>التعلم التعاوني والمجموعات الصغيرة</button><button>أوراق عمل إضافية</button><button>استخدام الوسائط المتعددة (فيديو/محاكاة)</button><button>التغذية الراجعة الفورية</button><button>تدريب على مهارات الاختبار</button><button>مهام تطبيقية وأنشطة عملية</button><button>واجبات منزلية موجهة</button><button>دعم فردي من المعلم/المعلمة</button><button>إشراك ولي الأمر</button><button>تبسيط التعليمات</button><button>وقت إضافي للمهام والاختبارات</button><button>إتاحة إعادة المحاولة</button><button>تقسيم المهمة إلى خطوات أصغر</button><button>استراتيجيات تحفيز وتنظيم الذات</button><button>استخدام الدعم البصري (صور/مخططات)</button><button>دعم باستخدام سيف</button><button>خطة إثرائية للمتقنين</button></div><p class="hint" id="saifActionHint">يمكن للمعلم/المعلمة اختيار إجراء واحد أو عدة إجراءات. اقتراح سيف استرشادي والقرار النهائي للمعلم/المعلمة.</p><textarea class="intervention-note" id="interventionNote" placeholder="ملاحظات إضافية (اختياري)"></textarea></div><div class="choice-block"><b>موعد إعادة القياس</b><div class="chips single" id="remeasureTimingChoices"><button>بعد أسبوع</button><button class="selected">بعد أسبوعين</button><button>بعد 3 أسابيع</button><button>بعد شهر</button></div></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('interventionDialog').close()">إلغاء</button><button class="btn primary" id="confirmIntervention">اعتماد الإجراء</button></div></div></dialog>
 <dialog id="evidenceDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('evidenceDialog').close()">×</button><span class="eyebrow">مركز الأدلة والشواهد</span><h3>إرفاق الدليل</h3><div class="context-strip" id="evidenceContext"></div><div class="modal-grid"><label>نوع الدليل<select id="evidenceType"><option>الاختبار التشخيصي</option><option>تحليل النتائج</option><option selected="">إجراء علاجي</option><option>نشاط علاجي/إثرائي</option><option>صورة تنفيذ</option><option>ورقة عمل</option><option>نتائج اختبار قصير</option><option>إعادة القياس</option><option>أخرى</option></select></label><label>ربط بطالب/طالبة<select id="evidenceStudentSelect"><option value="">دليل عام للشعبة</option></select></label><label class="full-span">الإجراء المرتبط بالدليل<select id="evidenceInterventionSelect"></select></label></div><div class="upload-box"><input accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" id="evidenceFile" type="file"><p>صورة أو PDF أو Word أو PowerPoint أو Excel</p></input></div><div class="choice-block"><b>مستوى الإتاحة</b><div class="chips single" id="privacyChoices"><button class="selected">خاص</button><button>متاح للقيادة</button><button>معتمد للزوار</button></div><p class="hint">عند اختيار «معتمد للزوار» لا تُعرض بيانات الطالب/الطالبة الفردية في نافذة QR؛ يظهر الدليل ضمن الأثر المجمع فقط.</p></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('evidenceDialog').close()">إلغاء</button><button class="btn primary" id="confirmEvidence">رفع الدليل</button></div></div></dialog>
@@ -1023,32 +1024,54 @@ function prepareScores(){
   renderScores();
 }
 function refreshAssessmentUI(){if(!subjectFilter||!gradeFilter||!classFilter)return;currentUser.subject=subjectFilter.value||currentUser.subject;syncRosterFromClass();syncSubjectMaxUI();cleanupDuplicateAssessments();renderAssessmentCards();if($('#view-scores').classList.contains('active'))prepareScores()}
-$('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);$('#newAssessmentMax').value='100';const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';renderAssessmentSkillChoices(assessmentSkillsForSubject(subjectFilter.value));$('#assessmentDialog').showModal()};
-$('#confirmAssessment').onclick=()=>{
-  const btn=$('#confirmAssessment');
+$('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);$('#newAssessmentMax').value='100';const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';const defaultSkills=assessmentSkillsForSubject(subjectFilter.value);renderAssessmentSkillChoices(defaultSkills);$('#assessmentDialog').showModal()};
+window.createDiagnosticAssessmentNow=function(event){
+  if(event){event.preventDefault();event.stopPropagation();}
+  const btn=document.getElementById('confirmAssessment');
   try{
-    const type=$('#newAssessmentType')?.value||'التشخيص الأول';
-    const date=$('#newAssessmentDate')?.value||new Date().toISOString().slice(0,10);
+    const sf=document.getElementById('subjectFilter');
+    const cf=document.getElementById('classFilter');
+    const type=document.getElementById('newAssessmentType')?.value||'التشخيص الأول';
+    const date=document.getElementById('newAssessmentDate')?.value||new Date().toISOString().slice(0,10);
+    if(!sf?.value||!cf?.value||cf.value==='لا توجد شعبة مسندة'){
+      alert('اختاري المادة والشعبة أولاً.'); return false;
+    }
     let skills=selectedAssessmentSkills();
-    if(!skills.length) skills=assessmentSkillsForSubject(subjectFilter.value);
-    if(!subjectFilter?.value||!classFilter?.value||classFilter.value==='لا توجد شعبة مسندة'){alert('اختاري المادة والشعبة أولاً.');return;}
+    if(!skills.length){
+      skills=assessmentSkillsForSubject(sf.value);
+      renderAssessmentSkillChoices(skills);
+    }
+    const ctx=contextKey();
     const dup=currentContextAssessments().find(a=>a.type===type&&String(a.date||'')===String(date||''));
-    if(dup){activeAssessmentId=dup.id;$('#assessmentDialog').close();showView('scores');prepareScores();return;}
-    const a={id:'A'+Date.now(),context:contextKey(),type,max:100,date,status:'not_started',skills,locked:false};
-    const all=loadAssessments(); all.push(a); saveAssessments(all);
+    if(dup){
+      activeAssessmentId=dup.id;
+      document.getElementById('assessmentDialog')?.close();
+      showView('scores');
+      prepareScores();
+      return false;
+    }
+    const a={id:'A'+Date.now(),context:ctx,type:type,max:100,date:date,status:'not_started',skills:skills,locked:false};
+    const all=loadAssessments();
+    all.push(a);
+    saveAssessments(all);
+    // verify the save before leaving the dialog
+    const saved=loadAssessments().find(x=>x.id===a.id);
+    if(!saved) throw new Error('Assessment was not persisted');
     activeAssessmentId=a.id;
-    if(btn){btn.disabled=true;btn.textContent='تم الإنشاء ✓';}
-    $('#assessmentDialog').close();
+    if(btn){btn.disabled=true;btn.textContent='تم إنشاء الاختبار ✓';}
+    document.getElementById('assessmentDialog')?.close();
     renderAssessmentCards();
     showView('scores');
     prepareScores();
-    setTimeout(()=>{if(btn){btn.disabled=false;btn.textContent='إنشاء الاختبار';}},500);
+    setTimeout(()=>{if(btn){btn.disabled=false;btn.textContent='إنشاء الاختبار';}},700);
   }catch(err){
     console.error('Assessment creation failed',err);
     if(btn){btn.disabled=false;btn.textContent='إنشاء الاختبار';}
-    alert('تعذر إنشاء الاختبار. أعيدي المحاولة.');
+    alert('تعذر إنشاء الاختبار: '+(err?.message||'خطأ غير معروف'));
   }
+  return false;
 };
+
 $('#goScoresBtn').onclick=()=>{showView('scores');prepareScores()};
 $('#assessmentSelect').addEventListener('change',()=>{activeAssessmentId=$('#assessmentSelect').value;const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);if(a)$('#maxScoreSelect').value=String(subjectMaxScore(subjectFilter.value));prepareScores()});
 $('#maxScoreSelect').addEventListener('change',()=>{syncSubjectMaxUI();renderScores()});
