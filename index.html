@@ -1661,7 +1661,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
     document.querySelectorAll('#subjectPicks label').forEach(l=>{if(/الدراسات الاجتماعية|التربية الإسلامية/.test(l.textContent)) l.remove();});
   });
 })();
-</script>
+<\/script>
 </body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='misbar-zayed-results.xls';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
@@ -1777,7 +1777,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
     document.querySelectorAll('#subjectPicks label').forEach(l=>{if(/الدراسات الاجتماعية|التربية الإسلامية/.test(l.textContent)) l.remove();});
   });
 })();
-</script>
+<\/script>
 </body></html>`,blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;const who=(currentUser?.name||currentUser?.email||'مستخدم').replace(/[\\/:*?"<>|]/g,'-'); const scope=isTeacher()?'المعلم-'+who:'الإدارة'; a.download='مسبار-زايد-'+scope+'-'+new Date().toISOString().slice(0,10)+'.xls';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
 }
 ['reportType','reportSubject','reportCycle','reportClass'].forEach(id=>$('#'+id)?.addEventListener('change',renderReports));$('#exportFullExcel')?.addEventListener('click',exportFullExcel);$('#exportTeacherExcel')?.addEventListener('click',exportFullExcel);$('#printFullReport')?.addEventListener('click',()=>{renderReports();window.print()});
@@ -1899,7 +1899,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
     document.querySelectorAll('#subjectPicks label').forEach(l=>{if(/الدراسات الاجتماعية|التربية الإسلامية/.test(l.textContent)) l.remove();});
   });
 })();
-</script>
+<\/script>
 </body></html>`); w.document.close();
   }
   // direct bindings
@@ -2014,7 +2014,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
     document.querySelectorAll('#subjectPicks label').forEach(l=>{if(/الدراسات الاجتماعية|التربية الإسلامية/.test(l.textContent)) l.remove();});
   });
 })();
-</script>
+<\/script>
 </body></html>`);
       w.document.close();
     } catch (err) {
