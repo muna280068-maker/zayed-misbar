@@ -273,6 +273,15 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
  body:not(.app-mode) .approved-cover img{width:100%!important}
 }
 </style>
+
+<style id="v4-six-subjects">
+.subject-grid{grid-template-columns:repeat(3,1fr)}
+.social .subject-art{background:linear-gradient(135deg,#79a98c,#47745c)}
+.islamic .subject-art{background:linear-gradient(135deg,#8fb49c,#527964)}
+@media(max-width:900px){.subject-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.subject-grid{grid-template-columns:1fr}}
+</style>
+
 </head>
 <body>
 <header class="topbar" id="appTopbar" style="display:none">
@@ -332,7 +341,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <article class="subject-card science"><div class="subject-art"><span>مختبر • استقصاء • بيانات</span></div><h4>العلوم</h4><p>تشخيص المفاهيم والمهارات العلمية وتحليل الفجوات.</p><button class="subject-enter">دخول المادة</button></article>
 <article class="subject-card math"><div class="subject-art"><span>أعداد • هندسة • حل مسائل</span></div><h4>الرياضيات</h4><p>تحليل المهارات الرياضية وتحديد أولويات الدعم.</p><button class="subject-enter">دخول المادة</button></article>
 <article class="subject-card arabic"><div class="subject-art"><span>قراءة • كتابة • فهم</span></div><h4>اللغة العربية</h4><p>رصد مستويات القراءة واللغة والمهارات المستهدفة.</p><button class="subject-enter">دخول المادة</button></article>
-<article class="subject-card english"><div class="subject-art"><span>Reading • Language • Skills</span></div><h4>اللغة الإنجليزية</h4><p>متابعة الإتقان واكتشاف الفجوات بصورة واضحة.</p><button class="subject-enter">دخول المادة</button></article>
+<article class="subject-card english"><div class="subject-art"><span>Reading • Language • Skills</span></div><h4>اللغة الإنجليزية</h4><p>متابعة الإتقان واكتشاف الفجوات بصورة واضحة.</p><button class="subject-enter">دخول المادة</button></article><article class="subject-card social"><div class="subject-art"><span>هوية • تاريخ • جغرافيا</span></div><h4>الدراسات الاجتماعية</h4><p>متابعة المفاهيم والمهارات وتحليل الفجوات التعليمية.</p><button class="subject-enter">دخول المادة</button></article><article class="subject-card islamic"><div class="subject-art"><span>قرآن • قيم • سيرة</span></div><h4>التربية الإسلامية</h4><p>متابعة الإتقان ودعم المهارات والمفاهيم الأساسية.</p><button class="subject-enter">دخول المادة</button></article>
 </div>
 </section>
 <section class="impact section" id="impact">
@@ -366,7 +375,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <div class="workspace">
 <div class="workspace-head">
 <div><span class="eyebrow" id="workspaceEyebrow">معلمة العلوم • الحلقة الثانية</span><h2 id="workspaceTitle">مرحبًا بك في مِسبار زايد</h2></div><div class="access-banner" id="accessBanner">صلاحيات العرض ستظهر هنا حسب الحساب.</div>
-<div class="subject-filter-wrap"><label>المادة</label><button class="subject-popup-btn" id="subjectPopupBtn" type="button">العلوم <span>⌄</span></button><select aria-hidden="true" class="subject-hidden-select" id="subjectFilter" tabindex="-1"><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option></select></div><div class="filters"><select id="gradeFilter">
+<div class="subject-filter-wrap"><label>المادة</label><button class="subject-popup-btn" id="subjectPopupBtn" type="button">العلوم <span>⌄</span></button><select aria-hidden="true" class="subject-hidden-select" id="subjectFilter" tabindex="-1"><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option><option>الدراسات الاجتماعية</option><option>التربية الإسلامية</option></select></div><div class="filters"><select id="gradeFilter">
 <option value="4">الصف الرابع</option><option value="5">الصف الخامس</option><option value="6">الصف السادس</option><option selected="" value="7">الصف السابع</option><option value="8">الصف الثامن</option>
 <option value="9-general">الصف التاسع - عام</option><option value="9-advanced">الصف التاسع - متقدم</option>
 <option value="10-general">الصف العاشر - عام</option><option value="10-advanced">الصف العاشر - متقدم</option>
@@ -387,7 +396,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 </div>
 <div class="view" id="view-scores">
 <div class="panel">
-<div class="panel-head"><div><span class="eyebrow">إدخال الدرجات</span><h3 id="scoreTitle">التشخيص الأول</h3><div class="saved-note" id="savedNote"></div></div><div class="roster-actions"><label class="btn ghost small file-btn">استيراد قائمة الطالبات<input accept=".csv,.txt,text/csv,text/plain" id="rosterFile" type="file"/></label><button class="btn ghost small" id="manageRosterBtn">إدارة الطالبات</button><button class="btn ghost small" id="useDemoRoster">قائمة تجريبية 34</button><button class="btn primary small" id="saveScores">حفظ واعتماد</button></div></div>
+<div class="panel-head"><div><span class="eyebrow">إدخال الدرجات</span><h3 id="scoreTitle">التشخيص الأول</h3><div class="saved-note" id="savedNote"></div></div><div class="roster-actions"><label class="btn ghost small file-btn">استيراد قائمة الطالبات<input accept=".csv,.txt,text/csv,text/plain" id="rosterFile" type="file"/></label><button class="btn ghost small" id="manageRosterBtn">إدارة الطالبات</button><button class="btn primary small" id="saveScores">حفظ واعتماد</button></div></div>
 <p class="hint">اختاري الدرجة فقط لكل طالب/طالبة. يُحسب المستوى تلقائيًا: 80% فأعلى متقن، 60–79% يحتاج تعزيزًا، وأقل من 60% يحتاج تدخلًا.</p>
 <div class="score-controls"><div class="control-card"><label>الاختبار</label><select id="assessmentSelect"></select></div><div class="control-card"><label>الدرجة النهائية <small style="display:block;color:#6b7f8f;font-weight:500">موحّدة لجميع المواد</small></label><select disabled="" id="maxScoreSelect"><option value="100">100</option></select></div><div class="control-card"><label>المادة</label><input disabled="" id="scoreSubject"/></div><div class="control-card"><label>الشعبة</label><input disabled="" id="scoreClass"/></div></div>
 <div class="score-summary"><div><span>عدد الطلبة</span><strong id="sumCount">0</strong></div><div><span>متقن</span><strong id="sumGood">0</strong></div><div><span>يحتاج تعزيزًا</span><strong id="sumMedium">0</strong></div><div><span>يحتاج تدخلًا</span><strong id="sumDanger">0</strong></div></div>
@@ -418,7 +427,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 </div>
 </div>
 <div class="view" id="view-weekly">
-<div class="panel"><div class="panel-head"><div><span class="eyebrow">Quiz أسبوعي • درجة مفتوحة</span><h3>المتابعة الأسبوعية للإتقان</h3><p class="hint">أضف/أضيفي نتيجة الاختبار القصير كل أسبوع ليحدّث مِسبار مسار تقدم الطالب/الطالبة ويقيس استدامة الأثر. الحد الأقصى 10 اختبارات، والدرجة النهائية مفتوحة لكل Quiz.</p></div><button class="btn primary" id="addWeeklyQuiz">إضافة Quiz أسبوعي</button></div>
+<div class="panel"><div class="panel-head"><div><span class="eyebrow">Quiz أسبوعي • درجة مفتوحة</span><h3>المتابعة الأسبوعية للإتقان</h3><p class="hint">أضف/أضيفي نتيجة الاختبار القصير كل أسبوع ليحدّث مِسبار مسار تقدم الطالب/الطالبة ويقيس استدامة الأثر. الحد الأقصى 10 اختبارات، والدرجة النهائية مفتوحة لكل Quiz.</p></div><button class="btn primary" id="addWeeklyQuiz">إضافة اختبار قصير Quiz</button></div>
 <div class="impact-note">يمكن تحديد الدرجة النهائية لكل Quiz بحرية (مثل 10 أو 20 أو 50 أو 100). يحول مِسبار النتائج إلى نسبة مئوية للتحليل فقط، مع حد أقصى 10 اختبارات أسبوعية.</div>
 <div class="impact-kpis"><article><strong id="weeklyCount">0</strong><span>اختبارات أسبوعية</span></article><article><strong id="weeklyLatest">—</strong><span>متوسط آخر Quiz</span></article><article><strong id="weeklyMastery">—</strong><span>إتقان آخر Quiz</span></article><article><strong id="weeklyTrend">—</strong><span>اتجاه التقدم</span></article></div>
 <div class="assessment-cards" id="weeklyQuizList"></div>
@@ -456,11 +465,11 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <div class="leadership-dashboard">
 <div class="panel">
 <div class="panel-head"><div><span class="eyebrow">لوحة القيادة</span><h3>مقارنة المواد والحلقات الثلاث</h3><p class="hint">تُحسب المؤشرات من النتائج المحفوظة فعليًا. المقارنة بين الحلقات والمواد تعتمد النسبة المئوية حتى تكون عادلة.</p></div><div class="export-actions"><button class="btn ghost small" id="exportLeadershipCsv">تصدير للـExcel</button><button class="btn ghost small" id="printLeadership">طباعة الملخص</button></div></div>
-<div class="leadership-toolbar"><label>المادة<select id="leaderSubject"><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option></select></label><label>عرض المقارنة<select id="leaderMode"><option value="cycles">المادة بين الحلقات الثلاث</option><option value="subjects">المواد داخل كل حلقة</option></select></label><label id="leaderCycleWrap" style="display:none">الحلقة<select id="leaderCycle"><option value="cycle1">الحلقة الأولى</option><option value="cycle2">الحلقة الثانية</option><option value="cycle3">الحلقة الثالثة</option></select></label></div>
+<div class="leadership-toolbar"><label>المادة<select id="leaderSubject"><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option><option>الدراسات الاجتماعية</option><option>التربية الإسلامية</option></select></label><label>عرض المقارنة<select id="leaderMode"><option value="cycles">المادة بين الحلقات الثلاث</option><option value="subjects">المواد داخل كل حلقة</option></select></label><label id="leaderCycleWrap" style="display:none">الحلقة<select id="leaderCycle"><option value="cycle1">الحلقة الأولى</option><option value="cycle2">الحلقة الثانية</option><option value="cycle3">الحلقة الثالثة</option></select></label></div>
 </div>
 <div class="leader-kpis"><article><strong id="leaderStudents">0</strong><span>نتائج طلبة داخلة في المقارنة</span></article><article><strong id="leaderAvg">—</strong><span>متوسط الأداء</span></article><article><strong id="leaderMastery">—</strong><span>نسبة الإتقان</span></article><article><strong id="leaderPriority">—</strong><span>نسبة أولوية التدخل</span></article></div>
 <div class="compare-grid"><div class="chart-panel"><div class="chart-title"><div><span class="eyebrow">الرسم المقارن</span><h3 id="leaderChartTitle">العلوم بين الحلقات الثلاث</h3></div></div><div class="cycle-bars" id="leaderChart"></div></div><div class="chart-panel"><div class="chart-title"><div><span class="eyebrow">قراءة سريعة</span><h3>سيف يلخص</h3></div></div><div class="impact-note" id="leaderSaifSummary">أدخلوا نتائج حقيقية ليظهر الملخص الذكي هنا.</div></div></div>
-<div class="panel"><div class="panel-head"><div><span class="eyebrow">المقارنة الشاملة للمجمع</span><h3>المواد الأربع × الحلقات الثلاث</h3></div></div><div class="table-wrap"><table class="matrix-table"><thead><tr><th>المادة</th><th>الحلقة الأولى</th><th>الحلقة الثانية</th><th>الحلقة الثالثة</th></tr></thead><tbody id="leaderMatrixBody"></tbody></table></div></div>
+<div class="panel"><div class="panel-head"><div><span class="eyebrow">المقارنة الشاملة للمجمع</span><h3>المواد الست × الحلقات الثلاث</h3></div></div><div class="table-wrap"><table class="matrix-table"><thead><tr><th>المادة</th><th>الحلقة الأولى</th><th>الحلقة الثانية</th><th>الحلقة الثالثة</th></tr></thead><tbody id="leaderMatrixBody"></tbody></table></div></div>
 </div>
 </div>
 <div class="view" id="view-reports">
@@ -469,7 +478,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <div class="panel-head"><div><span class="eyebrow">مركز التقارير والتصدير</span><h3>تقارير جاهزة للقيادة والمعلم/المعلمة</h3><p class="hint">تُطبق الصلاحيات تلقائيًا: المعلم/المعلمة يصدّر بيانات شعبه فقط، والقيادة تصدّر بيانات المدرسة المصرح بها.</p></div><div class="export-actions"><button class="btn primary small" id="exportFullExcel">تصدير Excel شامل</button><button class="btn ghost small" id="printFullReport">طباعة / PDF</button></div></div>
 <div class="report-toolbar">
 <label>نوع التقرير<select id="reportType"><option value="full">ملف أثر كامل</option><option value="results">نتائج الاختبارات التشخيصية</option><option value="skills">المهارات والفجوات</option><option value="interventions">الإجراءات العلاجية والإثرائية</option><option value="weekly">Quiz الأسبوعي</option><option value="evidence">الأدلة والشواهد</option></select></label>
-<label>المادة<select id="reportSubject"><option value="all">جميع المواد</option><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option></select></label>
+<label>المادة<select id="reportSubject"><option value="all">جميع المواد</option><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option><option>الدراسات الاجتماعية</option><option>التربية الإسلامية</option><option>الدراسات الاجتماعية</option><option>التربية الإسلامية</option></select></label>
 <label>الحلقة<select id="reportCycle"><option value="all">جميع الحلقات</option><option value="cycle1">الحلقة الأولى</option><option value="cycle2">الحلقة الثانية</option><option value="cycle3">الحلقة الثالثة</option></select></label>
 <label>الشعبة<select id="reportClass"><option value="all">جميع الشعب المسموح بها</option></select></label>
 </div>
@@ -496,7 +505,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <label>الدور<select id="roleSelect"><option>معلم / معلمة</option><option>مديرة المدرسة</option><option>نائبة المديرة</option><option>النائب الأكاديمي</option><option>مديرة النطاق</option></select></label>
 <div id="teacherFields">
 <div class="reg-section"><strong>1. المادة أو المواد التي تدرّسها</strong><div class="choice-grid subject-picks" id="subjectPicks">
-<label><input type="checkbox" value="العلوم"/> العلوم</label><label><input type="checkbox" value="الرياضيات"/> الرياضيات</label><label><input type="checkbox" value="اللغة العربية"/> اللغة العربية</label><label><input type="checkbox" value="اللغة الإنجليزية"/> اللغة الإنجليزية</label>
+<label><input type="checkbox" value="العلوم"/> العلوم</label><label><input type="checkbox" value="الرياضيات"/> الرياضيات</label><label><input type="checkbox" value="اللغة العربية"/> اللغة العربية</label><label><input type="checkbox" value="اللغة الإنجليزية"/> اللغة الإنجليزية</label><label><input type="checkbox" value="الدراسات الاجتماعية"/> الدراسات الاجتماعية</label><label><input type="checkbox" value="التربية الإسلامية"/> التربية الإسلامية</label>
 </div></div>
 <div class="reg-section"><strong>2. الصفوف</strong><div class="choice-grid grade-picks" id="gradePicks"></div><div class="note">جميع الصفوف من الرابع إلى الثاني عشر تحتوي على 7 شعب (G1–G7)، ومن الصف التاسع إلى الثاني عشر يظهر المساران: عام ومتقدم.</div></div>
 <div class="reg-section"><strong>3. الشُعب التي تدرّسها</strong><div class="choice-grid class-picks" id="classPicks"><span class="note">اختاري الصفوف أولًا لتظهر الشعب.</span></div></div>
@@ -505,12 +514,12 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 </div>
 <div hidden="" id="loginFields"><label>البريد الإلكتروني<input autocomplete="username" id="loginEmail" placeholder="name@school.ae" type="email"/></label><label>كلمة المرور<input autocomplete="current-password" id="loginPassword" placeholder="••••••••" type="password"/></label><label style="display:flex;align-items:center;gap:9px;margin-top:12px;font-weight:700"><input checked="" id="rememberLogin" style="width:auto;margin:0" type="checkbox"/> حفظ البريد وكلمة المرور والبقاء مسجّلًا على هذا الجهاز</label><div class="note" style="margin-top:4px">عند تفعيل الخيار، يحتفظ مِسبار ببيانات الدخول على هذا الجهاز لتوفير الوقت. استخدم «خروج» على الأجهزة المشتركة.</div><div class="note" id="loginStatus" style="margin-top:8px;color:#8a3b12"></div><button class="btn primary full" id="loginSubmit" style="margin-top:12px" type="button">دخول المنصة</button></div>
 <button class="btn primary full" id="authContinue" type="button">متابعة</button><p class="note">كل مستخدم ينشئ حسابه بنفسه. في هذه النسخة التجريبية تُحفظ الحسابات محليًا على هذا الجهاز فقط، وسيتم ربطها بقاعدة بيانات آمنة عند النشر الفعلي.</p></form></dialog>
-<dialog id="subjectDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('subjectDialog').close()">×</button><span class="eyebrow">المواد المسندة لك</span><h3>اختيار المادة</h3><p class="subject-dialog-note">تظهر للمعلم/المعلمة المواد المسجلة في الحساب فقط، بينما تظهر للقيادة المواد الأربع.</p><div class="subject-choice-grid" id="subjectChoiceGrid"></div></div></dialog>
+<dialog id="subjectDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('subjectDialog').close()">×</button><span class="eyebrow">المواد المسندة لك</span><h3>اختيار المادة</h3><p class="subject-dialog-note">تظهر للمعلم/المعلمة المواد المسجلة في الحساب فقط، بينما تظهر للقيادة جميع المواد الست.</p><div class="subject-choice-grid" id="subjectChoiceGrid"></div></div></dialog>
 <dialog id="assessmentDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('assessmentDialog').close()">×</button><span class="eyebrow">إضافة اختبار تشخيصي</span><h3>إعداد الاختبار</h3><div class="modal-grid"><label>نوع الاختبار<select id="newAssessmentType"><option>التشخيص الأول</option><option>التشخيص الثاني</option><option>تشخيص مهارة</option><option>إعادة القياس</option></select></label><label>الدرجة النهائية <small style="display:block;color:#6b7f8f;font-weight:500">جميع المواد من 100</small><select disabled="" id="newAssessmentMax"><option value="100">100</option></select></label><label>المادة<input disabled="" id="newAssessmentSubject"/></label><label>الشعبة<input disabled="" id="newAssessmentClass"/></label><label class="full-span">التاريخ<input id="newAssessmentDate" type="date"/></label><div class="full-span"><span class="field-label">المهارات المستهدفة</span><div class="choice-grid" id="assessmentSkillChoices"></div><small class="hint">اختاري مهارة واحدة أو أكثر. يمكن تعديلها قبل اعتماد النتائج.</small></div></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('assessmentDialog').close()">إلغاء</button><button class="btn primary" id="confirmAssessment">إنشاء الاختبار</button></div></div></dialog>
 <dialog id="saifDialog"><div class="saif-chat"><button class="close" onclick="document.getElementById('saifDialog').close()">×</button><div class="saif-avatar big">س</div><h3>اسأل سيف</h3><p>أجيب صوتيًا ونصيًا، وأتنقل داخل مِسبار وفق صلاحيتك.</p><div class="voice-status" id="voiceStatus">جاهز للمحادثة • اضغطي 🎙️ واسمحي باستخدام الميكروفون عند الطلب</div><div class="saif-input-row"><input id="saifInput" placeholder="مثال: افتح فجوات التعلّم" type="text"><button class="btn primary" id="sendSaif">إرسال</button><button class="btn ghost" id="micSaif">🎙️</button></input></div><div class="saif-response" id="saifResponse">مرحبًا، أنا سيف. كيف أساعدك؟</div></div></dialog>
 <dialog id="interventionDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('interventionDialog').close()">×</button><span class="eyebrow">اختيار فقط • بدون كتابة</span><h3>اختيار الإجراء العلاجي</h3><div class="context-strip" id="interventionContext"></div><div class="choice-block"><div class="select-all-row"><b>الطلبة المستهدفون</b><button id="toggleAllStudents" type="button">تحديد الكل</button></div><div class="student-pick-grid" id="interventionStudents"></div></div><div class="choice-block"><b>نوع الدعم</b><div class="chips single" id="supportLevelChoices"><button class="selected">تدخل علاجي</button><button>تعزيز</button></div></div><div class="choice-block"><div class="select-all-row"><b>الإجراءات (يمكن اختيار أكثر من إجراء)</b><button id="saifSuggestActions" type="button">✨ اقتراح سيف</button></div><div class="chips action-option-grid" id="actionChoices"><button class="selected">إعادة شرح المهارة بأسلوب مبسط</button><button>التعلم التعاوني والمجموعات الصغيرة</button><button>أوراق عمل إضافية</button><button>استخدام الوسائط المتعددة (فيديو/محاكاة)</button><button>التغذية الراجعة الفورية</button><button>تدريب على مهارات الاختبار</button><button>مهام تطبيقية وأنشطة عملية</button><button>واجبات منزلية موجهة</button><button>دعم فردي من المعلم/المعلمة</button><button>إشراك ولي الأمر</button><button>تبسيط التعليمات</button><button>وقت إضافي للمهام والاختبارات</button><button>إتاحة إعادة المحاولة</button><button>تقسيم المهمة إلى خطوات أصغر</button><button>استراتيجيات تحفيز وتنظيم الذات</button><button>استخدام الدعم البصري (صور/مخططات)</button><button>دعم باستخدام سيف</button><button>خطة إثرائية للمتقنين</button></div><p class="hint" id="saifActionHint">يمكن للمعلم/المعلمة اختيار إجراء واحد أو عدة إجراءات. اقتراح سيف استرشادي والقرار النهائي للمعلم/المعلمة.</p><textarea class="intervention-note" id="interventionNote" placeholder="ملاحظات إضافية (اختياري)"></textarea></div><div class="choice-block"><b>موعد إعادة القياس</b><div class="chips single" id="remeasureTimingChoices"><button>بعد أسبوع</button><button class="selected">بعد أسبوعين</button><button>بعد 3 أسابيع</button><button>بعد شهر</button></div></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('interventionDialog').close()">إلغاء</button><button class="btn primary" id="confirmIntervention">اعتماد الإجراء</button></div></div></dialog>
 <dialog id="evidenceDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('evidenceDialog').close()">×</button><span class="eyebrow">مركز الأدلة والشواهد</span><h3>إرفاق الدليل</h3><div class="context-strip" id="evidenceContext"></div><div class="modal-grid"><label>نوع الدليل<select id="evidenceType"><option>الاختبار التشخيصي</option><option>تحليل النتائج</option><option selected="">إجراء علاجي</option><option>نشاط علاجي/إثرائي</option><option>صورة تنفيذ</option><option>ورقة عمل</option><option>نتائج Quiz أسبوعي</option><option>إعادة القياس</option><option>أخرى</option></select></label><label>ربط بطالب/طالبة<select id="evidenceStudentSelect"><option value="">دليل عام للشعبة</option></select></label><label class="full-span">الإجراء المرتبط بالدليل<select id="evidenceInterventionSelect"></select></label></div><div class="upload-box"><input accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" id="evidenceFile" type="file"><p>صورة أو PDF أو Word أو PowerPoint أو Excel</p></input></div><div class="choice-block"><b>مستوى الإتاحة</b><div class="chips single" id="privacyChoices"><button class="selected">خاص</button><button>متاح للقيادة</button><button>معتمد للزوار</button></div><p class="hint">عند اختيار «معتمد للزوار» لا تُعرض بيانات الطالب/الطالبة الفردية في نافذة QR؛ يظهر الدليل ضمن الأثر المجمع فقط.</p></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('evidenceDialog').close()">إلغاء</button><button class="btn primary" id="confirmEvidence">رفع الدليل</button></div></div></dialog>
-<dialog id="weeklyQuizDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('weeklyQuizDialog').close()">×</button><span class="eyebrow">المتابعة الأسبوعية</span><h3>إضافة Quiz أسبوعي</h3><div class="modal-grid"><label>رقم الأسبوع<input disabled="" id="weeklyWeekNo"/></label><label>الدرجة النهائية للاختبار<input id="weeklyMaxScore" min="1" placeholder="مثال: 10 أو 20 أو 50" step="1" type="number" value="10"/></label><label class="full-span">التاريخ<input id="weeklyQuizDate" type="date"/></label></div><p class="hint">الحد الأقصى 10 اختبارات أسبوعية لكل مادة/صف/شعبة. تُحفظ الدرجة الأصلية ويستخدم مِسبار النسبة المئوية للتحليل.</p><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('weeklyQuizDialog').close()">إلغاء</button><button class="btn primary" id="confirmWeeklyQuiz">إنشاء Quiz</button></div></div></dialog>
+<dialog id="weeklyQuizDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('weeklyQuizDialog').close()">×</button><span class="eyebrow">المتابعة الأسبوعية</span><h3>إضافة اختبار قصير Quiz</h3><div class="modal-grid"><label>رقم الاختبار القصير<input disabled="" id="weeklyWeekNo"/></label><label>الدرجة النهائية للاختبار<input id="weeklyMaxScore" min="1" placeholder="مثال: 10 أو 20 أو 50" step="1" type="number" value="10"/></label><label class="full-span">التاريخ<input id="weeklyQuizDate" type="date"/></label></div><p class="hint">الحد الأقصى 10 اختبارات قصيرة Quiz لكل مادة/صف/شعبة. تُحفظ الدرجة الأصلية ويستخدم مِسبار النسبة المئوية للتحليل.</p><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('weeklyQuizDialog').close()">إلغاء</button><button class="btn primary" id="confirmWeeklyQuiz">إنشاء Quiz</button></div></div></dialog>
 <dialog id="supportDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('supportDialog').close()">×</button><span class="eyebrow">خطة الدعم الفردية</span><h3>تكييفات وإجراءات معتمدة</h3><div class="privacy-lock">هذه البيانات للمستخدمين المخولين داخل المدرسة فقط، ولا تظهر في واجهة الزوار أو QR. سيف لا يشخّص الطالب/الطالبة؛ بل يتابع ما تعتمده المدرسة أو الفريق المختص.</div><div class="support-choice-grid" id="supportChoices"><label><input type="checkbox" value="تبسيط التعليمات"/>تبسيط التعليمات</label><label><input type="checkbox" value="تقليل عدد الأسئلة"/>تقليل عدد الأسئلة</label><label><input type="checkbox" value="وقت إضافي"/>وقت إضافي</label><label><input type="checkbox" value="دعم بصري وصور"/>دعم بصري وصور</label><label><input type="checkbox" value="قراءة السؤال"/>قراءة السؤال</label><label><input type="checkbox" value="تقسيم المهمة إلى خطوات"/>تقسيم المهمة إلى خطوات</label><label><input type="checkbox" value="إعادة المحاولة"/>إعادة المحاولة</label><label><input type="checkbox" value="دعم فردي"/>دعم فردي</label><label><input type="checkbox" value="نشاط عملي"/>نشاط عملي</label><label><input type="checkbox" value="أهداف تعلم فردية"/>أهداف تعلم فردية</label></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('supportDialog').close()">إلغاء</button><button class="btn primary" id="saveSupportPlan">حفظ خطة الدعم</button></div></div></dialog>
 <dialog id="visitorDialog"><div class="visitor-preview visitor-impact-dashboard"><button class="close" onclick="document.getElementById('visitorDialog').close()">×</button><span class="eyebrow">دخول الزوار بالـ QR • بدون تسجيل دخول</span><h2>لوحة الأثر والنتائج – مِسبار زايد</h2><p class="hint">عرض عام وآمن لزوار الوزارة والضيوف. لا تظهر أسماء الطلبة أو بياناتهم الفردية.</p><div class="visitor-kpis"><div><span>نسبة الإتقان</span><strong id="visitorMastery">—</strong></div><div><span>متوسط الأداء</span><strong id="visitorAvg">—</strong></div><div><span>أدلة معتمدة</span><strong id="visitorEvidenceCount">0</strong></div><div><span>تدخلات موثقة</span><strong id="visitorInterventions">0</strong></div></div><div class="visitor-compare-wrap"><h3>مقارنة المواد والحلقات الثلاث</h3><div class="visitor-compare" id="visitorCompare"></div></div><div class="visitor-evidence"><h3>معرض الأثر والشواهد</h3><div id="visitorEvidenceList"></div></div><div class="visitor-safe-note">تظهر النتائج المجمعة والأدلة التي اعتمدتها المدرسة للنشر فقط. خطط الدعم الفردية وبيانات أصحاب الهمم تبقى ضمن الصلاحيات الداخلية.</div></div></dialog>
 <dialog class="modal" id="rosterDialog"><div class="modal-card" style="max-width:760px"><button class="modal-close" id="closeRosterDialog">×</button><span class="eyebrow">إدارة الطالبات</span><h3 id="rosterDialogTitle">قائمة الطالبات</h3><p class="hint">الأسماء مستوردة من ملف القوائم فقط، بدون أرقام الطالبات. يمكنك الإضافة أو التعديل أو الحذف لهذه الشعبة.</p><div class="roster-manage-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="btn primary small" id="addStudentBtn">إضافة طالبة</button><button class="btn ghost small" id="resetRosterBtn">استعادة القائمة الأصلية</button></div><div id="rosterManageList" style="max-height:420px;overflow:auto;border:1px solid #dbe7ef;border-radius:16px;padding:8px"></div></div></dialog>
@@ -569,7 +578,7 @@ function applyAccess(){
     syncGradeFilters(); syncSubjectPopup();
   }else{
     $('#accessBanner').textContent=currentUser.role==='مديرة النطاق'?'حساب مديرة النطاق: تعرض المؤشرات والنتائج المصرح بها للمدارس التابعة للنطاق.':'حساب قيادة مدرسية: تظهر نتائج جميع طلاب المدرسة والمواد والصفوف وفق صلاحية الحساب.';
-    subjectFilter.innerHTML=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية'].map(v=>`<option>${v}</option>`).join('');
+    subjectFilter.innerHTML=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'].map(v=>`<option>${v}</option>`).join('');
     const all=['4','5','6','7','8','9-general','9-advanced','10-general','10-advanced','11-general','11-advanced','12-general','12-advanced'];
     gradeFilter.innerHTML=all.map(v=>`<option value="${v}">${gradeArabicName(v)}</option>`).join('');
     syncGradeFilters(); syncSubjectPopup();
@@ -708,7 +717,7 @@ window.addEventListener('popstate',()=>{if(!document.body.classList.contains('ap
 
 const subjectFilter=$('#subjectFilter'), gradeFilter=$('#gradeFilter'), classFilter=$('#classFilter');
 const subjectPopupBtn=$('#subjectPopupBtn'), subjectDialog=$('#subjectDialog'), subjectChoiceGrid=$('#subjectChoiceGrid');
-const ALL_SUBJECTS=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية'];
+const ALL_SUBJECTS=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'];
 function allowedSubjects(){return isTeacher()?((currentUser.subjects&&currentUser.subjects.length)?currentUser.subjects:[currentUser.subject||'العلوم']):ALL_SUBJECTS;}
 function renderSubjectChoices(){const list=allowedSubjects();subjectChoiceGrid.innerHTML=list.length?list.map(s=>`<button type="button" class="subject-choice ${s===subjectFilter.value?'active':''}" data-subject="${s}"><b>${s}</b><span>${s===subjectFilter.value?'المادة الحالية':'اضغط للاختيار'}</span></button>`).join(''):'<div class="subject-dialog-list-empty">لا توجد مواد مسندة لهذا الحساب.</div>';subjectChoiceGrid.querySelectorAll('.subject-choice').forEach(b=>b.onclick=()=>{subjectFilter.value=b.dataset.subject;currentUser.subject=b.dataset.subject;subjectPopupBtn.firstChild.textContent=b.dataset.subject+' ';subjectDialog.close();refreshAssessmentUI();$('#sideSubject').textContent=isTeacher()?b.dataset.subject:(currentUser.role==='مديرة النطاق'?'لوحة النطاق':'القيادة المدرسية');});}
 subjectPopupBtn.addEventListener('click',()=>{renderSubjectChoices();subjectDialog.showModal();});
@@ -782,7 +791,7 @@ function routeFromSaif(t){
   const map=[['درجات','scores'],['فج','gaps'],['إجراء','interventions'],['علاج','interventions'],['دليل','evidence'],['شواهد','evidence'],['إعادة','remeasure'],['أثر','impact'],['تحسن','impact'],['تقرير','reports'],['شهاد','recognition'],['اختبار','assessments']];
   for(const [k,v] of map) if(t.includes(k)){ if(!appShell.hidden)showView(v); return v; } return null;
 }
-function demoSaifAnswer(q){const t=q.trim();if(!t)return'اكتب أو قل طلبك.'; const v=routeFromSaif(t); if(v==='gaps')return'فتحت فجوات التعلّم. ستظهر الأولويات وفق النتائج الحقيقية المعتمدة.'; if(v==='interventions')return'فتحت الإجراءات العلاجية. يمكنك اختيار الإجراء من القائمة دون أي كتابة.'; if(v==='scores')return'فتحت إدخال الدرجات، وكل طالبة لها قائمة درجات جاهزة.'; if(v==='evidence')return'فتحت الأدلة والشواهد. ارفعي الملف أو الصورة فقط، ومِسبار يتولى بقية التوثيق.'; if(v==='weekly')return'فتحت المتابعة الأسبوعية. يمكنك إضافة Quiz أسبوعي بدرجة نهائية مفتوحة وتتبع الإتقان أسبوعًا بعد أسبوع.'; if(v==='impact')return'فتحت سجل الأثر. ستجدين رحلة كل طالب من التشخيص إلى التدخل والدليل وإعادة القياس وحالة إغلاق الفجوة.'; if(v==='reports')return'فتحت التقارير. يمكن إنشاء تقرير النتائج أو الفجوات أو الأثر بضغطة واحدة.'; if(t.includes('اشرح')||t.includes('نبض'))return'سيظهر تحليل نبض الشعبة بعد إدخال واعتماد النتائج الحقيقية.'; if(t.includes('اسبوع')||t.includes('أسبوع')||t.includes('quiz')||t.includes('كويز')){showView('weekly');return 'فتحت المتابعة الأسبوعية.';} if(t.includes('علوم'))return isTeacher()?'قسم العلوم هو مساحتك الحالية، وسأعرض فقط الصفوف والشعب المسندة لك.':'يمكنني عرض نتائج العلوم على مستوى المدرسة وفق صلاحيتك.'; return'فهمت طلبك. يمكنني التنقل والتحليل وشرح النتائج ضمن صلاحيتك.';}
+function demoSaifAnswer(q){const t=q.trim();if(!t)return'اكتب أو قل طلبك.'; const v=routeFromSaif(t); if(v==='gaps')return'فتحت فجوات التعلّم. ستظهر الأولويات وفق النتائج الحقيقية المعتمدة.'; if(v==='interventions')return'فتحت الإجراءات العلاجية. يمكنك اختيار الإجراء من القائمة دون أي كتابة.'; if(v==='scores')return'فتحت إدخال الدرجات، وكل طالبة لها قائمة درجات جاهزة.'; if(v==='evidence')return'فتحت الأدلة والشواهد. ارفعي الملف أو الصورة فقط، ومِسبار يتولى بقية التوثيق.'; if(v==='weekly')return'فتحت المتابعة الأسبوعية. يمكنك إضافة اختبار قصير Quiz بدرجة نهائية مفتوحة وتتبع الإتقان أسبوعًا بعد أسبوع.'; if(v==='impact')return'فتحت سجل الأثر. ستجدين رحلة كل طالب من التشخيص إلى التدخل والدليل وإعادة القياس وحالة إغلاق الفجوة.'; if(v==='reports')return'فتحت التقارير. يمكن إنشاء تقرير النتائج أو الفجوات أو الأثر بضغطة واحدة.'; if(t.includes('اشرح')||t.includes('نبض'))return'سيظهر تحليل نبض الشعبة بعد إدخال واعتماد النتائج الحقيقية.'; if(t.includes('اسبوع')||t.includes('أسبوع')||t.includes('quiz')||t.includes('كويز')){showView('weekly');return 'فتحت المتابعة الأسبوعية.';} if(t.includes('علوم'))return isTeacher()?'قسم العلوم هو مساحتك الحالية، وسأعرض فقط الصفوف والشعب المسندة لك.':'يمكنني عرض نتائج العلوم على مستوى المدرسة وفق صلاحيتك.'; return'فهمت طلبك. يمكنني التنقل والتحليل وشرح النتائج ضمن صلاحيتك.';}
 $('#sendSaif').onclick=()=>{const ans=demoSaifAnswer($('#saifInput').value);$('#saifResponse').textContent=ans;speak(ans)};
 let saifRecognition=null, saifListening=false;
 function setVoiceStatus(message,type=''){
@@ -891,7 +900,9 @@ function assessmentSkillsForSubject(subject){
     'العلوم':['الاستقصاء العلمي','تفسير البيانات','المفاهيم العلمية','التطبيق والاستدلال'],
     'الرياضيات':['الأعداد والعمليات','الجبر','الهندسة والقياس','البيانات والاحتمالات','حل المشكلات'],
     'اللغة العربية':['القراءة والفهم','المفردات','القواعد والتراكيب','الكتابة','الاستماع والتحدث'],
-    'اللغة الإنجليزية':['Reading','Vocabulary','Grammar','Writing','Listening & Speaking']
+    'اللغة الإنجليزية':['Reading','Vocabulary','Grammar','Writing','Listening & Speaking'],
+    'الدراسات الاجتماعية':['المواطنة والهوية','التاريخ','الجغرافيا','الاقتصاد والمجتمع','التحليل والاستدلال'],
+    'التربية الإسلامية':['القرآن الكريم','الحديث الشريف','العقيدة','الفقه والعبادات','السيرة والقيم الإسلامية']
   }; return map[subject]||['المهارة 1','المهارة 2','المهارة 3'];
 }
 function renderAssessmentSkillChoices(selected=[]){const box=$('#assessmentSkillChoices');if(!box)return;box.innerHTML=assessmentSkillsForSubject(subjectFilter.value).map(s=>`<button type="button" class="${selected.includes(s)?'selected':''}" data-skill="${s}">${s}</button>`).join('');$$('#assessmentSkillChoices button').forEach(b=>b.onclick=()=>b.classList.toggle('selected'))}
@@ -905,10 +916,22 @@ function cleanupDuplicateAssessments(){
   }
   if(kept.length!==all.length)saveAssessments(kept); return kept;
 }
-function ensureDefaultAssessment(){cleanupDuplicateAssessments();let all=loadAssessments(),ctx=currentContextAssessments();if(!ctx.length&&classFilter?.value&&classFilter.value!=='لا توجد شعبة مسندة'){const a={id:'A'+Date.now(),context:contextKey(),type:'التشخيص الأول',max:100,date:new Date().toISOString().slice(0,10),status:'not_started',skills:assessmentSkillsForSubject(subjectFilter.value)};all.push(a);saveAssessments(all);ctx=[a]}return ctx}
+function ensureDefaultAssessment(){cleanupDuplicateAssessments();return currentContextAssessments()}
 function assessmentUiStatus(a,saved){if(a.locked)return['معتمد','locked'];if(!saved||!saved.rows?.length)return['لم يبدأ','draft'];const total=rosterForCurrentClass().length||roster.length,entered=saved.rows.length;if(entered<total)return[`جارٍ الإدخال ${entered}/${total}`,'progress'];return['مكتمل','done']}
 function renderAssessmentCards(){if(!$('#assessmentCards'))return;const list=ensureDefaultAssessment();$('#assessmentContext').textContent=`${subjectFilter.value} • الصف ${gradeArabicName(gradeFilter.value)} • ${classFilter.value}`;const box=$('#assessmentCards');if(!list.length){box.innerHTML='<div class="assessment-empty">لا توجد اختبارات لهذه الشعبة بعد.</div>';return}const scores=loadAllScores();box.innerHTML=list.map(a=>{const saved=scores[assessmentKey(a.id)],st=assessmentUiStatus(a,saved),skills=(a.skills||[]).map(s=>`<span>${s}</span>`).join('');return `<article class="assessment-card ${a.locked?'locked-card':''}"><div class="assessment-meta"><span>${subjectFilter.value}</span><span>${classFilter.value}</span><span>من ${a.max}</span></div><h4>${a.type}</h4><small>${a.date||'بدون تاريخ'}</small><span class="assessment-status ${st[1]}">${st[0]}</span>${skills?`<div class="assessment-skills">${skills}</div>`:''}<div class="card-actions"><button class="btn ghost small open-assessment" data-id="${a.id}">فتح</button><button class="btn primary small score-assessment" data-id="${a.id}">${a.locked?'عرض النتائج':'إدخال الدرجات'}</button></div></article>`}).join('');$$('.open-assessment,.score-assessment').forEach(b=>b.onclick=()=>{activeAssessmentId=b.dataset.id;showView('scores');prepareScores()})}
-function populateAssessmentSelect(){const list=ensureDefaultAssessment(),sel=$('#assessmentSelect');sel.innerHTML=list.map(a=>`<option value="${a.id}">${a.type}${a.locked?' • معتمد':''}</option>`).join('');if(activeAssessmentId&&list.some(a=>a.id===activeAssessmentId))sel.value=activeAssessmentId;else activeAssessmentId=sel.value;const a=list.find(x=>x.id===sel.value);if(a){$('#maxScoreSelect').value=String(a.max);$('#scoreTitle').textContent=`${a.type} • ${classFilter.value}`}}
+function populateAssessmentSelect(){
+  const list=ensureDefaultAssessment(),sel=$('#assessmentSelect');
+  if(!list.length){
+    sel.innerHTML='<option value="">لا يوجد اختبار تشخيصي</option>';
+    activeAssessmentId='';
+    $('#scoreTitle').textContent='لا يوجد اختبار تشخيصي';
+    return;
+  }
+  sel.innerHTML=list.map(a=>`<option value="${a.id}">${a.type}${a.locked?' • معتمد':''}</option>`).join('');
+  if(activeAssessmentId&&list.some(a=>a.id===activeAssessmentId))sel.value=activeAssessmentId;else activeAssessmentId=sel.value;
+  const a=list.find(x=>x.id===sel.value);
+  if(a){$('#maxScoreSelect').value=String(a.max);$('#scoreTitle').textContent=`${a.type} • ${classFilter.value}`}
+}
 function scoreLevel(score,max){const pct=max?score/max*100:0;if(pct>=80)return['متقن','good'];if(pct>=60)return['يحتاج تعزيزًا','medium'];return['يحتاج تدخلًا','danger']}
 function renderScores(){const tb=$('#scoreTable tbody');if(!tb)return;const max=+$('#maxScoreSelect').value;const all=loadAllScores();const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);const locked=!!a?.locked;const saved=activeAssessmentId?all[assessmentKey(activeAssessmentId)]:null;const savedMap=saved?Object.fromEntries(saved.rows.map(r=>[r.name,r.score])):{};tb.innerHTML='';roster.forEach((name,i)=>{const val=savedMap[name]??'';const opts=['<option value="">—</option>'].concat(Array.from({length:max+1},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');const tr=document.createElement('tr');tr.innerHTML=`<td class="student-index">${i+1}</td><td><button type="button" class="student-name-link" data-student="${name.replace(/&/g,'&amp;').replace(/\"/g,'&quot;')}">${name}</button></td><td><select class="score-select" ${locked?'disabled':''}>${opts}</select></td><td class="pct-cell">—</td><td class="level-cell">—</td>`;tb.appendChild(tr)});$$('#scoreTable .score-select').forEach(x=>x.addEventListener('change',updateLevels));$$('#scoreTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));updateLevels();if($('#saveScores')){$('#saveScores').textContent=locked?'فتح للتعديل':'حفظ واعتماد';$('#saveScores').classList.toggle('warn',locked)}if($('#savedNote'))$('#savedNote').innerHTML=locked?'<span class="locked-note">النتائج معتمدة ومقفلة ضد التعديل غير المقصود.</span>':''}
 function updateLevels(){const max=+$('#maxScoreSelect').value;let g=0,m=0,d=0,entered=0;$$('#scoreTable tbody tr').forEach(tr=>{const raw=tr.querySelector('select').value,pct=tr.querySelector('.pct-cell'),cell=tr.querySelector('.level-cell');if(raw===''){pct.textContent='—';cell.textContent='—';cell.className='level-cell';return}entered++;const score=+raw,p=Math.round(score/max*100),[txt,cls]=scoreLevel(score,max);pct.textContent=p+'%';cell.innerHTML=`<span class="level-chip ${cls}">${txt}</span>`;if(cls==='good')g++;else if(cls==='medium')m++;else d++});$('#sumCount').textContent=roster.length;$('#sumGood').textContent=g;$('#sumMedium').textContent=m;$('#sumDanger').textContent=d;if($('#kpiEntered'))$('#kpiEntered').textContent=entered;if($('#kpiMastery'))$('#kpiMastery').textContent=(entered?Math.round(g/entered*100):0)+'%';if($('#kpiBoost'))$('#kpiBoost').textContent=m;if($('#kpiPriority'))$('#kpiPriority').textContent=d;if($('#kpiOpenGaps'))$('#kpiOpenGaps').textContent=(m>0?1:0)+(d>0?1:0)}
@@ -940,7 +963,7 @@ $('#confirmAssessment').onclick=()=>{const type=$('#newAssessmentType').value,da
 $('#goScoresBtn').onclick=()=>{showView('scores');prepareScores()};
 $('#assessmentSelect').addEventListener('change',()=>{activeAssessmentId=$('#assessmentSelect').value;const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);if(a)$('#maxScoreSelect').value=String(subjectMaxScore(subjectFilter.value));prepareScores()});
 $('#maxScoreSelect').addEventListener('change',()=>{syncSubjectMaxUI();renderScores()});
-$('#useDemoRoster').onclick=()=>{roster=[...demoStudents];persistCurrentRoster();renderScores();updateOverviewStudentCount()};
+if($('#useDemoRoster')) $('#useDemoRoster').onclick=()=>{roster=[...demoStudents];persistCurrentRoster();renderScores();updateOverviewStudentCount()};
 $('#rosterFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{const text=String(reader.result||'').replace(/^\uFEFF/,'');const names=text.split(/\r?\n/).map(line=>line.split(',')[0].trim()).filter(Boolean).filter(x=>!/^name|اسم|student/i.test(x));if(!names.length){alert('لم أتمكن من قراءة أسماء من الملف. استخدمي CSV أو TXT ويكون الاسم في العمود الأول.');return}roster=names.slice(0,200);persistCurrentRoster();renderScores();updateOverviewStudentCount();};reader.readAsText(f,'UTF-8')});
 $('#manageRosterBtn').onclick=()=>{syncRosterFromClass();renderRosterManager();$('#rosterDialog').showModal()};
 $('#closeRosterDialog').onclick=()=>$('#rosterDialog').close();
@@ -1085,7 +1108,7 @@ function latestWeeklyMap(){
 
   return map;
 }
-function weeklyAssessments(){return currentContextAssessments().filter(a=>String(a.type).startsWith('Quiz أسبوعي')).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
+function weeklyAssessments(){return currentContextAssessments().filter(a=>a.weekly||String(a.type).startsWith('Quiz أسبوعي')||/^Quiz\s+\d+/.test(String(a.type))).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
 function renderWeekly(){
   const box=$('#weeklyQuizList');
   if(!box)return;
@@ -1113,7 +1136,7 @@ function renderWeekly(){
   $('#weeklyTrend').textContent=(latestAvg===null||previousAvg===null)?'—':latestAvg>previousAvg?'صاعد ↑':latestAvg<previousAvg?'متراجع ↓':'مستقر';
 
   if(!list.length){
-    box.innerHTML='<div class="assessment-empty" style="grid-column:1/-1">لا يوجد Quiz أسبوعي بعد. اضغطي «إضافة Quiz أسبوعي» للبدء.</div>';
+    box.innerHTML='<div class="assessment-empty" style="grid-column:1/-1">لا يوجد اختبار قصير Quiz بعد. اضغطي «إضافة اختبار قصير Quiz» للبدء.</div>';
     return;
   }
   box.innerHTML=summaries.map((x,i)=>`
@@ -1154,7 +1177,7 @@ function createWeeklyQuiz(){
   const a={
     id:'W'+Date.now(),
     context:contextKey(),
-    type:`Quiz أسبوعي ${week}`,
+    type:`Quiz ${week}`,
     weekly:true,
     max,
     date,
@@ -1349,7 +1372,7 @@ $('#editSupportPlan')?.addEventListener('click',openSupportPlan);
 $('#saveSupportPlan')?.addEventListener('click',()=>{const name=activeStudentName||$('#studentProfileSelect')?.value;if(!name)return;const all=loadSupportPlans();all[supportKey(name)]={student:name,context:contextKey(),adaptations:[...$$('#supportChoices input:checked')].map(x=>x.value),updatedAt:new Date().toISOString(),updatedBy:currentUser.email};saveSupportPlans(all);$('#supportDialog').close();renderStudentProfile()});
 function renderSupportPlan(name){const box=$('#studentSupport');if(!box)return;const plan=loadSupportPlans()[supportKey(name)];box.innerHTML=plan?.adaptations?.length?plan.adaptations.map(x=>`<span class="profile-chip">${x}</span>`).join(''):'<span class="profile-chip">لا توجد خطة دعم فردية مسجلة حاليًا</span>'}
 
-function renderStudentProfile(){populateStudentProfileSelect();const name=activeStudentName||$('#studentProfileSelect')?.value;if(!name)return;activeStudentName=name;$('#studentProfileName').textContent=name;$('#studentProfileContext').textContent=`${subjectFilter.value} • الصف ${gradeArabicName(gradeFilter.value)} • ${classFilter.value}`;const pts=studentSeries(name),base=pts[0]?.pct,last=pts[pts.length-1]?.pct,delta=(base!==undefined&&last!==undefined)?last-base:null;$('#spBaseline').textContent=base===undefined?'—':base+'%';$('#spLatest').textContent=last===undefined?'—':last+'%';$('#spDelta').textContent=delta===null?'—':(delta>=0?'+':'')+delta+' نقطة';const state=last===undefined?'بانتظار البيانات':last>=80?'متقن':last>=60?'يحتاج تعزيزًا':'يحتاج تدخلًا';$('#spState').textContent=state;drawStudentProgress(pts);let summary='لا توجد بيانات كافية بعد.';if(pts.length){if(pts.length===1)summary=`نتيجة التشخيص الحالية ${base}%. ستظهر قراءة الاتجاه بعد إضافة Quiz أسبوعي.`;else summary=`بدأ المسار عند ${base}% ووصل إلى ${last}%، بتغير ${delta>=0?'+':''}${delta} نقطة مئوية. الاتجاه الحالي ${delta>0?'صاعد':delta<0?'متراجع':'مستقر'}، والحالة: ${state}.`;}$('#studentSaifSummary').textContent=summary;const ints=studentInterventionsFor(name);$('#studentInterventions').innerHTML=ints.length?ints.map(i=>`<span class="profile-chip">${i.action||'إجراء'} • ${new Date(i.createdAt||Date.now()).toLocaleDateString('ar-AE')}</span>`).join(''):'<span class="profile-chip">لا توجد إجراءات مرتبطة بهذا الطالب/الطالبة.</span>';const ev=loadEvidence().filter(e=>ints.some(i=>i.id===e.interventionId));$('#studentEvidence').innerHTML=ev.length?ev.map(e=>`<span class="profile-chip">${e.fileName} • ${e.privacy||'خاص'}</span>`).join(''):'<span class="profile-chip">لا توجد أدلة مرتبطة بهذا الطالب/الطالبة.</span>';const latest=last===undefined?null:last;const diagAss=currentContextAssessments().find(a=>!a.weekly&&a.type!=='إعادة القياس'&&(a.skills||[]).length);const targetSkills=diagAss?.skills||[];$('#studentSkills').innerHTML=targetSkills.length?targetSkills.map(s=>`<span class="profile-chip">${s} • ${latest===null?'بانتظار النتيجة':latest>=80?'ضمن الإتقان العام':latest>=60?'يحتاج متابعة':'أولوية تدخل'}</span>`).join(''):'<span class="profile-chip">لم تُحدد مهارات مستهدفة لهذا التشخيص بعد.</span>';renderSupportPlan(name)}
+function renderStudentProfile(){populateStudentProfileSelect();const name=activeStudentName||$('#studentProfileSelect')?.value;if(!name)return;activeStudentName=name;$('#studentProfileName').textContent=name;$('#studentProfileContext').textContent=`${subjectFilter.value} • الصف ${gradeArabicName(gradeFilter.value)} • ${classFilter.value}`;const pts=studentSeries(name),base=pts[0]?.pct,last=pts[pts.length-1]?.pct,delta=(base!==undefined&&last!==undefined)?last-base:null;$('#spBaseline').textContent=base===undefined?'—':base+'%';$('#spLatest').textContent=last===undefined?'—':last+'%';$('#spDelta').textContent=delta===null?'—':(delta>=0?'+':'')+delta+' نقطة';const state=last===undefined?'بانتظار البيانات':last>=80?'متقن':last>=60?'يحتاج تعزيزًا':'يحتاج تدخلًا';$('#spState').textContent=state;drawStudentProgress(pts);let summary='لا توجد بيانات كافية بعد.';if(pts.length){if(pts.length===1)summary=`نتيجة التشخيص الحالية ${base}%. ستظهر قراءة الاتجاه بعد إضافة اختبار قصير Quiz.`;else summary=`بدأ المسار عند ${base}% ووصل إلى ${last}%، بتغير ${delta>=0?'+':''}${delta} نقطة مئوية. الاتجاه الحالي ${delta>0?'صاعد':delta<0?'متراجع':'مستقر'}، والحالة: ${state}.`;}$('#studentSaifSummary').textContent=summary;const ints=studentInterventionsFor(name);$('#studentInterventions').innerHTML=ints.length?ints.map(i=>`<span class="profile-chip">${i.action||'إجراء'} • ${new Date(i.createdAt||Date.now()).toLocaleDateString('ar-AE')}</span>`).join(''):'<span class="profile-chip">لا توجد إجراءات مرتبطة بهذا الطالب/الطالبة.</span>';const ev=loadEvidence().filter(e=>ints.some(i=>i.id===e.interventionId));$('#studentEvidence').innerHTML=ev.length?ev.map(e=>`<span class="profile-chip">${e.fileName} • ${e.privacy||'خاص'}</span>`).join(''):'<span class="profile-chip">لا توجد أدلة مرتبطة بهذا الطالب/الطالبة.</span>';const latest=last===undefined?null:last;const diagAss=currentContextAssessments().find(a=>!a.weekly&&a.type!=='إعادة القياس'&&(a.skills||[]).length);const targetSkills=diagAss?.skills||[];$('#studentSkills').innerHTML=targetSkills.length?targetSkills.map(s=>`<span class="profile-chip">${s} • ${latest===null?'بانتظار النتيجة':latest>=80?'ضمن الإتقان العام':latest>=60?'يحتاج متابعة':'أولوية تدخل'}</span>`).join(''):'<span class="profile-chip">لم تُحدد مهارات مستهدفة لهذا التشخيص بعد.</span>';renderSupportPlan(name)}
 $('#studentProfileSelect')?.addEventListener('change',e=>{activeStudentName=e.target.value;renderStudentProfile()});$('#printStudentProfile')?.addEventListener('click',()=>window.print());
 
 // V33: leadership dashboard and stage comparisons
@@ -1372,7 +1395,7 @@ function aggregateRecords(rows){
   return {count:rows.length,avg,mastery,priority};
 }
 function renderLeaderMatrix(all){
-  const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية'],cycles=['cycle1','cycle2','cycle3'];
+  const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'],cycles=['cycle1','cycle2','cycle3'];
   const body=$('#leaderMatrixBody'); if(!body)return;
   body.innerHTML=subjects.map(s=>`<tr><td><b>${s}</b></td>${cycles.map(c=>{const a=aggregateRecords(all.filter(r=>r.subject===s&&r.cycle===c));return `<td><span class="matrix-pill">${a.avg===null?'—':a.avg+'%'}</span><small style="display:block;color:#7a8c98;margin-top:4px">${a.count} نتيجة</small></td>`}).join('')}</tr>`).join('');
 }
@@ -1383,7 +1406,7 @@ function renderLeadership(){
     focus=all.filter(r=>r.subject===subject); groups=['cycle1','cycle2','cycle3'].map(c=>({label:cycleLabel(c),...aggregateRecords(focus.filter(r=>r.cycle===c))}));
     $('#leaderChartTitle').textContent=`${subject} بين الحلقات الثلاث`;
   }else{
-    const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية']; focus=all.filter(r=>r.cycle===cycle); groups=subjects.map(s=>({label:s,...aggregateRecords(focus.filter(r=>r.subject===s))}));
+    const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية']; focus=all.filter(r=>r.cycle===cycle); groups=subjects.map(s=>({label:s,...aggregateRecords(focus.filter(r=>r.subject===s))}));
     $('#leaderChartTitle').textContent=`المواد داخل ${cycleLabel(cycle)}`;
   }
   const total=aggregateRecords(focus); $('#leaderStudents').textContent=total.count; $('#leaderAvg').textContent=total.avg===null?'—':total.avg+'%'; $('#leaderMastery').textContent=total.mastery===null?'—':total.mastery+'%'; $('#leaderPriority').textContent=total.priority===null?'—':total.priority+'%';
@@ -1450,7 +1473,156 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
  body:not(.app-mode) .approved-cover img{width:100%!important}
 }
 </style>
-</head><body><table border="1"><thead><tr><th>المادة</th><th>الحلقة</th><th>الصف</th><th>الشعبة</th><th>الطالب/الطالبة</th><th>النسبة</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+</head><body><table border="1"><thead><tr><th>المادة</th><th>الحلقة</th><th>الصف</th><th>الشعبة</th><th>الطالب/الطالبة</th><th>النسبة</th></tr></thead><tbody>${rows}</tbody></table>
+<script id="v4-final-functional-patch">
+(function(){
+  function ensureAboutView(){
+    if(document.getElementById('view-about')) return;
+    const workspace=document.querySelector('.workspace');
+    if(!workspace) return;
+    const v=document.createElement('div');
+    v.className='view';
+    v.id='view-about';
+    v.innerHTML=`
+      <div class="panel">
+        <div class="panel-head"><div><span class="eyebrow">عن المبادرة</span><h3>مِسبار زايد | ZAYED MISBAR</h3></div></div>
+        <p>منصة تعليمية لمتابعة رحلة التعلّم من التشخيص إلى تحديد الفجوات، واختيار الإجراء، والمتابعة، وإعادة القياس، وتوثيق الأثر.</p>
+        <div class="journey">
+          <div class="step"><b>1</b><span>التشخيص</span></div><div class="arrow">←</div>
+          <div class="step"><b>2</b><span>فجوات التعلّم</span></div><div class="arrow">←</div>
+          <div class="step"><b>3</b><span>الإجراء</span></div><div class="arrow">←</div>
+          <div class="step"><b>4</b><span>المتابعة</span></div><div class="arrow">←</div>
+          <div class="step"><b>5</b><span>إعادة القياس</span></div><div class="arrow">←</div>
+          <div class="step"><b>6</b><span>الأثر</span></div>
+        </div>
+        <div class="access-banner">المواد المدرجة: العلوم، الرياضيات، اللغة العربية، اللغة الإنجليزية، الدراسات الاجتماعية، التربية الإسلامية.</div>
+      </div>`;
+    workspace.appendChild(v);
+  }
+
+  ensureAboutView();
+
+  // Fix top navigation while logged in.
+  document.querySelectorAll('#publicNav a').forEach(a=>{
+    a.addEventListener('click',function(e){
+      if(!document.body.classList.contains('app-mode')) return;
+      e.preventDefault();
+      const href=(this.getAttribute('href')||'').replace('#','');
+      if(href==='about'){
+        ensureAboutView();
+        showView('about');
+        const wt=document.getElementById('workspaceTitle'); if(wt)wt.textContent='عن المنصة';
+      }else if(href==='subjects'){
+        showView('assessments');
+      }else if(href==='impact'){
+        showView('impact');
+      }else if(href==='saif'){
+        if(!saifDialog.open)saifDialog.showModal();
+      }
+    },true);
+  });
+
+  // Improve Saif routing and real-data answers.
+  window.routeFromSaif=function(raw){
+    const t=String(raw||'').toLowerCase();
+    const map=[
+      [['درجة','درجات','إدخال الدرجات'],'scores'],
+      [['فجوة','فجوات'],'gaps'],
+      [['إجراء','علاجي','علاج'],'interventions'],
+      [['دليل','أدلة','شواهد'],'evidence'],
+      [['إعادة القياس'],'remeasure'],
+      [['متابعة','كويز','quiz','اختبار قصير'],'weekly'],
+      [['سجل الأثر','الأثر'],'impact'],
+      [['تقرير','تقارير'],'reports'],
+      [['شهادة','شهادات','تميز','تقدير'],'recognition'],
+      [['اختبار تشخيصي','الاختبارات التشخيصية','تشخيص'],'assessments'],
+      [['ملف الطالب','ملف الطالبة'],'student']
+    ];
+    for(const [keys,v] of map){
+      if(keys.some(k=>t.includes(k))){
+        if(saifDialog?.open)saifDialog.close();
+        setTimeout(()=>showView(v),40);
+        return v;
+      }
+    }
+    return null;
+  };
+
+  window.demoSaifAnswer=function(q){
+    const t=String(q||'').trim();
+    if(!t)return'اكتب أو قل طلبك.';
+    const low=t.toLowerCase();
+
+    if(low.includes('حالة')&&(low.includes('شعبة')||low.includes('6g')||low.includes('صف'))){
+      const total=(typeof rosterForCurrentClass==='function'?rosterForCurrentClass().length:roster.length)||0;
+      const lv=typeof studentLevelsFromLatest==='function'?studentLevelsFromLatest():{all:[],good:[],medium:[],danger:[],assessment:null};
+      if(!lv.assessment){
+        return `الشعبة الحالية تضم ${total} طالبًا/طالبة. لا توجد نتائج تشخيصية معتمدة بعد، لذلك الإتقان والفجوات ما زالت بانتظار إدخال النتائج.`;
+      }
+      const entered=lv.all.length, mastery=entered?Math.round(lv.good.length/entered*100):0;
+      return `في الشعبة الحالية ${total} طالبًا/طالبة، وتم تشخيص ${entered}. نسبة الإتقان ${mastery}%. يحتاج ${lv.medium.length} إلى تعزيز و${lv.danger.length} إلى تدخل علاجي.`;
+    }
+
+    const v=routeFromSaif(t);
+    const replies={
+      scores:'فتحت إدخال الدرجات.',
+      gaps:'فتحت فجوات التعلّم.',
+      interventions:'فتحت الإجراءات العلاجية.',
+      evidence:'فتحت الأدلة والشواهد.',
+      remeasure:'فتحت إعادة القياس.',
+      weekly:'فتحت الاختبارات القصيرة Quiz.',
+      impact:'فتحت سجل الأثر.',
+      reports:'فتحت التقارير.',
+      recognition:'فتحت التميز والتقدير.',
+      assessments:'فتحت الاختبارات التشخيصية.',
+      student:'فتحت ملف الطالب/الطالبة.'
+    };
+    if(v)return replies[v]||'تم تنفيذ طلبك.';
+    if(low.includes('اشرح')||low.includes('نبض'))return 'سيظهر تحليل الشعبة اعتمادًا على النتائج الحقيقية المحفوظة في المنصة.';
+    return 'يمكنني عرض حالة الشعبة أو فتح الاختبارات والدرجات والفجوات والإجراءات والأدلة وإعادة القياس والمتابعة والتقارير.';
+  };
+
+  const send=document.getElementById('sendSaif');
+  if(send) send.onclick=()=>{
+    const ans=demoSaifAnswer(document.getElementById('saifInput').value);
+    document.getElementById('saifResponse').textContent=ans;
+    if(typeof speak==='function')speak(ans);
+  };
+
+  // Make impact refresh visibly respond.
+  const refresh=document.getElementById('refreshImpact');
+  if(refresh){
+    refresh.addEventListener('click',()=>{
+      try{renderImpact()}catch(e){}
+      const old=refresh.textContent;
+      refresh.textContent='تم التحديث ✓';
+      setTimeout(()=>refresh.textContent=old,1200);
+    });
+  }
+
+  // Close open dialogs when browser Back/Forward is used so the page never remains trapped.
+  window.addEventListener('popstate',()=>{
+    document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
+  });
+
+  // Remove old empty auto-created diagnostic assessments once, but preserve any assessment with saved scores.
+  try{
+    const migration='misbarCleanupEmptyAutoDiagnosticV2';
+    if(!localStorage.getItem(migration) && typeof loadAssessments==='function' && typeof loadAllScores==='function'){
+      const all=loadAssessments(), scores=loadAllScores();
+      const kept=all.filter(a=>{
+        const saved=scores[(a.context||'')+'|'+a.id];
+        return a.weekly || saved?.rows?.length || a.status!=='not_started';
+      });
+      if(kept.length!==all.length)saveAssessments(kept);
+      localStorage.setItem(migration,'1');
+      setTimeout(()=>{try{refreshAssessmentUI()}catch(e){}},80);
+    }
+  }catch(e){}
+})();
+</script>
+
+</body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='misbar-zayed-results.xls';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
 }
@@ -1563,7 +1735,7 @@ function renderVisitorPreviewV38(){
   const all=diagnosticScoreRecords(),agg=aggregateRecords(all),ev=loadEvidence().filter(e=>e.privacy==='معتمد للزوار'),ints=loadInterventions().filter(i=>(i.evidenceIds||[]).some(id=>ev.some(e=>e.id===id)));
   $('#visitorEvidenceCount').textContent=ev.length;$('#visitorInterventions').textContent=ints.length;$('#visitorMastery').textContent=agg.mastery===null?'—':agg.mastery+'%';$('#visitorAvg').textContent=agg.avg===null?'—':agg.avg+'%';
   $('#visitorEvidenceList').innerHTML=ev.length?ev.slice(-8).reverse().map(e=>`<div><b>${e.type||'دليل وشاهد'}</b><small>${e.subject||''} • ${e.className||''} • ${new Date(e.createdAt).toLocaleDateString('ar-AE')}</small></div>`).join(''):'<div>لا توجد أدلة معتمدة للنشر بعد.</div>';
-  const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية'],cycles=['cycle1','cycle2','cycle3'];let rows=[];subjects.forEach(s=>cycles.forEach(c=>{const a=aggregateRecords(all.filter(r=>r.subject===s&&r.cycle===c));if(a.count)rows.push({label:`${s} • ${cycleLabel(c)}`,avg:a.avg})}));$('#visitorCompare').innerHTML=rows.length?rows.map(r=>`<div class="visitor-compare-row"><b>${r.label}</b><div class="track"><div class="fill" style="width:${r.avg||0}%"></div></div><strong>${r.avg}%</strong></div>`).join(''):'<div class="leader-empty">ستظهر المقارنات هنا بعد اكتمال النتائج المعتمدة.</div>';
+  const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'],cycles=['cycle1','cycle2','cycle3'];let rows=[];subjects.forEach(s=>cycles.forEach(c=>{const a=aggregateRecords(all.filter(r=>r.subject===s&&r.cycle===c));if(a.count)rows.push({label:`${s} • ${cycleLabel(c)}`,avg:a.avg})}));$('#visitorCompare').innerHTML=rows.length?rows.map(r=>`<div class="visitor-compare-row"><b>${r.label}</b><div class="track"><div class="fill" style="width:${r.avg||0}%"></div></div><strong>${r.avg}%</strong></div>`).join(''):'<div class="leader-empty">ستظهر المقارنات هنا بعد اكتمال النتائج المعتمدة.</div>';
 }
 $('#visitorPreviewBtn').onclick=()=>{renderVisitorPreviewV38();$('#visitorDialog').showModal()};
 
