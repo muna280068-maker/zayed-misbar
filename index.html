@@ -2263,6 +2263,76 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
   });
 })();
 </script>
+
+<script id="misbar-password-recovery-v63">
+/* V63 — استعادة/تغيير كلمة المرور للحسابات المحلية */
+(function(){
+  const css=document.createElement('style');
+  css.textContent=`
+    .misbar-pass-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .misbar-pass-link{border:0;background:transparent;color:#0d4f78;font-weight:800;cursor:pointer;padding:6px 2px;text-decoration:underline;text-underline-offset:3px}
+    .misbar-reset-box{border:1px solid #d8e2e8;border-radius:16px;padding:16px;background:#fff;direction:rtl;text-align:right;max-width:520px}
+    .misbar-reset-box label{display:block;font-weight:800;margin:10px 0 5px}.misbar-reset-box input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #bdcbd3;border-radius:10px}
+    .misbar-reset-actions{display:flex;gap:8px;justify-content:flex-start;margin-top:14px;flex-wrap:wrap}
+  `; document.head.appendChild(css);
+
+  function el(id){return document.getElementById(id)}
+  function users(){ try{return typeof loadUsers==='function'?loadUsers():[]}catch(e){return[]} }
+  function persist(arr){ if(typeof saveUsers==='function') saveUsers(arr); }
+  async function hash(v){ return typeof misbarPasswordHash==='function'?await misbarPasswordHash(v):String(v); }
+
+  const loginFields=el('loginFields');
+  if(loginFields && !el('forgotPasswordBtn')){
+    const row=document.createElement('div'); row.className='misbar-pass-actions';
+    row.innerHTML='<button type="button" class="misbar-pass-link" id="forgotPasswordBtn">نسيت كلمة المرور؟ استعادة / تغيير</button>';
+    const submit=el('loginSubmit'); loginFields.insertBefore(row, submit);
+  }
+
+  const dlg=document.createElement('dialog'); dlg.id='passwordRecoveryDialog'; dlg.dir='rtl';
+  dlg.innerHTML=`<form method="dialog" class="misbar-reset-box" id="passwordRecoveryForm">
+    <h3 style="margin-top:0">استعادة / تغيير كلمة المرور</h3>
+    <p class="note">هذه النسخة تحفظ الحساب على الجهاز الحالي. أدخلي البريد المسجل في المنصة ثم اختاري كلمة مرور جديدة.</p>
+    <label>البريد الإلكتروني</label><input id="recoveryEmail" type="email" autocomplete="username" placeholder="name@school.ae" required>
+    <label>كلمة المرور الجديدة</label><input id="recoveryNewPassword" type="password" autocomplete="new-password" placeholder="6 أحرف على الأقل" minlength="6" required>
+    <label>تأكيد كلمة المرور الجديدة</label><input id="recoveryConfirmPassword" type="password" autocomplete="new-password" placeholder="أعيدي كتابة كلمة المرور" minlength="6" required>
+    <div id="recoveryStatus" class="note" style="margin-top:10px;color:#8a3b12"></div>
+    <div class="misbar-reset-actions"><button type="button" class="btn primary" id="doPasswordReset">حفظ كلمة المرور الجديدة</button><button type="button" class="btn ghost" id="cancelPasswordReset">إلغاء</button></div>
+  </form>`;
+  document.body.appendChild(dlg);
+
+  function openReset(){
+    const email=(el('loginEmail')?.value||localStorage.getItem('misbarZayedLastEmailV1')||'').trim().toLowerCase();
+    el('recoveryEmail').value=email; el('recoveryNewPassword').value=''; el('recoveryConfirmPassword').value=''; el('recoveryStatus').textContent='';
+    dlg.showModal(); setTimeout(()=>el(email?'recoveryNewPassword':'recoveryEmail')?.focus(),50);
+  }
+  el('forgotPasswordBtn')?.addEventListener('click',openReset);
+  el('cancelPasswordReset')?.addEventListener('click',()=>dlg.close());
+  el('doPasswordReset')?.addEventListener('click',async()=>{
+    const email=el('recoveryEmail').value.trim().toLowerCase(), p1=el('recoveryNewPassword').value, p2=el('recoveryConfirmPassword').value, st=el('recoveryStatus');
+    st.style.color='#8a3b12'; st.textContent='';
+    if(!email){st.textContent='أدخلي البريد الإلكتروني المسجل.';return}
+    if(p1.length<6){st.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل.';return}
+    if(p1!==p2){st.textContent='كلمتا المرور غير متطابقتين.';return}
+    const arr=users(), i=arr.findIndex(u=>String(u.email||'').trim().toLowerCase()===email);
+    if(i<0){st.textContent='لا يوجد حساب بهذا البريد على هذا الجهاز. يمكنك إنشاء حساب جديد.';return}
+    arr[i]={...arr[i],passwordHash:await hash(p1)}; delete arr[i].password; persist(arr);
+    try{localStorage.setItem('misbarZayedLastEmailV1',email);localStorage.removeItem('misbarZayedSavedPasswordV1');localStorage.removeItem('misbarZayedPersistentSessionV1')}catch(e){}
+    st.style.color='#176b42'; st.textContent='تم تغيير كلمة المرور بنجاح. يمكنك تسجيل الدخول الآن.';
+    if(el('loginEmail')) el('loginEmail').value=email;
+    setTimeout(()=>{dlg.close(); if(el('loginPassword')){el('loginPassword').value='';el('loginPassword').focus()}},900);
+  });
+
+  // تغيير كلمة المرور من داخل الحساب لمن هو مسجل الدخول بالفعل.
+  function addInAppButton(){
+    const logout=el('logoutBtn'); if(!logout||el('changePasswordInsideBtn')) return;
+    const b=document.createElement('button'); b.type='button'; b.id='changePasswordInsideBtn'; b.className='btn ghost'; b.textContent='تغيير كلمة المرور';
+    b.addEventListener('click',()=>{try{if(typeof currentUser!=='undefined'&&currentUser?.email){localStorage.setItem('misbarZayedLastEmailV1',currentUser.email)}}catch(e){} openReset()});
+    logout.parentNode.insertBefore(b,logout);
+  }
+  addInAppButton();
+  new MutationObserver(addInAppButton).observe(document.body,{childList:true,subtree:true});
+})();
+</script>
 </body>
 </html>
 
