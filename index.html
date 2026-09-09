@@ -376,7 +376,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 </div>
 <div class="view active" id="view-overview">
 <div class="kpi-grid"><div class="kpi"><span>الطالبات</span><strong>34</strong><small>في الشعبة المحددة</small></div><div class="kpi"><span>تم التشخيص</span><strong>31</strong><small>91% مكتمل</small></div><div class="kpi"><span>الإتقان</span><strong>68%</strong><small>النتيجة الأولية</small></div><div class="kpi warn"><span>يحتاجن تدخلًا</span><strong>7</strong><small>أولوية متابعة</small></div></div>
-<div class="dashboard-grid"><div class="panel"><div class="panel-head"><h3>نبض شعبتي</h3><button class="btn ghost small" id="explainChart">اشرحه لي يا سيف</button></div><div class="bar-chart"><div><span>مهارة 1</span><i style="--v:84%"></i><b>84%</b></div><div><span>مهارة 2</span><i style="--v:61%"></i><b>61%</b></div><div><span>مهارة 3</span><i style="--v:47%"></i><b>47%</b></div><div><span>مهارة 4</span><i style="--v:76%"></i><b>76%</b></div></div></div><div class="panel alert-panel"><span class="eyebrow">سيف لاحظ</span><h3>فجوة ذات أولوية</h3><p>مهارة 3 هي الأقل إتقانًا حاليًا، و7 طالبات يحتجن دعمًا مباشرًا.</p><button class="btn primary" id="quickIntervention" onclick="openIntervention('all')" type="button">اختيار إجراء علاجي</button></div></div>
+<div class="dashboard-grid"><div class="panel"><div class="panel-head"><h3>نبض شعبتي</h3><button class="btn ghost small" id="explainChart">اشرحه لي يا سيف</button></div><div class="bar-chart"><div><span>مهارة 1</span><i style="--v:84%"></i><b>—</b></div><div><span>مهارة 2</span><i style="--v:61%"></i><b>—</b></div><div><span>مهارة 3</span><i style="--v:47%"></i><b>—</b></div><div><span>مهارة 4</span><i style="--v:76%"></i><b>—</b></div></div></div><div class="panel alert-panel"><span class="eyebrow">سيف لاحظ</span><h3>فجوة ذات أولوية</h3><p>مهارة 3 هي الأقل إتقانًا حاليًا، و7 طالبات يحتجن دعمًا مباشرًا.</p><button class="btn primary" id="quickIntervention" onclick="openIntervention('all')" type="button">اختيار إجراء علاجي</button></div></div>
 <div class="quick-actions"><button data-view="scores">إدخال الدرجات</button><button data-view="gaps">عرض الفجوات</button><button data-view="interventions">اختيار إجراء</button><button data-view="evidence">إرفاق دليل</button><button data-view="reports">إنشاء تقرير</button></div>
 </div>
 <div class="view" id="view-assessments">
@@ -1761,6 +1761,27 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 [subjectFilter,gradeFilter,classFilter].forEach(el=>{
   if(el) el.addEventListener('change',()=>{ if($('#view-weekly')?.classList.contains('active')) setTimeout(renderWeekly,0); });
 });
+
+// Production clean-state guard: show no demo statistics when there are no real diagnostic scores.
+function enforceCleanOverview(){
+  try{
+    const assessments=(typeof currentContextAssessments==='function'?currentContextAssessments():[])
+      .filter(a=>!a.weekly&&!String(a.type||'').startsWith('Quiz أسبوعي'));
+    const allScores=typeof loadAllScores==='function'?loadAllScores():{};
+    let realRows=[];
+    assessments.forEach(a=>{
+      const s=allScores[assessmentKey(a.id)];
+      if(s?.rows?.length) realRows.push(...s.rows.filter(r=>Number.isFinite(Number(r.score))));
+    });
+    if(!realRows.length){
+      const vals={diagCount:'0',masteryRate:'—',needIntervention:'0'};
+      Object.entries(vals).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.textContent=val});
+      document.querySelectorAll('#view-overview .progress-fill').forEach(el=>el.style.width='0%');
+      document.querySelectorAll('#view-overview .progress-row strong').forEach(el=>el.textContent='—');
+    }
+  }catch(e){console.warn('Clean overview guard',e)}
+}
+window.addEventListener('load',()=>setTimeout(enforceCleanOverview,150));
 </script>
 
 <style id="v50-crisp-approved-landing">
