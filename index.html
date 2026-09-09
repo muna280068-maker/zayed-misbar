@@ -322,6 +322,10 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <button aria-label="تسجيل الدخول" class="cover-hotspot cover-hero-login" id="coverHeroLogin"></button>
 <button aria-label="اسأل سيف" class="cover-hotspot cover-saif" id="coverSaif"></button>
 <button aria-label="أثر مسبار زايد" class="cover-hotspot cover-impact" id="coverImpact"></button>
+<a class="cover-visitor-qr" id="coverVisitorQr" href="https://muna280068-maker.github.io/zayed-misbar/?visitor=1" target="_blank" rel="noopener" aria-label="فتح لوحة الزوار عبر رمز QR">
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADBUlEQVR4nO2cS26jQBCGvxqQvGykOUCO0r7aHCk3gKP4AJHoZSTQP4t+GM+sMslgBxerpvEnF/LvelG2iQ8f04+PM+CQQw455JBDDh0TsnL01NO+7ZnZObXVXcxzaH8oSpLmsqmR1aS5E1ES0EnKq7uY59D+UCoOwGxYDcIChAX9GlYDit+4m3kO7Qb1f27E15MsXk4ywgx59RXv5NA3habsI95NI6vZOa8exjyH/jdUfUQQkADCDKQBg5NsGuacPWw7WQ9+Tw59ATSZmdkAxEuPnelEnK+nay417mWeQ3v7iK0DCAvAaoJ30/TybsWD3MM8h3aHyFVlnIFcZM5dCRNjUD2uVyVpfPB7cugzUFEEQSJqQSO1C1FUAsSZzQVXxKEhytceIM6dchdCWjZS0RiKQNxHHB+qHzydNF7FMFMFQlc8SHuxK+LQEDVVWIoEohZK/AhlL69KYHFFHByqX/vQZKGlXGl5hNRk4Yo4PLTJI3LuSFg2ZUbJIzYxxRVxcKhGjZlNmIBrXVFTiBw/XBGHhzaKoOmgpJI10cxdq1yRuiKODuWepQEIVoM0AKlfthdSjybraobx4Pfk0Gegm7ZD27stLoqPmL36fAaoRY2u5QxdSTSl29DhPcungsK7Qapzlmc6MQ2rSXM9zS+5k3kO7QbduoKbJxwtqdx4EPcRzwLFS5+HJDSmHkg9ZnbKrQimAYC1TlN9j3ty6BO1BgRhhLcyLjG9LL1Ig0EACG8m0kkWx33Nc2h3qCoiDYh0ElGridTDdO4WYO2BnjyIu7d5Du0OtSdd17Z1Kzzn8kijjkt4rfEM0KZDBXSLSsGx9kxD9hEG6WduTmlv8xy6FxRrK9typdkmb3NSGZa8svN9zHNo9+ozz11fZ6jmejn3LIHc1vSe5fNB8XKS2YvKQMRkZjWtWP2XwE8A/fUrv2nAyBVG6GTxdQCSoTxft7N5Du0O1ajRHm5s5yzhOjGDT+c/B9Qmb4GWT+YZqjJG11rZ8hmqZ4DM/5nMIYcccsghhxz6R+g3l1yLQS1QcfcAAAAASUVORK5CYII=" alt="رمز QR للزوار">
+  <span><b>دخول الزوار</b><small>QR • بدون تسجيل دخول</small></span>
+</a>
 </section>
 <section class="hero" id="about">
 <div class="hero-copy">
@@ -719,8 +723,8 @@ function prepareRememberedLogin(){
 setTimeout(prepareRememberedLogin,0);
 function setupVisitorQr(){
   const base='https://muna280068-maker.github.io/zayed-misbar/?visitor=1';
-  const qr='https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&data='+encodeURIComponent(base);
-  ['heroVisitorQr','visitorQrImage'].forEach(id=>{const img=document.getElementById(id);if(img){img.src=qr;img.title='دخول الزوار إلى لوحة الأثر';img.onclick=()=>window.open(base,'_blank','noopener');img.style.cursor='pointer';}});
+  const embeddedQr='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADBUlEQVR4nO2cS26jQBCGvxqQvGykOUCO0r7aHCk3gKP4AJHoZSTQP4t+GM+sMslgBxerpvEnF/LvelG2iQ8f04+PM+CQQw455JBDDh0TsnL01NO+7ZnZObXVXcxzaH8oSpLmsqmR1aS5E1ES0EnKq7uY59D+UCoOwGxYDcIChAX9GlYDit+4m3kO7Qb1f27E15MsXk4ywgx59RXv5NA3habsI95NI6vZOa8exjyH/jdUfUQQkADCDKQBg5NsGuacPWw7WQ9+Tw59ATSZmdkAxEuPnelEnK+nay417mWeQ3v7iK0DCAvAaoJ30/TybsWD3MM8h3aHyFVlnIFcZM5dCRNjUD2uVyVpfPB7cugzUFEEQSJqQSO1C1FUAsSZzQVXxKEhytceIM6dchdCWjZS0RiKQNxHHB+qHzydNF7FMFMFQlc8SHuxK+LQEDVVWIoEohZK/AhlL69KYHFFHByqX/vQZKGlXGl5hNRk4Yo4PLTJI3LuSFg2ZUbJIzYxxRVxcKhGjZlNmIBrXVFTiBw/XBGHhzaKoOmgpJI10cxdq1yRuiKODuWepQEIVoM0AKlfthdSjybraobx4Pfk0Gegm7ZD27stLoqPmL36fAaoRY2u5QxdSTSl29DhPcungsK7Qapzlmc6MQ2rSXM9zS+5k3kO7QbduoKbJxwtqdx4EPcRzwLFS5+HJDSmHkg9ZnbKrQimAYC1TlN9j3ty6BO1BgRhhLcyLjG9LL1Ig0EACG8m0kkWx33Nc2h3qCoiDYh0ElGridTDdO4WYO2BnjyIu7d5Du0OtSdd17Z1Kzzn8kijjkt4rfEM0KZDBXSLSsGx9kxD9hEG6WduTmlv8xy6FxRrK9typdkmb3NSGZa8svN9zHNo9+ozz11fZ6jmejn3LIHc1vSe5fNB8XKS2YvKQMRkZjWtWP2XwE8A/fUrv2nAyBVG6GTxdQCSoTxft7N5Du0O1ajRHm5s5yzhOjGDT+c/B9Qmb4GWT+YZqjJG11rZ8hmqZ4DM/5nMIYcccsghhxz6R+g3l1yLQS1QcfcAAAAASUVORK5CYII=';
+  ['heroVisitorQr','visitorQrImage'].forEach(id=>{const img=document.getElementById(id);if(img){img.src=embeddedQr;img.title='دخول الزوار إلى لوحة الأثر';img.onclick=()=>window.open(base,'_blank','noopener');img.style.cursor='pointer';}});
 }
 setTimeout(setupVisitorQr,0);
 
@@ -1902,6 +1906,16 @@ body:not(.app-mode) .cover-impact{top:1.7%!important;left:59.1%!important;width:
 @media(max-width:760px){body:not(.app-mode) .approved-cover{width:100%!important}body:not(.app-mode) .approved-cover img{width:100%!important;max-width:none!important}}
 </style>
 
+
+<style id="v7-visible-qr-fix">
+body:not(.app-mode) .cover-visitor-qr{position:absolute!important;z-index:120!important;left:2.2%!important;bottom:5.8%!important;display:flex!important;align-items:center!important;gap:9px!important;background:rgba(255,255,255,.96)!important;border:1px solid #bcd7e7!important;border-radius:16px!important;padding:8px 11px!important;text-decoration:none!important;color:#173b55!important;box-shadow:0 8px 24px rgba(23,54,83,.18)!important;direction:rtl!important}
+body:not(.app-mode) .cover-visitor-qr img{width:76px!important;height:76px!important;max-width:76px!important;border-radius:8px!important;box-shadow:none!important;filter:none!important;background:#fff!important}
+body:not(.app-mode) .cover-visitor-qr span{display:block!important;line-height:1.35!important;white-space:nowrap!important}
+body:not(.app-mode) .cover-visitor-qr b{display:block!important;font-size:14px!important;color:#173b55!important}
+body:not(.app-mode) .cover-visitor-qr small{display:block!important;font-size:11px!important;color:#5f7a8d!important;margin-top:3px!important}
+body.app-mode .cover-visitor-qr{display:none!important}
+@media(max-width:760px){body:not(.app-mode) .cover-visitor-qr{left:1.5%!important;bottom:3.5%!important;padding:5px 7px!important}body:not(.app-mode) .cover-visitor-qr img{width:54px!important;height:54px!important;max-width:54px!important}body:not(.app-mode) .cover-visitor-qr span{display:none!important}}
+</style>
 <script id="v4-final-functional-patch">
 (function(){
   function ensureAboutView(){
