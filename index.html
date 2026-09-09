@@ -2333,6 +2333,237 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
   new MutationObserver(addInAppButton).observe(document.body,{childList:true,subtree:true});
 })();
 </script>
+\n<!-- MISBAR FIREBASE CLOUD V70 -->
+<script type="module" id="misbar-firebase-cloud-v70">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  sendPasswordResetEmail, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs,
+  query, where, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA8ngE5NYTKNDz46TAkm-0N6xSPGxtUb1U",
+  authDomain: "zayed-misbar.firebaseapp.com",
+  projectId: "zayed-misbar",
+  storageBucket: "zayed-misbar.firebasestorage.app",
+  messagingSenderId: "481946681984",
+  appId: "1:481946681984:web:6653611abef9ef9e8f5c65",
+  measurementId: "G-CKVB6JBL8F"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+window.misbarFirebase = { app: fbApp, auth, db };
+
+const EXCLUDED_KEYS = new Set([
+  'misbarZayedUsersV12','misbarZayedPersistentSessionV1','misbarZayedLastEmailV1',
+  'misbarZayedSavedPasswordV1','misbarZayedExplicitSignedOutV1','misbarZayedCleanStartV62'
+]);
+const STATE_COLLECTION = 'state';
+let cloudUid = null;
+let cloudRole = null;
+let applyingCloud = false;
+let cloudReady = false;
+let syncTimer = new Map();
+
+function cloudKeyAllowed(key){
+  return typeof key === 'string' && key.startsWith('misbar') && !EXCLUDED_KEYS.has(key);
+}
+function stateDocId(uid,key){ return uid + '__' + encodeURIComponent(key); }
+function roleToArabic(role){
+  return ({teacher:'معلم / معلمة',principal:'مديرة المدرسة',deputy:'نائبة المديرة',rangeDirector:'مديرة النطاق'})[role] || 'معلم / معلمة';
+}
+function showCloudStatus(text, ok=true){
+  let el=document.getElementById('misbarCloudStatus');
+  if(!el){
+    el=document.createElement('div'); el.id='misbarCloudStatus';
+    el.style.cssText='position:fixed;left:14px;bottom:14px;z-index:99999;padding:8px 12px;border-radius:999px;font:700 13px Arial;background:#fff;border:1px solid #ccd7de;box-shadow:0 4px 18px #0002;direction:rtl';
+    document.body.appendChild(el);
+  }
+  el.textContent=(ok?'☁️ ':'⚠️ ')+text;
+  el.style.color=ok?'#176b42':'#9a3412';
+}
+
+async function pushStateKey(key,value){
+  if(!cloudReady || !cloudUid || applyingCloud || !cloudKeyAllowed(key)) return;
+  try{
+    await setDoc(doc(db,STATE_COLLECTION,stateDocId(cloudUid,key)),{
+      ownerUid:cloudUid,key,value:String(value ?? ''),updatedAt:serverTimestamp()
+    },{merge:true});
+    showCloudStatus('تمت المزامنة مع السحابة');
+  }catch(err){
+    console.error('Misbar cloud write failed',key,err);
+    showCloudStatus('تعذر مزامنة أحد الأقسام',false);
+  }
+}
+function schedulePush(key,value){
+  if(syncTimer.has(key)) clearTimeout(syncTimer.get(key));
+  syncTimer.set(key,setTimeout(()=>{syncTimer.delete(key);pushStateKey(key,value)},350));
+}
+
+const nativeSetItem = Storage.prototype.setItem;
+const nativeRemoveItem = Storage.prototype.removeItem;
+Storage.prototype.setItem = function(key,value){
+  nativeSetItem.call(this,key,value);
+  if(this===localStorage && cloudKeyAllowed(key)) schedulePush(key,value);
+};
+Storage.prototype.removeItem = function(key){
+  nativeRemoveItem.call(this,key);
+  if(this===localStorage && cloudReady && cloudUid && !applyingCloud && cloudKeyAllowed(key)){
+    deleteDoc(doc(db,STATE_COLLECTION,stateDocId(cloudUid,key))).catch(console.error);
+  }
+};
+
+function parseMaybeJson(v){ try{return JSON.parse(v)}catch{return v} }
+function mergeValues(key, docs){
+  const vals=docs.map(x=>parseMaybeJson(x.value));
+  if(vals.length===1) return vals[0];
+  if(vals.every(Array.isArray)){
+    const out=[]; const seen=new Set();
+    vals.flat().forEach(x=>{const id=JSON.stringify(x); if(!seen.has(id)){seen.add(id);out.push(x)}});
+    return out;
+  }
+  if(vals.every(v=>v && typeof v==='object' && !Array.isArray(v))){ return Object.assign({},...vals); }
+  return vals[vals.length-1];
+}
+async function migrateExistingLocalState(){
+  const jobs=[];
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    if(cloudKeyAllowed(key)) jobs.push(pushStateKey(key,localStorage.getItem(key)));
+  }
+  await Promise.allSettled(jobs);
+}
+async function hydrateCloudState(uid,role){
+  applyingCloud=true;
+  try{
+    let snap;
+    if(role==='teacher') snap=await getDocs(query(collection(db,STATE_COLLECTION),where('ownerUid','==',uid)));
+    else snap=await getDocs(collection(db,STATE_COLLECTION));
+    const grouped={};
+    snap.forEach(d=>{const x=d.data(); if(!x?.key)return; (grouped[x.key]??=[]).push(x)});
+    for(const [key,docs] of Object.entries(grouped)){
+      if(!cloudKeyAllowed(key)) continue;
+      const merged=mergeValues(key,docs);
+      nativeSetItem.call(localStorage,key, typeof merged==='string'?merged:JSON.stringify(merged));
+    }
+    showCloudStatus(role==='teacher'?'تم تحميل بياناتك من السحابة':'تم تحميل بيانات المدرسة من السحابة');
+  }catch(err){
+    console.error('Misbar cloud read failed',err);
+    showCloudStatus('تعذر تحميل البيانات السحابية',false);
+  }finally{ applyingCloud=false; }
+}
+
+async function firebaseProfile(user){
+  const snap=await getDoc(doc(db,'users',user.uid));
+  if(!snap.exists()) return null;
+  return snap.data();
+}
+function localProfileFromFirebase(fbUser,p){
+  const role=p?.role||'teacher';
+  return {
+    uid:fbUser.uid, name:p?.name||fbUser.email?.split('@')[0]||'مستخدم', email:fbUser.email||'',
+    role:roleToArabic(role), firebaseRole:role, subject:(p?.subjects||[])[0]||p?.subject||'',
+    subjects:Array.isArray(p?.subjects)?p.subjects:[], grades:Array.isArray(p?.grades)?p.grades:[],
+    classes:Array.isArray(p?.classes)?p.classes:[], status:p?.status||'active'
+  };
+}
+function saveLocalProfile(u){
+  try{
+    const arr=typeof window.loadUsers==='function'?window.loadUsers():[];
+    const i=arr.findIndex(x=>String(x.email||'').toLowerCase()===String(u.email||'').toLowerCase());
+    if(i>=0) arr[i]={...arr[i],...u}; else arr.push(u);
+    if(typeof window.saveUsers==='function') window.saveUsers(arr);
+  }catch(e){console.warn(e)}
+}
+async function enterFromFirebase(fbUser){
+  const p=await firebaseProfile(fbUser);
+  if(!p) throw new Error('لا يوجد ملف صلاحيات لهذا الحساب في Firestore.');
+  cloudUid=fbUser.uid; cloudRole=p.role||'teacher'; cloudReady=true;
+  await migrateExistingLocalState();
+  await hydrateCloudState(cloudUid,cloudRole);
+  const u=localProfileFromFirebase(fbUser,p); saveLocalProfile(u);
+  try{ localStorage.setItem('misbarZayedLastEmailV1',u.email); }catch{}
+  if(typeof window.enterApp==='function') window.enterApp(u);
+  else throw new Error('تعذر العثور على دالة فتح المنصة.');
+}
+
+async function firebaseLogin(e){
+  e?.preventDefault?.(); e?.stopImmediatePropagation?.();
+  const email=document.getElementById('loginEmail')?.value.trim().toLowerCase();
+  const password=document.getElementById('loginPassword')?.value||'';
+  const status=document.getElementById('loginStatus'); if(status)status.textContent='';
+  if(!email||!password){if(status)status.textContent='أدخل البريد الإلكتروني وكلمة المرور.';return false}
+  try{
+    if(status)status.textContent='جارٍ تسجيل الدخول الآمن...';
+    const cred=await signInWithEmailAndPassword(auth,email,password);
+    await enterFromFirebase(cred.user);
+    if(status)status.textContent='';
+  }catch(err){
+    console.error(err);
+    if(status) status.textContent='تعذر تسجيل الدخول. تحققي من البريد وكلمة المرور ومن اتصال الإنترنت.';
+  }
+  return false;
+}
+async function firebaseSignup(e){
+  e?.preventDefault?.(); e?.stopImmediatePropagation?.();
+  const name=document.getElementById('signupName')?.value.trim();
+  const email=document.getElementById('signupEmail')?.value.trim().toLowerCase();
+  const password=document.getElementById('signupPassword')?.value||'';
+  if(!name||!email||password.length<6){alert('أكملي الاسم والبريد وكلمة مرور من 6 أحرف على الأقل.');return false}
+  const subjects=[...document.querySelectorAll('#subjectPicks input:checked')].map(x=>x.value);
+  const grades=[...document.querySelectorAll('#gradePicks input:checked')].map(x=>x.value);
+  const classes=[...document.querySelectorAll('#classPicks input:checked')].map(x=>x.value);
+  if(!subjects.length||!grades.length||!classes.length){alert('اختاري المادة والصفوف والشعب التي تدرسينها.');return false}
+  try{
+    const cred=await createUserWithEmailAndPassword(auth,email,password);
+    const profile={name,email,role:'teacher',subjects,grades,classes,status:'active',schoolId:'zayed-misbar'};
+    await setDoc(doc(db,'users',cred.user.uid),profile);
+    cloudUid=cred.user.uid; cloudRole='teacher'; cloudReady=true;
+    const u=localProfileFromFirebase(cred.user,profile); saveLocalProfile(u);
+    await migrateExistingLocalState();
+    if(typeof window.enterApp==='function') window.enterApp(u);
+  }catch(err){
+    console.error(err);
+    const msg=String(err?.code||'');
+    alert(msg.includes('email-already-in-use')?'هذا البريد مسجل بالفعل. استخدمي تسجيل الدخول.':'تعذر إنشاء الحساب. تحققي من البريد وكلمة المرور والاتصال بالإنترنت.');
+  }
+  return false;
+}
+async function resetPassword(){
+  const email=(document.getElementById('loginEmail')?.value||localStorage.getItem('misbarZayedLastEmailV1')||'').trim().toLowerCase();
+  if(!email){alert('اكتبي بريدك الإلكتروني أولًا في خانة تسجيل الدخول.');return}
+  try{await sendPasswordResetEmail(auth,email);alert('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.')}
+  catch(err){console.error(err);alert('تعذر إرسال رابط إعادة التعيين. تحققي من البريد والمحاولة مرة أخرى.')}
+}
+
+function installAuthBridge(){
+  const login=document.getElementById('loginSubmit'); if(login) login.onclick=firebaseLogin;
+  const cont=document.getElementById('authContinue');
+  if(cont) cont.onclick=(e)=>{ const loginVisible=!document.getElementById('loginFields')?.hidden; return loginVisible?firebaseLogin(e):firebaseSignup(e); };
+  const form=document.getElementById('authForm');
+  if(form) form.addEventListener('submit',(e)=>{e.preventDefault();e.stopImmediatePropagation(); const loginVisible=!document.getElementById('loginFields')?.hidden; loginVisible?firebaseLogin(e):firebaseSignup(e)},true);
+  const oldForgot=document.getElementById('forgotPasswordBtn');
+  if(oldForgot){const b=oldForgot.cloneNode(true);oldForgot.replaceWith(b);b.textContent='نسيت كلمة المرور؟ إرسال رابط استعادة';b.onclick=resetPassword}
+  const inside=document.getElementById('changePasswordInsideBtn');
+  if(inside){const b=inside.cloneNode(true);inside.replaceWith(b);b.textContent='تغيير كلمة المرور بالبريد';b.onclick=resetPassword}
+  const logout=document.getElementById('logoutBtn');
+  if(logout){const old=logout.onclick;logout.onclick=async(e)=>{try{await signOut(auth)}catch{} cloudReady=false;cloudUid=null; if(typeof old==='function')old.call(logout,e)}}
+}
+installAuthBridge();
+new MutationObserver(installAuthBridge).observe(document.body,{childList:true,subtree:true});
+
+onAuthStateChanged(auth, async (u)=>{
+  if(!u) return;
+  const shell=document.getElementById('appShell');
+  if(shell && shell.hidden){ try{await enterFromFirebase(u)}catch(err){console.warn(err)} }
+});
+</script>
 </body>
 </html>
 
