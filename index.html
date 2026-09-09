@@ -282,6 +282,33 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 @media(max-width:600px){.subject-grid{grid-template-columns:1fr}}
 </style>
 
+
+<style id="v8-public-qr-final">
+/* V8: keep the visitor QR visibly over the approved public artwork */
+body:not(.app-mode) .approved-cover{position:relative!important;}
+body:not(.app-mode) #coverVisitorQr{
+ position:absolute!important; z-index:999!important;
+ top:43.5%!important; left:5.5%!important; right:auto!important; bottom:auto!important;
+ display:flex!important; visibility:visible!important; opacity:1!important; pointer-events:auto!important;
+ align-items:center!important; gap:8px!important; direction:rtl!important;
+ background:#fff!important; border:2px solid #2b82b0!important; border-radius:14px!important;
+ padding:7px 9px!important; box-shadow:0 10px 28px rgba(10,55,82,.28)!important;
+ text-decoration:none!important; color:#153f5c!important;
+}
+body:not(.app-mode) #coverVisitorQr>img{
+ display:block!important; width:82px!important; height:82px!important; min-width:82px!important; max-width:82px!important;
+ min-height:82px!important; max-height:82px!important; object-fit:contain!important;
+ margin:0!important; padding:0!important; border-radius:7px!important; filter:none!important; box-shadow:none!important; background:#fff!important;
+}
+body:not(.app-mode) #coverVisitorQr>span{display:block!important;visibility:visible!important;white-space:nowrap!important;line-height:1.35!important;}
+body:not(.app-mode) #coverVisitorQr b{display:block!important;font-size:14px!important;color:#153f5c!important;}
+body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px!important;color:#55758a!important;margin-top:3px!important;}
+@media(max-width:800px){
+ body:not(.app-mode) #coverVisitorQr{top:44%!important;left:2%!important;padding:5px!important;}
+ body:not(.app-mode) #coverVisitorQr>img{width:62px!important;height:62px!important;min-width:62px!important;max-width:62px!important;min-height:62px!important;max-height:62px!important;}
+ body:not(.app-mode) #coverVisitorQr>span{display:none!important;}
+}
+</style>
 </head>
 <body>
 <!-- ZAYED MISBAR V6 FINAL FRONT-END FIX: logout/session + 6 subjects + visible visitor QR -->
