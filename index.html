@@ -1023,8 +1023,32 @@ function prepareScores(){
   renderScores();
 }
 function refreshAssessmentUI(){if(!subjectFilter||!gradeFilter||!classFilter)return;currentUser.subject=subjectFilter.value||currentUser.subject;syncRosterFromClass();syncSubjectMaxUI();cleanupDuplicateAssessments();renderAssessmentCards();if($('#view-scores').classList.contains('active'))prepareScores()}
-$('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);$('#newAssessmentMax').value='100';const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';renderAssessmentSkillChoices();$('#assessmentDialog').showModal()};
-$('#confirmAssessment').onclick=()=>{const type=$('#newAssessmentType').value,date=$('#newAssessmentDate').value,skills=selectedAssessmentSkills();if(!skills.length){alert('اختاري مهارة مستهدفة واحدة على الأقل.');return}const candidate={context:contextKey(),type,date};const dup=currentContextAssessments().find(a=>a.type===type&&String(a.date||'')===String(date||''));if(dup){activeAssessmentId=dup.id;$('#assessmentDialog').close();alert('هذا الاختبار موجود بالفعل. تم فتحه بدل إنشاء نسخة مكررة.');showView('scores');prepareScores();return}const a={id:'A'+Date.now(),context:contextKey(),type,max:100,date,status:'not_started',skills,locked:false};const all=loadAssessments();all.push(a);saveAssessments(all);activeAssessmentId=a.id;$('#assessmentDialog').close();renderAssessmentCards();showView('scores');prepareScores()};
+$('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);$('#newAssessmentMax').value='100';const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';renderAssessmentSkillChoices(assessmentSkillsForSubject(subjectFilter.value));$('#assessmentDialog').showModal()};
+$('#confirmAssessment').onclick=()=>{
+  const btn=$('#confirmAssessment');
+  try{
+    const type=$('#newAssessmentType')?.value||'التشخيص الأول';
+    const date=$('#newAssessmentDate')?.value||new Date().toISOString().slice(0,10);
+    let skills=selectedAssessmentSkills();
+    if(!skills.length) skills=assessmentSkillsForSubject(subjectFilter.value);
+    if(!subjectFilter?.value||!classFilter?.value||classFilter.value==='لا توجد شعبة مسندة'){alert('اختاري المادة والشعبة أولاً.');return;}
+    const dup=currentContextAssessments().find(a=>a.type===type&&String(a.date||'')===String(date||''));
+    if(dup){activeAssessmentId=dup.id;$('#assessmentDialog').close();showView('scores');prepareScores();return;}
+    const a={id:'A'+Date.now(),context:contextKey(),type,max:100,date,status:'not_started',skills,locked:false};
+    const all=loadAssessments(); all.push(a); saveAssessments(all);
+    activeAssessmentId=a.id;
+    if(btn){btn.disabled=true;btn.textContent='تم الإنشاء ✓';}
+    $('#assessmentDialog').close();
+    renderAssessmentCards();
+    showView('scores');
+    prepareScores();
+    setTimeout(()=>{if(btn){btn.disabled=false;btn.textContent='إنشاء الاختبار';}},500);
+  }catch(err){
+    console.error('Assessment creation failed',err);
+    if(btn){btn.disabled=false;btn.textContent='إنشاء الاختبار';}
+    alert('تعذر إنشاء الاختبار. أعيدي المحاولة.');
+  }
+};
 $('#goScoresBtn').onclick=()=>{showView('scores');prepareScores()};
 $('#assessmentSelect').addEventListener('change',()=>{activeAssessmentId=$('#assessmentSelect').value;const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);if(a)$('#maxScoreSelect').value=String(subjectMaxScore(subjectFilter.value));prepareScores()});
 $('#maxScoreSelect').addEventListener('change',()=>{syncSubjectMaxUI();renderScores()});
