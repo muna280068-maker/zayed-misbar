@@ -2334,9 +2334,9 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
 })();
 </script>
 
-<script type="module" id="firebase-auth-minimal-v70">
+<script type="module" id="firebase-auth-role-sync-v71">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -2362,6 +2362,44 @@ const roleMap = {
   teacher: 'معلم / معلمة'
 };
 
+async function buildFirebasePlatformUser(fbUser){
+  const snap=await getDoc(doc(fbDb,'users',fbUser.uid));
+  if(!snap.exists()) throw new Error('missing-profile');
+  const profile=snap.data()||{};
+  const role=roleMap[String(profile.role||'').trim()]||'معلم / معلمة';
+  return {
+    name: profile.name || fbUser.displayName || (role==='مديرة المدرسة'?'إدارة المدرسة':'مستخدم مِسبار زايد'),
+    email: fbUser.email || '',
+    role,
+    subject: (profile.subjects&&profile.subjects[0]) || profile.subject || 'العلوم',
+    subjects: Array.isArray(profile.subjects)?profile.subjects:(role==='معلم / معلمة'?['العلوم']:[]),
+    grades: Array.isArray(profile.grades)?profile.grades:[],
+    classes: Array.isArray(profile.classes)?profile.classes:[],
+    status: 'active', firebaseUid: fbUser.uid
+  };
+}
+
+function persistFirebaseProfile(user){
+  try{
+    const users=(typeof loadUsers==='function'?loadUsers():[]);
+    const email=String(user.email||'').trim().toLowerCase();
+    const idx=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email);
+    const merged=idx>=0?{...users[idx],...user}:{...user};
+    if(idx>=0) users[idx]=merged; else users.push(merged);
+    if(typeof saveUsers==='function') saveUsers(users);
+    localStorage.setItem('misbarZayedLastEmailV1',email);
+    localStorage.removeItem('misbarZayedExplicitSignedOutV1');
+    if(typeof savePersistentSession==='function') savePersistentSession(merged);
+  }catch(e){ console.warn('Firebase profile persistence skipped',e); }
+}
+
+async function applyFirebaseRole(fbUser,{openApp=true}={}){
+  const user=await buildFirebasePlatformUser(fbUser);
+  persistFirebaseProfile(user);
+  if(openApp && typeof enterApp==='function') enterApp(user);
+  return user;
+}
+
 async function firebaseLogin(){
   const email=(document.getElementById('loginEmail')?.value||'').trim().toLowerCase();
   const password=document.getElementById('loginPassword')?.value||'';
@@ -2371,29 +2409,13 @@ async function firebaseLogin(){
   try{
     if(status) status.textContent='جاري تسجيل الدخول...';
     const cred=await signInWithEmailAndPassword(fbAuth,email,password);
-    const snap=await getDoc(doc(fbDb,'users',cred.user.uid));
-    if(!snap.exists()) throw new Error('missing-profile');
-    const profile=snap.data()||{};
-    const role=roleMap[profile.role]||'معلم / معلمة';
-    const user={
-      name: profile.name || cred.user.displayName || (role==='مديرة المدرسة'?'إدارة المدرسة':'مستخدم مِسبار زايد'),
-      email: cred.user.email || email,
-      role,
-      subject: (profile.subjects&&profile.subjects[0]) || profile.subject || 'العلوم',
-      subjects: Array.isArray(profile.subjects)?profile.subjects:(role==='معلم / معلمة'?['العلوم']:[]),
-      grades: Array.isArray(profile.grades)?profile.grades:[],
-      classes: Array.isArray(profile.classes)?profile.classes:[],
-      status: 'active', firebaseUid: cred.user.uid
-    };
-    try{ localStorage.setItem('misbarZayedLastEmailV1',email); }catch(e){}
-    if(typeof enterApp!=='function') throw new Error('app-entry-unavailable');
-    enterApp(user);
+    await applyFirebaseRole(cred.user,{openApp:true});
     if(status) status.textContent='';
   }catch(err){
     console.error('Firebase login error',err);
     let msg='تعذر تسجيل الدخول. تحققي من البريد وكلمة المرور.';
     const code=String(err?.code||'');
-    if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found')) msg='البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+    if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found')) msg='البريد الإلكتروني أو كلمة المرور غير صحيحة في حساب Firebase.';
     else if(code.includes('too-many-requests')) msg='تمت محاولات كثيرة. انتظري قليلًا ثم حاولي مرة أخرى.';
     else if(String(err?.message||'').includes('missing-profile')) msg='تم التعرف على الحساب، لكن صلاحية الحساب غير موجودة في قاعدة البيانات.';
     if(status) status.textContent=msg;
@@ -2426,6 +2448,19 @@ document.addEventListener('submit',(e)=>{
     if(loginVisible){ e.preventDefault(); e.stopImmediatePropagation(); firebaseLogin(); }
   }
 },true);
+
+
+// عند إعادة تحميل المنصة، تُعاد قراءة الدور من Firestore بدل الاعتماد على الدور المحلي القديم.
+onAuthStateChanged(fbAuth, async (fbUser)=>{
+  if(!fbUser) return;
+  try{
+    const user=await applyFirebaseRole(fbUser,{openApp:false});
+    const shell=document.getElementById('appShell');
+    const appAlreadyOpen=shell && !shell.hidden && shell.style.display!=='none';
+    const localRole=(typeof currentUser!=='undefined' && currentUser)?currentUser.role:'';
+    if(appAlreadyOpen && localRole!==user.role && typeof enterApp==='function') enterApp(user);
+  }catch(err){ console.error('Firebase role reconciliation error',err); }
+});
 
 const oldNote=document.querySelector('#passwordRecoveryDialog .note');
 if(oldNote) oldNote.textContent='أدخلي بريدك المسجل في مِسبار زايد. سيُرسل Firebase رابطًا آمنًا لتغيير كلمة المرور إلى البريد.';
