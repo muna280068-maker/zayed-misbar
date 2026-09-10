@@ -2334,7 +2334,7 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
 })();
 </script>
 
-<script type="module" id="firebase-auth-role-sync-v71">
+<script type="module" id="firebase-auth-role-sync-v72">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
@@ -2366,7 +2366,10 @@ async function buildFirebasePlatformUser(fbUser){
   const snap=await getDoc(doc(fbDb,'users',fbUser.uid));
   if(!snap.exists()) throw new Error('missing-profile');
   const profile=snap.data()||{};
-  const role=roleMap[String(profile.role||'').trim()]||'معلم / معلمة';
+  let role=roleMap[String(profile.role||'').trim()]||'معلم / معلمة';
+  // الحساب الإداري الأساسي: لا تسمح لبيانات الحساب المحلي القديمة بتخفيض صلاحية المديرة.
+  const normalizedEmail=String(fbUser.email||'').trim().toLowerCase();
+  if(normalizedEmail==='muna.zebaiboh@moe.sch.ae') role='مديرة المدرسة';
   return {
     name: profile.name || fbUser.displayName || (role==='مديرة المدرسة'?'إدارة المدرسة':'مستخدم مِسبار زايد'),
     email: fbUser.email || '',
@@ -2461,6 +2464,26 @@ onAuthStateChanged(fbAuth, async (fbUser)=>{
     if(appAlreadyOpen && localRole!==user.role && typeof enterApp==='function') enterApp(user);
   }catch(err){ console.error('Firebase role reconciliation error',err); }
 });
+
+// إصلاح حاسم لتعارض الجلسة المحلية القديمة مع دور Firebase بعد فتح التطبيق.
+let roleSyncAttempts=0;
+const roleSyncTimer=setInterval(async ()=>{
+  roleSyncAttempts++;
+  const fbUser=fbAuth.currentUser;
+  const shell=document.getElementById('appShell');
+  const appOpen=shell && !shell.hidden && shell.style.display!=='none';
+  if(fbUser && appOpen){
+    try{
+      const user=await buildFirebasePlatformUser(fbUser);
+      const shownRole=(document.getElementById('chipRole')?.textContent||'').trim();
+      if(user.role==='مديرة المدرسة' && shownRole!=='مديرة المدرسة' && typeof enterApp==='function'){
+        persistFirebaseProfile(user);
+        enterApp(user);
+      }
+    }catch(err){ console.error('Firebase principal role sync error',err); }
+  }
+  if(roleSyncAttempts>=20) clearInterval(roleSyncTimer);
+},500);
 
 const oldNote=document.querySelector('#passwordRecoveryDialog .note');
 if(oldNote) oldNote.textContent='أدخلي بريدك المسجل في مِسبار زايد. سيُرسل Firebase رابطًا آمنًا لتغيير كلمة المرور إلى البريد.';
