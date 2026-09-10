@@ -4,6 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
+<!-- ZAYED MISBAR V88 - ROBUST IMMEDIATE SCORE AUTOSAVE -->
 <title>مِسبار زايد | ZAYED MISBAR</title>
 <!-- V77 LOCAL STABLE: Firebase removed; accounts and data stored on this device -->
 <style>
@@ -1103,7 +1104,25 @@ function populateAssessmentSelect(){
   if(a){$('#maxScoreSelect').value=String(a.max);$('#scoreTitle').textContent=`${a.type} • ${classFilter.value}`}
 }
 function scoreLevel(score,max){const pct=max?score/max*100:0;if(pct>=80)return['متقن','good'];if(pct>=60)return['يحتاج تعزيزًا','medium'];return['يحتاج تدخلًا','danger']}
-function renderScores(){const tb=$('#scoreTable tbody');if(!tb)return;const max=+$('#maxScoreSelect').value;const all=loadAllScores();const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);const locked=!!a?.locked;const saved=activeAssessmentId?all[assessmentKey(activeAssessmentId)]:null;const savedMap=saved?Object.fromEntries(saved.rows.map(r=>[r.name,r.score])):{};tb.innerHTML='';roster.forEach((name,i)=>{const val=savedMap[name]??'';const opts=['<option value="">—</option>'].concat(Array.from({length:max+1},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');const tr=document.createElement('tr');tr.innerHTML=`<td class="student-index">${i+1}</td><td><button type="button" class="student-name-link" data-student="${name.replace(/&/g,'&amp;').replace(/\"/g,'&quot;')}">${name}</button></td><td><select class="score-select" ${locked?'disabled':''}>${opts}</select></td><td class="pct-cell">—</td><td class="level-cell">—</td>`;tb.appendChild(tr)});$$('#scoreTable .score-select').forEach(x=>x.addEventListener('change',()=>{updateLevels();autoSaveCurrentScores();}));$$('#scoreTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));updateLevels();if($('#saveScores')){$('#saveScores').textContent=locked?'فتح للتعديل':'حفظ واعتماد';$('#saveScores').classList.toggle('warn',locked)}if($('#savedNote'))$('#savedNote').innerHTML=locked?'<span class="locked-note">النتائج معتمدة ومقفلة ضد التعديل غير المقصود.</span>':''}
+function scoreDraftKey(key){return 'misbarZayedScoreDraftV88|'+key}
+function loadScoreDraft(key){try{return safeObject(JSON.parse(localStorage.getItem(scoreDraftKey(key))||'{}'))}catch{return{}}}
+function saveSingleScoreImmediate(sel){
+  try{
+    const key=sel.dataset.scoreKey, name=sel.dataset.studentName;
+    if(!key||!name)return;
+    const all=loadAllScores(), existing=safeObject(all[key]);
+    const map=new Map(safeArray(existing.rows).map(r=>[r.name,+r.score]));
+    if(sel.value==='')map.delete(name);else map.set(name,+sel.value);
+    const rows=[...map.entries()].map(([name,score])=>({name,score}));
+    const max=Number(sel.dataset.max||100);
+    if(rows.length)all[key]={...existing,rows,max,savedAt:new Date().toISOString(),autoSaved:true,subject:sel.dataset.subject||'',grade:sel.dataset.grade||'',className:sel.dataset.className||''};
+    else delete all[key];
+    saveAllScores(all);
+    localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(map)));
+    const note=$('#savedNote');if(note)note.textContent=`تم الحفظ تلقائيًا • ${rows.length} نتيجة`;
+  }catch(err){console.error('Immediate score save failed',err);const note=$('#savedNote');if(note)note.textContent='تعذر الحفظ التلقائي';}
+}
+function renderScores(){const tb=$('#scoreTable tbody');if(!tb)return;const max=+$('#maxScoreSelect').value;const all=loadAllScores();const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);const locked=!!a?.locked;const key=activeAssessmentId?assessmentKey(activeAssessmentId):'';const saved=key?all[key]:null;const draft=key?loadScoreDraft(key):{};const savedMap=saved?Object.fromEntries(saved.rows.map(r=>[r.name,r.score])):{};Object.assign(savedMap,draft);tb.innerHTML='';roster.forEach((name,i)=>{const val=savedMap[name]??'';const opts=['<option value="">—</option>'].concat(Array.from({length:max+1},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');const tr=document.createElement('tr');tr.innerHTML=`<td class="student-index">${i+1}</td><td><button type="button" class="student-name-link" data-student="${name.replace(/&/g,'&amp;').replace(/\"/g,'&quot;')}">${name}</button></td><td><select class="score-select" ${locked?'disabled':''}>${opts}</select></td><td class="pct-cell">—</td><td class="level-cell">—</td>`;const sel=tr.querySelector('.score-select');sel.dataset.scoreKey=key;sel.dataset.studentName=name;sel.dataset.max=String(max);sel.dataset.subject=subjectFilter.value;sel.dataset.grade=gradeFilter.value;sel.dataset.className=classFilter.value;tb.appendChild(tr)});$$('#scoreTable .score-select').forEach(x=>x.addEventListener('change',()=>{updateLevels();saveSingleScoreImmediate(x);}));$$('#scoreTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));updateLevels();if($('#saveScores')){$('#saveScores').textContent=locked?'فتح للتعديل':'حفظ واعتماد';$('#saveScores').classList.toggle('warn',locked)}if($('#savedNote'))$('#savedNote').innerHTML=locked?'<span class="locked-note">النتائج معتمدة ومقفلة ضد التعديل غير المقصود.</span>':''}
 function updateLevels(){const max=+$('#maxScoreSelect').value;let g=0,m=0,d=0,entered=0;$$('#scoreTable tbody tr').forEach(tr=>{const raw=tr.querySelector('select').value,pct=tr.querySelector('.pct-cell'),cell=tr.querySelector('.level-cell');if(raw===''){pct.textContent='—';cell.textContent='—';cell.className='level-cell';return}entered++;const score=+raw,p=Math.round(score/max*100),[txt,cls]=scoreLevel(score,max);pct.textContent=p+'%';cell.innerHTML=`<span class="level-chip ${cls}">${txt}</span>`;if(cls==='good')g++;else if(cls==='medium')m++;else d++});$('#sumCount').textContent=roster.length;$('#sumGood').textContent=g;$('#sumMedium').textContent=m;$('#sumDanger').textContent=d;if($('#kpiEntered'))$('#kpiEntered').textContent=entered;if($('#kpiMastery'))$('#kpiMastery').textContent=(entered?Math.round(g/entered*100):0)+'%';if($('#kpiBoost'))$('#kpiBoost').textContent=m;if($('#kpiPriority'))$('#kpiPriority').textContent=d;if($('#kpiOpenGaps'))$('#kpiOpenGaps').textContent=(m>0?1:0)+(d>0?1:0)}
 function autoSaveCurrentScores(){
   try{
