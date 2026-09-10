@@ -1065,7 +1065,12 @@ function loadAllScores(){try{const raw=safeObject(JSON.parse(localStorage.getIte
 function saveAllScores(v){localStorage.setItem(SCORES_KEY,JSON.stringify(v))}
 function contextKey(){return [currentUser.email||'demo',subjectFilter?.value||currentUser.subject,gradeFilter?.value||'',classFilter?.value||''].join('|')}
 function assessmentKey(id){return contextKey()+'|'+id}
-function currentContextAssessments(){return loadAssessments().filter(a=>a.context===contextKey())}
+function currentContextAssessments(){
+  const ctx=contextKey();
+  const list=loadAssessments().filter(a=>a.context===ctx);
+  if(list.length)return list;
+  return [{id:'DIRECT_DIAGNOSTIC',context:ctx,type:'التشخيص الأول',max:100,date:'',status:'in_progress',skills:[...assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject)],locked:false,virtual:true}];
+}
 function subjectMaxScore(subject){return 100}
 function syncSubjectMaxUI(){const max=subjectMaxScore(subjectFilter?.value);if($('#maxScoreSelect'))$('#maxScoreSelect').value=String(max);if($('#newAssessmentMax'))$('#newAssessmentMax').value=String(max);return max}
 function assessmentSkillsForSubject(subject){
@@ -1088,29 +1093,7 @@ function cleanupDuplicateAssessments(){
   if(kept.length!==all.length)saveAssessments(kept); return kept;
 }
 function ensureDefaultAssessment(){
-  cleanupDuplicateAssessments();
-  let list=currentContextAssessments();
-  if(list.length)return list;
-  // V90: create a stable default diagnostic automatically when the teacher opens score entry.
-  // This guarantees activeAssessmentId and a persistent score key exist before any score is entered.
-  const ctx=contextKey();
-  const a={
-    id:'AUTO-'+btoa(unescape(encodeURIComponent(ctx))).replace(/[^A-Za-z0-9]/g,'').slice(0,28),
-    context:ctx,
-    type:'التشخيص الأول',
-    max:100,
-    date:new Date().toISOString().slice(0,10),
-    status:'not_started',
-    skills:[...assessmentSkillsForSubject(subjectFilter.value)],
-    locked:false,
-    autoCreated:true
-  };
-  const all=loadAssessments();
-  // Avoid duplicate auto assessments if an older browser state already contains the same context.
-  const existing=all.find(x=>x.context===ctx && (x.autoCreated||x.type==='التشخيص الأول'));
-  if(existing)return [existing];
-  all.push(a);saveAssessments(all);
-  return [a];
+  return currentContextAssessments();
 }
 function assessmentUiStatus(a,saved){if(a.locked)return['معتمد','locked'];if(!saved||!saved.rows?.length)return['لم يبدأ','draft'];const total=rosterForCurrentClass().length||roster.length,entered=saved.rows.length;if(entered<total)return[`جارٍ الإدخال ${entered}/${total}`,'progress'];return['مكتمل','done']}
 function renderAssessmentCards(){if(!$('#assessmentCards'))return;const list=ensureDefaultAssessment();$('#assessmentContext').textContent=`${subjectFilter.value} • الصف ${gradeArabicName(gradeFilter.value)} • ${classFilter.value}`;const box=$('#assessmentCards');if(!list.length){box.innerHTML='<div class="assessment-empty">لا توجد اختبارات لهذه الشعبة بعد.</div>';return}const scores=loadAllScores();box.innerHTML=list.map(a=>{const saved=scores[assessmentKey(a.id)],st=assessmentUiStatus(a,saved),skills=safeArray(a.skills).map(s=>`<span>${s}</span>`).join('');return `<article class="assessment-card ${a.locked?'locked-card':''}"><div class="assessment-meta"><span>${subjectFilter.value}</span><span>${classFilter.value}</span><span>من ${a.max}</span></div><h4>${a.type}</h4><small>${a.date||'بدون تاريخ'}</small><span class="assessment-status ${st[1]}">${st[0]}</span>${skills?`<div class="assessment-skills">${skills}</div>`:''}<div class="card-actions"><button class="btn ghost small open-assessment" data-id="${a.id}">فتح</button><button class="btn primary small score-assessment" data-id="${a.id}">${a.locked?'عرض النتائج':'إدخال الدرجات'}</button></div></article>`}).join('');$$('.open-assessment,.score-assessment').forEach(b=>b.onclick=()=>{activeAssessmentId=b.dataset.id;showView('scores');prepareScores()})}
@@ -1144,8 +1127,7 @@ function persistVisibleScoresNow(){
   try{
     const sels=$$('#scoreTable tbody select.score-select');
     if(!sels.length)return false;
-    const first=sels[0], key=first.dataset.scoreKey||'';
-    if(!key)return false;
+    const first=sels[0], key=first.dataset.scoreKey||assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC');
     const rows=scoreRowsFromDom();
     const all=loadAllScores(), existing=safeObject(all[key]);
     const max=Number(first.dataset.max||100)||100;
@@ -1164,7 +1146,7 @@ function persistVisibleScoresNow(){
 }
 function saveSingleScoreImmediate(sel){
   try{
-    const key=sel.dataset.scoreKey, name=sel.dataset.studentName;
+    const key=sel.dataset.scoreKey||assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC'), name=sel.dataset.studentName;
     if(!key||!name)throw new Error('missing score key/student');
     const all=loadAllScores(), existing=safeObject(all[key]);
     const map=new Map(safeArray(existing.rows).map(r=>[String(r.name),+r.score]));
@@ -1191,7 +1173,7 @@ function renderScores(){
   const all=loadAllScores();
   const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);
   const locked=!!a?.locked;
-  const key=activeAssessmentId?assessmentKey(activeAssessmentId):'';
+  const key=assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC');
   const saved=key?all[key]:null;
   const draft=key?loadScoreDraft(key):{};
   const savedMap=saved?Object.fromEntries(safeArray(saved.rows).map(r=>[r.name,r.score])):{};
@@ -1359,15 +1341,11 @@ $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استع
 $('#saveScores').onclick=()=>{
   try{
     if(!activeAssessmentId)populateAssessmentSelect();
-    if(!activeAssessmentId){
-      const autoList=ensureDefaultAssessment();
-      if(autoList.length){activeAssessmentId=autoList[0].id;populateAssessmentSelect();renderScores();}
-    }
+    if(!activeAssessmentId){ activeAssessmentId='DIRECT_DIAGNOSTIC'; populateAssessmentSelect(); renderScores(); }
     const rows=scoreRowsFromDom();
     if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return;}
     const first=$('#scoreTable select.score-select');
-    const key=first?.dataset.scoreKey || (activeAssessmentId?assessmentKey(activeAssessmentId):'');
-    if(!key){alert('تعذر تحديد الاختبار الحالي. أعيدي فتح إدخال الدرجات ثم حاولي.');return;}
+    const key=first?.dataset.scoreKey || assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC');
     let ass=loadAssessments(),idx=ass.findIndex(a=>a.id===activeAssessmentId),a=idx>=0?ass[idx]:null;
     if(a?.locked){
       if(!confirm('النتائج معتمدة. هل تريد/تريدين فتح الاختبار للتعديل؟'))return;
@@ -1904,6 +1882,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
   });
 })();
 <\/script>
+<div id="misbarVersionBadge" style="position:fixed;left:8px;bottom:8px;z-index:999999;font:700 11px Arial;background:#fff;border:1px solid #b8cbd8;border-radius:8px;padding:4px 7px;color:#315b73">V91</div>
 </body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='misbar-zayed-results.xls';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
