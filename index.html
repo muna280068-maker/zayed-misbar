@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<!-- ZAYED MISBAR V88 - ROBUST IMMEDIATE SCORE AUTOSAVE -->
+<!-- ZAYED MISBAR V89 - FINAL SCORE PERSISTENCE FIX -->
 <title>مِسبار زايد | ZAYED MISBAR</title>
 <!-- V77 LOCAL STABLE: Firebase removed; accounts and data stored on this device -->
 <style>
@@ -1104,25 +1104,104 @@ function populateAssessmentSelect(){
   if(a){$('#maxScoreSelect').value=String(a.max);$('#scoreTitle').textContent=`${a.type} • ${classFilter.value}`}
 }
 function scoreLevel(score,max){const pct=max?score/max*100:0;if(pct>=80)return['متقن','good'];if(pct>=60)return['يحتاج تعزيزًا','medium'];return['يحتاج تدخلًا','danger']}
-function scoreDraftKey(key){return 'misbarZayedScoreDraftV88|'+key}
+function scoreDraftKey(key){return 'misbarZayedScoreDraftV89|'+key}
 function loadScoreDraft(key){try{return safeObject(JSON.parse(localStorage.getItem(scoreDraftKey(key))||'{}'))}catch{return{}}}
+function scoreRowsFromDom(){
+  const rows=[];
+  $$('#scoreTable tbody tr').forEach(tr=>{
+    const sel=tr.querySelector('select.score-select');
+    if(!sel)return;
+    const name=sel.dataset.studentName||tr.children[1]?.textContent.trim()||'';
+    if(name && sel.value!=='')rows.push({name,score:+sel.value});
+  });
+  return rows;
+}
+function persistVisibleScoresNow(){
+  try{
+    const sels=$$('#scoreTable tbody select.score-select');
+    if(!sels.length)return false;
+    const first=sels[0], key=first.dataset.scoreKey||'';
+    if(!key)return false;
+    const rows=scoreRowsFromDom();
+    const all=loadAllScores(), existing=safeObject(all[key]);
+    const max=Number(first.dataset.max||100)||100;
+    if(rows.length){
+      all[key]={...existing,rows,max,savedAt:new Date().toISOString(),autoSaved:true,
+        subject:first.dataset.subject||'',grade:first.dataset.grade||'',className:first.dataset.className||'',
+        teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
+    }else if(existing?.rows?.length){
+      // Do not erase previously saved results merely because the UI is being redrawn/left.
+      return true;
+    }
+    saveAllScores(all);
+    localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
+    return true;
+  }catch(err){console.error('Persist visible scores failed',err);return false;}
+}
 function saveSingleScoreImmediate(sel){
   try{
     const key=sel.dataset.scoreKey, name=sel.dataset.studentName;
-    if(!key||!name)return;
+    if(!key||!name)throw new Error('missing score key/student');
     const all=loadAllScores(), existing=safeObject(all[key]);
-    const map=new Map(safeArray(existing.rows).map(r=>[r.name,+r.score]));
+    const map=new Map(safeArray(existing.rows).map(r=>[String(r.name),+r.score]));
+    const draft=loadScoreDraft(key);Object.entries(draft).forEach(([n,v])=>map.set(n,+v));
     if(sel.value==='')map.delete(name);else map.set(name,+sel.value);
-    const rows=[...map.entries()].map(([name,score])=>({name,score}));
-    const max=Number(sel.dataset.max||100);
-    if(rows.length)all[key]={...existing,rows,max,savedAt:new Date().toISOString(),autoSaved:true,subject:sel.dataset.subject||'',grade:sel.dataset.grade||'',className:sel.dataset.className||''};
-    else delete all[key];
+    const rows=[...map.entries()].filter(([,score])=>Number.isFinite(score)).map(([name,score])=>({name,score}));
+    const max=Number(sel.dataset.max||100)||100;
+    all[key]={...existing,rows,max,savedAt:new Date().toISOString(),autoSaved:true,
+      subject:sel.dataset.subject||'',grade:sel.dataset.grade||'',className:sel.dataset.className||'',
+      teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
     saveAllScores(all);
-    localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(map)));
-    const note=$('#savedNote');if(note)note.textContent=`تم الحفظ تلقائيًا • ${rows.length} نتيجة`;
-  }catch(err){console.error('Immediate score save failed',err);const note=$('#savedNote');if(note)note.textContent='تعذر الحفظ التلقائي';}
+    localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
+    // Read-back verification: confirms storage actually contains the chosen value.
+    const verify=loadAllScores()[key];
+    const ok=safeArray(verify?.rows).some(r=>String(r.name)===String(name)&&Number(r.score)===Number(sel.value));
+    const note=$('#savedNote');
+    if(note)note.textContent=ok?`✓ تم حفظ درجة ${name} تلقائيًا`:'⚠️ تعذر تثبيت الدرجة';
+    return ok;
+  }catch(err){console.error('Immediate score save failed',err);const note=$('#savedNote');if(note)note.textContent='⚠️ تعذر الحفظ التلقائي';return false;}
 }
-function renderScores(){const tb=$('#scoreTable tbody');if(!tb)return;const max=+$('#maxScoreSelect').value;const all=loadAllScores();const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);const locked=!!a?.locked;const key=activeAssessmentId?assessmentKey(activeAssessmentId):'';const saved=key?all[key]:null;const draft=key?loadScoreDraft(key):{};const savedMap=saved?Object.fromEntries(saved.rows.map(r=>[r.name,r.score])):{};Object.assign(savedMap,draft);tb.innerHTML='';roster.forEach((name,i)=>{const val=savedMap[name]??'';const opts=['<option value="">—</option>'].concat(Array.from({length:max+1},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');const tr=document.createElement('tr');tr.innerHTML=`<td class="student-index">${i+1}</td><td><button type="button" class="student-name-link" data-student="${name.replace(/&/g,'&amp;').replace(/\"/g,'&quot;')}">${name}</button></td><td><select class="score-select" ${locked?'disabled':''}>${opts}</select></td><td class="pct-cell">—</td><td class="level-cell">—</td>`;const sel=tr.querySelector('.score-select');sel.dataset.scoreKey=key;sel.dataset.studentName=name;sel.dataset.max=String(max);sel.dataset.subject=subjectFilter.value;sel.dataset.grade=gradeFilter.value;sel.dataset.className=classFilter.value;tb.appendChild(tr)});$$('#scoreTable .score-select').forEach(x=>x.addEventListener('change',()=>{updateLevels();saveSingleScoreImmediate(x);}));$$('#scoreTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));updateLevels();if($('#saveScores')){$('#saveScores').textContent=locked?'فتح للتعديل':'حفظ واعتماد';$('#saveScores').classList.toggle('warn',locked)}if($('#savedNote'))$('#savedNote').innerHTML=locked?'<span class="locked-note">النتائج معتمدة ومقفلة ضد التعديل غير المقصود.</span>':''}
+function renderScores(){
+  const tb=$('#scoreTable tbody');if(!tb)return;
+  const max=+$('#maxScoreSelect').value;
+  const all=loadAllScores();
+  const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);
+  const locked=!!a?.locked;
+  const key=activeAssessmentId?assessmentKey(activeAssessmentId):'';
+  const saved=key?all[key]:null;
+  const draft=key?loadScoreDraft(key):{};
+  const savedMap=saved?Object.fromEntries(safeArray(saved.rows).map(r=>[r.name,r.score])):{};
+  Object.assign(savedMap,draft);
+  tb.innerHTML='';
+  roster.forEach((name,i)=>{
+    const val=savedMap[name]??'';
+    const opts=['<option value="">—</option>'].concat(Array.from({length:max+1},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="student-index">${i+1}</td><td><button type="button" class="student-name-link" data-student="${name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${name}</button></td><td><select class="score-select" ${locked?'disabled':''}>${opts}</select></td><td class="pct-cell">—</td><td class="level-cell">—</td>`;
+    const sel=tr.querySelector('.score-select');
+    sel.dataset.scoreKey=key;sel.dataset.studentName=name;sel.dataset.max=String(max);
+    sel.dataset.subject=subjectFilter.value;sel.dataset.grade=gradeFilter.value;sel.dataset.className=classFilter.value;
+    tb.appendChild(tr);
+  });
+  $$('#scoreTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));
+  updateLevels();
+  if($('#saveScores')){$('#saveScores').textContent=locked?'فتح للتعديل':'حفظ واعتماد';$('#saveScores').classList.toggle('warn',locked)}
+  if($('#savedNote'))$('#savedNote').innerHTML=locked?'<span class="locked-note">النتائج معتمدة ومقفلة ضد التعديل غير المقصود.</span>':'';
+}
+// Capture score changes at document level so saving survives any table re-render.
+document.addEventListener('change',function(e){
+  const sel=e.target?.closest?.('#scoreTable select.score-select');
+  if(!sel)return;
+  updateLevels();
+  saveSingleScoreImmediate(sel);
+},true);
+// Save the visible table BEFORE navigation or context filters can change.
+document.addEventListener('click',function(e){
+  if(e.target?.closest?.('[data-view], .side-nav button, .quick-grid button'))persistVisibleScoresNow();
+},true);
+[subjectFilter,gradeFilter,classFilter].forEach(el=>el&&el.addEventListener('change',()=>persistVisibleScoresNow(),true));
+window.addEventListener('pagehide',persistVisibleScoresNow);
+window.addEventListener('beforeunload',persistVisibleScoresNow);
 function updateLevels(){const max=+$('#maxScoreSelect').value;let g=0,m=0,d=0,entered=0;$$('#scoreTable tbody tr').forEach(tr=>{const raw=tr.querySelector('select').value,pct=tr.querySelector('.pct-cell'),cell=tr.querySelector('.level-cell');if(raw===''){pct.textContent='—';cell.textContent='—';cell.className='level-cell';return}entered++;const score=+raw,p=Math.round(score/max*100),[txt,cls]=scoreLevel(score,max);pct.textContent=p+'%';cell.innerHTML=`<span class="level-chip ${cls}">${txt}</span>`;if(cls==='good')g++;else if(cls==='medium')m++;else d++});$('#sumCount').textContent=roster.length;$('#sumGood').textContent=g;$('#sumMedium').textContent=m;$('#sumDanger').textContent=d;if($('#kpiEntered'))$('#kpiEntered').textContent=entered;if($('#kpiMastery'))$('#kpiMastery').textContent=(entered?Math.round(g/entered*100):0)+'%';if($('#kpiBoost'))$('#kpiBoost').textContent=m;if($('#kpiPriority'))$('#kpiPriority').textContent=d;if($('#kpiOpenGaps'))$('#kpiOpenGaps').textContent=(m>0?1:0)+(d>0?1:0)}
 function autoSaveCurrentScores(){
   try{
@@ -1253,7 +1332,35 @@ $('#manageRosterBtn').onclick=()=>{syncRosterFromClass();renderRosterManager();$
 $('#closeRosterDialog').onclick=()=>$('#rosterDialog').close();
 $('#addStudentBtn').onclick=()=>{const n=prompt('اكتب/اكتبي اسم الطالب/الطالبة:');if(n&&n.trim()){roster.push(n.trim());persistCurrentRoster();renderRosterManager();renderScores();updateOverviewStudentCount()}};
 $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استعادة القائمة الأصلية لهذه الشعبة؟'))return;const o=loadRosterOverrides();delete o[k];saveRosterOverrides(o);roster=rosterForCurrentClass();renderRosterManager();renderScores();updateOverviewStudentCount()};
-$('#saveScores').onclick=()=>{if(!activeAssessmentId)populateAssessmentSelect();let ass=loadAssessments(),idx=ass.findIndex(a=>a.id===activeAssessmentId);if(idx<0)return;const a=ass[idx];if(a.locked){if(!confirm('النتائج معتمدة. هل تريد/تريدين فتح الاختبار للتعديل؟ سيتم تسجيل حالة فتح التعديل.'))return;a.locked=false;a.status='in_progress';a.reopenedAt=new Date().toISOString();saveAssessments(ass);renderScores();renderAssessmentCards();return}const rows=[];$$('#scoreTable tbody tr').forEach(tr=>{const name=tr.children[1].textContent.trim(),raw=tr.querySelector('select').value;if(raw!=='')rows.push({name,score:+raw})});if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return}const total=roster.length;if(!confirm(`سيتم حفظ واعتماد ${rows.length} نتيجة من أصل ${total}. ${rows.length<total?'الطلبة دون درجة سيبقون «بانتظار التشخيص».':''}\nهل تريد/تريدين المتابعة؟`))return;const all=loadAllScores();all[assessmentKey(activeAssessmentId)]={rows,max:a.max||100,savedAt:new Date().toISOString(),subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,skills:a.skills||[]};saveAllScores(all);a.status=rows.length===total?'completed':'in_progress';a.locked=true;a.approvedAt=new Date().toISOString();saveAssessments(ass);$('#savedNote').textContent=`تم الحفظ والاعتماد • ${rows.length} نتيجة`;renderAssessmentCards();renderScores();setTimeout(()=>showView('gaps'),450)};
+$('#saveScores').onclick=()=>{
+  try{
+    if(!activeAssessmentId)populateAssessmentSelect();
+    const rows=scoreRowsFromDom();
+    if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return;}
+    const first=$('#scoreTable select.score-select');
+    const key=first?.dataset.scoreKey || (activeAssessmentId?assessmentKey(activeAssessmentId):'');
+    if(!key){alert('تعذر تحديد الاختبار الحالي. أعيدي فتح إدخال الدرجات ثم حاولي.');return;}
+    let ass=loadAssessments(),idx=ass.findIndex(a=>a.id===activeAssessmentId),a=idx>=0?ass[idx]:null;
+    if(a?.locked){
+      if(!confirm('النتائج معتمدة. هل تريد/تريدين فتح الاختبار للتعديل؟'))return;
+      a.locked=false;a.status='in_progress';a.reopenedAt=new Date().toISOString();saveAssessments(ass);renderScores();renderAssessmentCards();return;
+    }
+    const total=roster.length;
+    if(!confirm(`سيتم حفظ واعتماد ${rows.length} نتيجة من أصل ${total}. ${rows.length<total?'الطلبة دون درجة سيبقون «بانتظار التشخيص».':''}\nهل تريد/تريدين المتابعة؟`))return;
+    const all=loadAllScores(),existing=safeObject(all[key]);
+    const max=Number(first?.dataset.max||a?.max||100)||100;
+    all[key]={...existing,rows,max,savedAt:new Date().toISOString(),approvedAt:new Date().toISOString(),autoSaved:false,
+      subject:first?.dataset.subject||subjectFilter.value,grade:first?.dataset.grade||gradeFilter.value,className:first?.dataset.className||classFilter.value,
+      skills:a?.skills||[],teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
+    saveAllScores(all);
+    localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
+    if(a){a.status=rows.length===total?'completed':'in_progress';a.locked=true;a.approvedAt=new Date().toISOString();saveAssessments(ass);}
+    const verify=loadAllScores()[key];
+    if(!verify||safeArray(verify.rows).length!==rows.length){alert('تعذر التحقق من حفظ النتائج. لم يتم اعتمادها.');return;}
+    $('#savedNote').textContent=`✓ تم الحفظ والاعتماد • ${rows.length} نتيجة`;
+    renderAssessmentCards();renderScores();
+  }catch(err){console.error('Save and approve failed',err);alert('حدث خطأ أثناء الحفظ. أعيدي المحاولة.');}
+};
 function loadInterventions(){try{const v=JSON.parse(localStorage.getItem(INTERVENTIONS_KEY)||'[]');return safeArray(v).map(i=>({...safeObject(i),students:safeArray(i?.students),actions:safeArray(i?.actions),evidenceIds:safeArray(i?.evidenceIds)}))}catch{return[]}}
 function saveInterventions(v){localStorage.setItem(INTERVENTIONS_KEY,JSON.stringify(v))}
 function loadEvidence(){try{const v=JSON.parse(localStorage.getItem(EVIDENCE_KEY)||'[]');return safeArray(v).map(e=>safeObject(e))}catch{return[]}}
