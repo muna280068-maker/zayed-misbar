@@ -1067,9 +1067,12 @@ function contextKey(){return [currentUser.email||'demo',subjectFilter?.value||cu
 function assessmentKey(id){return contextKey()+'|'+id}
 function currentContextAssessments(){
   const ctx=contextKey();
-  const list=loadAssessments().filter(a=>a.context===ctx);
-  if(list.length)return list;
-  return [{id:'DIRECT_DIAGNOSTIC',context:ctx,type:'التشخيص الأول',max:100,date:'',status:'in_progress',skills:[...assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject)],locked:false,virtual:true}];
+  return loadAssessments().filter(a=>a.context===ctx);
+}
+function defaultAssessmentIdForContext(ctx=contextKey()){
+  let h=2166136261;
+  for(let i=0;i<ctx.length;i++){h^=ctx.charCodeAt(i);h=Math.imul(h,16777619)}
+  return 'AUTO_DIAGNOSTIC_'+(h>>>0).toString(36).toUpperCase();
 }
 function subjectMaxScore(subject){return 100}
 function syncSubjectMaxUI(){const max=subjectMaxScore(subjectFilter?.value);if($('#maxScoreSelect'))$('#maxScoreSelect').value=String(max);if($('#newAssessmentMax'))$('#newAssessmentMax').value=String(max);return max}
@@ -1086,29 +1089,47 @@ function selectedAssessmentSkills(){return $$('#assessmentSkillChoices button.se
 function assessmentSignature(a){return [a.context,a.type,a.date||'',a.interventionId||'',a.week||''].join('||')}
 function cleanupDuplicateAssessments(){
   const all=loadAssessments(),scores=loadAllScores(),seen=new Map(),kept=[];
-  for(const a of all){const sig=assessmentSignature(a);if(!seen.has(sig)){seen.set(sig,a);kept.push(a);continue}
-    const first=seen.get(sig),firstSaved=scores[assessmentKey(first.id)],thisSaved=scores[assessmentKey(a.id)];
-    if(!firstSaved&&thisSaved){const idx=kept.findIndex(x=>x.id===first.id);if(idx>=0)kept[idx]=a;seen.set(sig,a)}
+  for(const a of all){
+    const sig=assessmentSignature(a);
+    if(!seen.has(sig)){seen.set(sig,a);kept.push(a);continue}
+    const first=seen.get(sig);
+    const firstSaved=scores[String(first.context||'')+'|'+first.id];
+    const thisSaved=scores[String(a.context||'')+'|'+a.id];
+    if(!firstSaved&&thisSaved){
+      const idx=kept.findIndex(x=>x.id===first.id&&x.context===first.context);
+      if(idx>=0)kept[idx]=a;
+      seen.set(sig,a);
+    }
   }
-  if(kept.length!==all.length)saveAssessments(kept); return kept;
+  if(kept.length!==all.length)saveAssessments(kept);
+  return kept;
 }
 function ensureDefaultAssessment(){
-  let list=currentContextAssessments();
-  if(list.length)return list;
   try{
     const ctx=contextKey();
-    let h=0;for(let i=0;i<ctx.length;i++)h=((h<<5)-h+ctx.charCodeAt(i))|0;
-    const id='AUTO_DIAGNOSTIC_'+Math.abs(h);
-    const all=loadAssessments();
-    let a=all.find(x=>x.id===id&&x.context===ctx);
-    if(!a){
-      a={id,context:ctx,type:'التشخيص الأول',max:subjectMaxScore(subjectFilter.value)||100,date:new Date().toISOString().slice(0,10),status:'in_progress',skills:assessmentSkillsForSubject(subjectFilter.value),locked:false,autoCreated:true};
-      all.push(a);saveAssessments(all);
+    let all=loadAssessments();
+    let list=all.filter(a=>a.context===ctx);
+    if(!list.length){
+      const id=defaultAssessmentIdForContext(ctx);
+      const a={id,context:ctx,type:'التشخيص الأول',max:100,date:new Date().toISOString().slice(0,10),status:'in_progress',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true};
+      all.push(a);
+      saveAssessments(all);
+      const check=loadAssessments().find(x=>x.id===id&&x.context===ctx);
+      if(!check)throw new Error('تعذر إنشاء سجل التشخيص الافتراضي');
+      list=[check];
+      // Migrate scores created by V89-V92 under the temporary DIRECT_DIAGNOSTIC key.
+      const store=loadAllScores(), oldKey=ctx+'|DIRECT_DIAGNOSTIC', newKey=ctx+'|'+id;
+      if(store[oldKey]&&!store[newKey]){
+        store[newKey]={...safeObject(store[oldKey]),migratedFrom:'DIRECT_DIAGNOSTIC'};
+        saveAllScores(store);
+      }
     }
-    list=[a];
-    if(!activeAssessmentId)activeAssessmentId=a.id;
+    if(!activeAssessmentId||!list.some(a=>a.id===activeAssessmentId))activeAssessmentId=list[0].id;
     return list;
-  }catch(err){console.error('Default assessment creation failed',err);return currentContextAssessments();}
+  }catch(err){
+    console.error('Default assessment creation failed',err);
+    return currentContextAssessments();
+  }
 }
 function assessmentUiStatus(a,saved){if(a.locked)return['معتمد','locked'];if(!saved||!saved.rows?.length)return['لم يبدأ','draft'];const total=rosterForCurrentClass().length||roster.length,entered=saved.rows.length;if(entered<total)return[`جارٍ الإدخال ${entered}/${total}`,'progress'];return['مكتمل','done']}
 function renderAssessmentCards(){if(!$('#assessmentCards'))return;const list=ensureDefaultAssessment();$('#assessmentContext').textContent=`${subjectFilter.value} • الصف ${gradeArabicName(gradeFilter.value)} • ${classFilter.value}`;const box=$('#assessmentCards');if(!list.length){box.innerHTML='<div class="assessment-empty">لا توجد اختبارات لهذه الشعبة بعد.</div>';return}const scores=loadAllScores();box.innerHTML=list.map(a=>{const saved=scores[assessmentKey(a.id)],st=assessmentUiStatus(a,saved),skills=safeArray(a.skills).map(s=>`<span>${s}</span>`).join('');return `<article class="assessment-card ${a.locked?'locked-card':''}"><div class="assessment-meta"><span>${subjectFilter.value}</span><span>${classFilter.value}</span><span>من ${a.max}</span></div><h4>${a.type}</h4><small>${a.date||'بدون تاريخ'}</small><span class="assessment-status ${st[1]}">${st[0]}</span>${skills?`<div class="assessment-skills">${skills}</div>`:''}<div class="card-actions"><button class="btn ghost small open-assessment" data-id="${a.id}">فتح</button><button class="btn primary small score-assessment" data-id="${a.id}">${a.locked?'عرض النتائج':'إدخال الدرجات'}</button></div></article>`}).join('');$$('.open-assessment,.score-assessment').forEach(b=>b.onclick=()=>{activeAssessmentId=b.dataset.id;showView('scores');prepareScores()})}
@@ -1161,47 +1182,46 @@ function persistVisibleScoresNow(){
 }
 function saveSingleScoreImmediate(sel){
   try{
-    const key=sel.dataset.scoreKey||assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC'), name=sel.dataset.studentName;
-    if(!key||!name)throw new Error('missing score key/student');
+    const list=ensureDefaultAssessment();
+    if(!activeAssessmentId&&list.length)activeAssessmentId=list[0].id;
+    const a=list.find(x=>x.id===activeAssessmentId)||list[0];
+    if(!a)throw new Error('missing assessment');
+    activeAssessmentId=a.id;
+    const key=assessmentKey(a.id), name=sel.dataset.studentName;
+    if(!name)throw new Error('missing student');
+    sel.dataset.scoreKey=key;
     const all=loadAllScores(), existing=safeObject(all[key]);
     const map=new Map(safeArray(existing.rows).map(r=>[String(r.name),+r.score]));
     const draft=loadScoreDraft(key);Object.entries(draft).forEach(([n,v])=>map.set(n,+v));
     if(sel.value==='')map.delete(name);else map.set(name,+sel.value);
     const rows=[...map.entries()].filter(([,score])=>Number.isFinite(score)).map(([name,score])=>({name,score}));
-    const max=Number(sel.dataset.max||100)||100;
-    all[key]={...existing,rows,max,savedAt:new Date().toISOString(),autoSaved:true,
-      subject:sel.dataset.subject||'',grade:sel.dataset.grade||'',className:sel.dataset.className||'',
-      teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
+    all[key]={...existing,rows,max:100,savedAt:new Date().toISOString(),autoSaved:true,
+      subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,
+      teacherEmail:currentUser.email||'',teacherName:currentUser.name||'',skills:safeArray(a.skills)};
     saveAllScores(all);
     localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
-    // Read-back verification: confirms storage actually contains the chosen value.
     const verify=loadAllScores()[key];
-    const ok=safeArray(verify?.rows).some(r=>String(r.name)===String(name)&&Number(r.score)===Number(sel.value));
-    const note=$('#savedNote');
-    if(note)note.textContent=ok?`✓ تم حفظ درجة ${name} تلقائيًا`:'⚠️ تعذر تثبيت الدرجة';
+    const ok=sel.value==='' ? !safeArray(verify?.rows).some(r=>String(r.name)===String(name)) : safeArray(verify?.rows).some(r=>String(r.name)===String(name)&&Number(r.score)===Number(sel.value));
+    const note=$('#savedNote');if(note)note.textContent=ok?`✓ تم حفظ درجة ${name} تلقائيًا`:'⚠️ تعذر تثبيت الدرجة';
     return ok;
   }catch(err){console.error('Immediate score save failed',err);const note=$('#savedNote');if(note)note.textContent='⚠️ تعذر الحفظ التلقائي';return false;}
 }
 function renderScores(){
   const tb=$('#scoreTable tbody');if(!tb)return;
-  const max=+$('#maxScoreSelect').value;
-  const all=loadAllScores();
-  const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);
-  const locked=!!a?.locked;
-  const key=assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC');
-  const saved=key?all[key]:null;
-  const draft=key?loadScoreDraft(key):{};
-  const savedMap=saved?Object.fromEntries(safeArray(saved.rows).map(r=>[r.name,r.score])):{};
-  Object.assign(savedMap,draft);
+  const list=ensureDefaultAssessment();
+  if(!list.length){tb.innerHTML='<tr><td colspan="5">تعذر تجهيز الاختبار التشخيصي.</td></tr>';return;}
+  if(!activeAssessmentId||!list.some(a=>a.id===activeAssessmentId))activeAssessmentId=list[0].id;
+  const a=list.find(x=>x.id===activeAssessmentId)||list[0];
+  const max=100,all=loadAllScores(),locked=!!a.locked,key=assessmentKey(a.id),saved=all[key],draft=loadScoreDraft(key);
+  const savedMap=saved?Object.fromEntries(safeArray(saved.rows).map(r=>[r.name,r.score])):{};Object.assign(savedMap,draft);
   tb.innerHTML='';
   roster.forEach((name,i)=>{
     const val=savedMap[name]??'';
-    const opts=['<option value="">—</option>'].concat(Array.from({length:max+1},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');
+    const opts=['<option value="">—</option>'].concat(Array.from({length:101},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');
     const tr=document.createElement('tr');
     tr.innerHTML=`<td class="student-index">${i+1}</td><td><button type="button" class="student-name-link" data-student="${name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${name}</button></td><td><select class="score-select" ${locked?'disabled':''}>${opts}</select></td><td class="pct-cell">—</td><td class="level-cell">—</td>`;
     const sel=tr.querySelector('.score-select');
-    sel.dataset.scoreKey=key;sel.dataset.studentName=name;sel.dataset.max=String(max);
-    sel.dataset.subject=subjectFilter.value;sel.dataset.grade=gradeFilter.value;sel.dataset.className=classFilter.value;
+    sel.dataset.scoreKey=key;sel.dataset.studentName=name;sel.dataset.max='100';sel.dataset.subject=subjectFilter.value;sel.dataset.grade=gradeFilter.value;sel.dataset.className=classFilter.value;
     tb.appendChild(tr);
   });
   $$('#scoreTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));
@@ -1220,46 +1240,27 @@ document.addEventListener('change',function(e){
 document.addEventListener('click',function(e){
   if(e.target?.closest?.('[data-view], .side-nav button, .quick-grid button'))persistVisibleScoresNow();
 },true);
-[subjectFilter,gradeFilter,classFilter].forEach(el=>el&&el.addEventListener('change',()=>persistVisibleScoresNow(),true));
 window.addEventListener('pagehide',persistVisibleScoresNow);
 window.addEventListener('beforeunload',persistVisibleScoresNow);
 function updateLevels(){const max=+$('#maxScoreSelect').value;let g=0,m=0,d=0,entered=0;$$('#scoreTable tbody tr').forEach(tr=>{const raw=tr.querySelector('select').value,pct=tr.querySelector('.pct-cell'),cell=tr.querySelector('.level-cell');if(raw===''){pct.textContent='—';cell.textContent='—';cell.className='level-cell';return}entered++;const score=+raw,p=Math.round(score/max*100),[txt,cls]=scoreLevel(score,max);pct.textContent=p+'%';cell.innerHTML=`<span class="level-chip ${cls}">${txt}</span>`;if(cls==='good')g++;else if(cls==='medium')m++;else d++});$('#sumCount').textContent=roster.length;$('#sumGood').textContent=g;$('#sumMedium').textContent=m;$('#sumDanger').textContent=d;if($('#kpiEntered'))$('#kpiEntered').textContent=entered;if($('#kpiMastery'))$('#kpiMastery').textContent=(entered?Math.round(g/entered*100):0)+'%';if($('#kpiBoost'))$('#kpiBoost').textContent=m;if($('#kpiPriority'))$('#kpiPriority').textContent=d;if($('#kpiOpenGaps'))$('#kpiOpenGaps').textContent=(m>0?1:0)+(d>0?1:0)}
 function autoSaveCurrentScores(){
   try{
-    if(!activeAssessmentId)return;
+    const list=ensureDefaultAssessment();
+    if(!activeAssessmentId&&list.length)activeAssessmentId=list[0].id;
+    if(!activeAssessmentId)return false;
     const ass=loadAssessments();
-    const a=ass.find(x=>x.id===activeAssessmentId);
-    if(!a||a.locked)return;
-    const rows=[];
-    $$('#scoreTable tbody tr').forEach(tr=>{
-      const name=tr.children[1].textContent.trim();
-      const raw=tr.querySelector('select').value;
-      if(raw!=='')rows.push({name,score:+raw});
-    });
-    const all=loadAllScores();
-    const key=assessmentKey(activeAssessmentId);
-    if(rows.length){
-      all[key]={rows,max:a.max||100,savedAt:new Date().toISOString(),autoSaved:true,subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,skills:a.skills||[]};
-    }else{
-      delete all[key];
-    }
-    saveAllScores(all);
+    const a=ass.find(x=>x.id===activeAssessmentId&&x.context===contextKey());
+    if(!a||a.locked)return false;
+    const ok=persistVisibleScoresNow();
     if(a.status==='not_started'){
       a.status='in_progress';
       saveAssessments(ass);
     }
-    const note=$('#savedNote');
-    if(note){
-      note.textContent=rows.length?`تم الحفظ تلقائيًا • ${rows.length} نتيجة`:'تم تحديث الحفظ التلقائي';
-      clearTimeout(window.__misbarAutoSaveNoteTimer);
-      window.__misbarAutoSaveNoteTimer=setTimeout(()=>{
-        if(note && !a.locked) note.textContent='';
-      },2200);
-    }
+    return ok;
   }catch(err){
     console.error('Auto-save scores failed',err);
-    const note=$('#savedNote');
-    if(note)note.textContent='تعذر الحفظ التلقائي — اضغطي حفظ واعتماد';
+    const note=$('#savedNote');if(note)note.textContent='تعذر الحفظ التلقائي — استخدمي حفظ واعتماد';
+    return false;
   }
 }
 
@@ -1353,81 +1354,46 @@ $('#manageRosterBtn').onclick=()=>{syncRosterFromClass();renderRosterManager();$
 $('#closeRosterDialog').onclick=()=>$('#rosterDialog').close();
 $('#addStudentBtn').onclick=()=>{const n=prompt('اكتب/اكتبي اسم الطالب/الطالبة:');if(n&&n.trim()){roster.push(n.trim());persistCurrentRoster();renderRosterManager();renderScores();updateOverviewStudentCount()}};
 $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استعادة القائمة الأصلية لهذه الشعبة؟'))return;const o=loadRosterOverrides();delete o[k];saveRosterOverrides(o);roster=rosterForCurrentClass();renderRosterManager();renderScores();updateOverviewStudentCount()};
-$('#saveScores').onclick=()=>{
-  try{
-    if(!activeAssessmentId)populateAssessmentSelect();
-    if(!activeAssessmentId){ activeAssessmentId='DIRECT_DIAGNOSTIC'; populateAssessmentSelect(); renderScores(); }
-    const rows=scoreRowsFromDom();
-    if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return;}
-    const first=$('#scoreTable select.score-select');
-    const key=first?.dataset.scoreKey || assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC');
-    let ass=loadAssessments(),idx=ass.findIndex(a=>a.id===activeAssessmentId),a=idx>=0?ass[idx]:null;
-    if(a?.locked){
-      if(!confirm('النتائج معتمدة. هل تريد/تريدين فتح الاختبار للتعديل؟'))return;
-      a.locked=false;a.status='in_progress';a.reopenedAt=new Date().toISOString();saveAssessments(ass);renderScores();renderAssessmentCards();return;
-    }
-    const total=roster.length;
-    if(!confirm(`سيتم حفظ واعتماد ${rows.length} نتيجة من أصل ${total}. ${rows.length<total?'الطلبة دون درجة سيبقون «بانتظار التشخيص».':''}\nهل تريد/تريدين المتابعة؟`))return;
-    const all=loadAllScores(),existing=safeObject(all[key]);
-    const max=Number(first?.dataset.max||a?.max||100)||100;
-    all[key]={...existing,rows,max,savedAt:new Date().toISOString(),approvedAt:new Date().toISOString(),autoSaved:false,
-      subject:first?.dataset.subject||subjectFilter.value,grade:first?.dataset.grade||gradeFilter.value,className:first?.dataset.className||classFilter.value,
-      skills:a?.skills||[],teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
-    saveAllScores(all);
-    localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
-    if(a){a.status=rows.length===total?'completed':'in_progress';a.locked=true;a.approvedAt=new Date().toISOString();saveAssessments(ass);}
-    const verify=loadAllScores()[key];
-    if(!verify||safeArray(verify.rows).length!==rows.length){alert('تعذر التحقق من حفظ النتائج. لم يتم اعتمادها.');return;}
-    $('#savedNote').textContent=`✓ تم الحفظ والاعتماد • ${rows.length} نتيجة`;
-    renderAssessmentCards();renderScores();
-  }catch(err){console.error('Save and approve failed',err);alert('حدث خطأ أثناء الحفظ. أعيدي المحاولة.');}
-};
-
-// V92: definitive save/approve handler. Runs in capture phase and does not depend on a pre-existing manual assessment.
-(function installV92ScoreSaveHandler(){
+// V93: single authoritative save/approve handler.
+(function installV93ScoreSaveHandler(){
   const btn=document.getElementById('saveScores');
   if(!btn)return;
+  btn.onclick=null;
   btn.addEventListener('click',function(ev){
     ev.preventDefault();
     ev.stopImmediatePropagation();
     try{
       const list=ensureDefaultAssessment();
-      if(!activeAssessmentId && list.length)activeAssessmentId=list[0].id;
+      if(!list.length)throw new Error('تعذر تجهيز الاختبار التشخيصي');
+      if(!activeAssessmentId||!list.some(a=>a.id===activeAssessmentId))activeAssessmentId=list[0].id;
       let ass=loadAssessments();
-      let idx=ass.findIndex(x=>x.id===activeAssessmentId && x.context===contextKey());
-      if(idx<0){
-        ensureDefaultAssessment();
-        ass=loadAssessments();
-        idx=ass.findIndex(x=>x.id===activeAssessmentId && x.context===contextKey());
-      }
-      const a=idx>=0?ass[idx]:null;
-      if(a?.locked){
+      let idx=ass.findIndex(a=>a.id===activeAssessmentId&&a.context===contextKey());
+      if(idx<0)throw new Error('سجل الاختبار غير موجود بعد إنشائه');
+      const a=ass[idx];
+      if(a.locked){
         if(!confirm('النتائج معتمدة. هل تريد/تريدين فتحها للتعديل؟'))return;
-        a.locked=false;a.status='in_progress';a.reopenedAt=new Date().toISOString();saveAssessments(ass);
-        renderScores();renderAssessmentCards();
-        return;
+        a.locked=false;a.status='in_progress';a.reopenedAt=new Date().toISOString();
+        saveAssessments(ass);renderScores();renderAssessmentCards();return;
       }
       const rows=scoreRowsFromDom();
       if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return;}
       const total=roster.length;
       if(!confirm(`سيتم حفظ واعتماد ${rows.length} نتيجة من أصل ${total}. ${rows.length<total?'الطلبة دون درجة سيبقون «بانتظار التشخيص».':''}\nهل تريد/تريدين المتابعة؟`))return;
-      const max=Number(document.getElementById('maxScoreSelect')?.value||a?.max||100)||100;
-      const key=assessmentKey(activeAssessmentId);
-      const all=loadAllScores(),existing=safeObject(all[key]);
+      const max=100,key=assessmentKey(a.id),all=loadAllScores(),existing=safeObject(all[key]);
       all[key]={...existing,rows,max,savedAt:new Date().toISOString(),approvedAt:new Date().toISOString(),autoSaved:false,
-        subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,skills:a?.skills||[],
+        subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,skills:safeArray(a.skills),
         teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
       saveAllScores(all);
       localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
-      if(a){a.status=rows.length===total?'completed':'in_progress';a.locked=true;a.approvedAt=new Date().toISOString();saveAssessments(ass);}
+      a.status=rows.length===total?'completed':'in_progress';a.locked=true;a.approvedAt=new Date().toISOString();ass[idx]=a;saveAssessments(ass);
       const verify=loadAllScores()[key];
-      if(!verify || safeArray(verify.rows).length!==rows.length)throw new Error('readback failed');
+      if(!verify||safeArray(verify.rows).length!==rows.length)throw new Error('فشل التحقق من النتائج بعد الحفظ');
       const note=document.getElementById('savedNote');if(note)note.textContent=`✓ تم الحفظ والاعتماد • ${rows.length} نتيجة`;
-      renderAssessmentCards();renderScores();
+      renderAssessmentCards();renderScores();updateOverviewStudentCount();
       alert(`تم حفظ واعتماد ${rows.length} نتيجة بنجاح.`);
     }catch(err){
-      console.error('V92 save/approve failed',err);
-      alert('حدث خطأ أثناء حفظ الدرجات. لم يتم حذف الدرجات المدخلة.');
+      console.error('V93 save/approve failed',err);
+      alert('تعذر حفظ واعتماد الدرجات: '+(err?.message||'خطأ غير معروف'));
     }
   },true);
 })();
@@ -1948,7 +1914,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 })();
 <\/script>
 <div id="misbarVersionBadge" style="position:fixed;left:8px;bottom:8px;z-index:999999;font:700 11px Arial;background:#fff;border:1px solid #b8cbd8;border-radius:8px;padding:4px 7px;color:#315b73">V92</div>
-</body></html>`;
+<div id="misbarBuildMarker" style="position:fixed;bottom:4px;left:6px;z-index:9999;font:10px Arial;color:#789;opacity:.55">V93</div></body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='misbar-zayed-results.xls';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
 }
@@ -2238,7 +2204,10 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 })();
 document.getElementById('uploadEvidenceBtn')?.addEventListener('click', function () {
   openEvidenceDialog('');
-});</script>
+});
+// V93 comprehensive QA marker
+window.MISBAR_BUILD='V93-COMPREHENSIVE-QA';
+</script>
 
 <dialog class="modal-dialog certificate-dialog" dir="rtl" id="certificateDialog">
 <form class="modal-card certificate-modal-card" id="certificateForm" method="dialog">
