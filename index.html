@@ -550,7 +550,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <div class="reg-summary" id="regSummary">لم يتم اختيار تكليفات بعد.</div>
 </div>
 </div>
-<div hidden="" id="loginFields"><label>البريد الإلكتروني<input autocomplete="username" id="loginEmail" placeholder="name@school.ae" type="email"/></label><label>كلمة المرور<input autocomplete="current-password" id="loginPassword" placeholder="••••••••" type="password"/></label><label style="display:flex;align-items:center;gap:9px;margin-top:12px;font-weight:700"><input checked="" id="rememberLogin" style="width:auto;margin:0" type="checkbox"/> تذكّر البريد والبقاء مسجّلًا على هذا الجهاز</label><div class="note" style="margin-top:4px">لا يتم حفظ كلمة المرور. عند تفعيل الخيار، يحتفظ مِسبار بالبريد والجلسة فقط على هذا الجهاز. استخدم «خروج» على الأجهزة المشتركة.</div><div class="note" id="loginStatus" style="margin-top:8px;color:#8a3b12"></div><button class="btn primary full" id="loginSubmit" style="margin-top:12px" type="button">دخول المنصة</button></div>
+<div hidden="" id="loginFields"><label>البريد الإلكتروني<input autocomplete="username" id="loginEmail" placeholder="name@school.ae" type="email"/></label><label>كلمة المرور<input autocomplete="current-password" id="loginPassword" placeholder="••••••••" type="password"/></label><label style="display:flex;align-items:center;gap:9px;margin-top:12px;font-weight:700"><input checked="" id="rememberLogin" style="width:auto;margin:0" type="checkbox"/> تذكّر البريد والبقاء مسجّلًا على هذا الجهاز</label><div class="note" style="margin-top:4px">لا يتم حفظ كلمة المرور. عند تفعيل الخيار، يحتفظ مِسبار بالبريد والجلسة فقط على هذا الجهاز. استخدم «خروج» على الأجهزة المشتركة.</div><div class="note" id="loginStatus" style="margin-top:8px;color:#8a3b12"></div><button class="btn primary full" id="loginSubmit" style="margin-top:12px" type="button">دخول المنصة</button><button class="btn full" id="adminDirectLogin" style="margin-top:8px" type="button">دخول إدارة المدرسة</button></div>
 <button class="btn primary full" id="authContinue" type="button">متابعة</button><p class="note">حساب المعلم/المعلمة في هذه النسخة محفوظ على الجهاز الحالي. لا تُحفظ كلمة المرور تلقائيًا. المزامنة بين أجهزة متعددة تتطلب تفعيل قاعدة البيانات السحابية.</p></form></dialog>
 <dialog id="subjectDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('subjectDialog').close()">×</button><span class="eyebrow">المواد المسندة لك</span><h3>اختيار المادة</h3><p class="subject-dialog-note">تظهر للمعلم/المعلمة المواد المسجلة في الحساب فقط، بينما تظهر للقيادة جميع المواد الست.</p><div class="subject-choice-grid" id="subjectChoiceGrid"></div></div></dialog>
 <dialog id="assessmentDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('assessmentDialog').close()">×</button><span class="eyebrow">إضافة اختبار تشخيصي</span><h3>إعداد الاختبار</h3><div class="modal-grid"><label>نوع الاختبار<select id="newAssessmentType"><option>التشخيص الأول</option><option>التشخيص الثاني</option><option>تشخيص مهارة</option><option>إعادة القياس</option></select></label><label>الدرجة النهائية <small style="display:block;color:#6b7f8f;font-weight:500">جميع المواد من 100</small><select disabled="" id="newAssessmentMax"><option value="100">100</option></select></label><label>المادة<input disabled="" id="newAssessmentSubject"/></label><label>الشعبة<input disabled="" id="newAssessmentClass"/></label><label class="full-span">التاريخ<input id="newAssessmentDate" type="date"/></label><div class="full-span"><span class="field-label">المهارات المستهدفة</span><div class="choice-grid" id="assessmentSkillChoices"></div><small class="hint">اختاري مهارة واحدة أو أكثر. يمكن تعديلها قبل اعتماد النتائج.</small></div></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('assessmentDialog').close()">إلغاء</button><button class="btn primary" id="confirmAssessment" type="button" onclick="return window.createDiagnosticAssessmentNow(event)">إنشاء الاختبار</button></div></div></dialog>
@@ -729,6 +729,25 @@ async function performLogin(e){
   }
   try{ enterApp(user); }catch(err){ console.error(err); if(status) status.textContent='تعذر فتح المنصة. أعد تحميل الصفحة وحاول مرة أخرى.'; }
 }
+// V83: دخول الإدارة المباشر لا يعتمد على وجود حساب محلي مسبقًا.
+// الرمز لا يُحفظ كنص صريح؛ تتم مقارنة بصمته فقط، ثم تحفظ الجلسة على جهاز الإدارة إن اختير التذكر.
+async function directAdminLogin(){
+  const code=window.prompt('أدخل رمز إدارة المدرسة:');
+  if(code===null) return;
+  const status=$('#loginStatus'); if(status) status.textContent='';
+  const codeHash=await misbarPasswordHash(code);
+  if(codeHash!=='1790afa338bbfe01cdd10b82d5e227bea8aabcafeded2509fbcee8538ccf73d3'){
+    if(status) status.textContent='رمز الإدارة غير صحيح.';
+    return;
+  }
+  const user={name:'إدارة المدرسة',email:'principal@zayed-misbar.local',role:'مديرة المدرسة',subject:'',subjects:[],grades:[],classes:[],status:'active'};
+  try{
+    localStorage.removeItem(SIGNED_OUT_KEY);
+    if($('#rememberLogin')?.checked) savePersistentSession(user);
+  }catch(err){}
+  enterApp(user);
+}
+$('#adminDirectLogin').onclick=directAdminLogin;
 async function handleAuthSubmit(e){
   if(e) e.preventDefault();
   if(authMode==='signup'){
