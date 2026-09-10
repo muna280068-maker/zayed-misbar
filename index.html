@@ -329,6 +329,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 @media(max-width:1050px){.remeasure-form-grid-v98{grid-template-columns:repeat(2,minmax(0,1fr))}.rm-notes-v98{grid-column:1/-1}.remeasure-help-v98{grid-column:1/-1;grid-row:auto}}
 @media(max-width:650px){.remeasure-form-grid-v98,.remeasure-summary-v98,.remeasure-progress-cards-v98{grid-template-columns:1fr}.remeasure-tab-v98{min-width:0;flex:1}.rm-notes-v98,.remeasure-help-v98{grid-column:auto}.remeasure-actions-v98 .btn{width:100%}}
 </style>
+<!-- V99: Weekly Quiz score dropdown follows assessment max; values above max are blocked. -->
 </head>
 <body>
 <!-- ZAYED MISBAR V85 LEADERSHIP SIX SUBJECTS HARD FIX: logout/session + 6 subjects + visible visitor QR -->
@@ -1245,7 +1246,9 @@ function saveSingleScoreImmediate(sel){
     const draft=loadScoreDraft(key);Object.entries(draft).forEach(([n,v])=>map.set(n,+v));
     if(sel.value==='')map.delete(name);else map.set(name,+sel.value);
     const rows=[...map.entries()].filter(([,score])=>Number.isFinite(score)).map(([name,score])=>({name,score}));
-    all[key]={...existing,rows,max:100,savedAt:new Date().toISOString(),autoSaved:true,
+    const max=Math.max(1,Number(a.max)||100);
+    if(sel.value!=='' && (+sel.value<0 || +sel.value>max)){sel.value='';throw new Error('score out of range');}
+    all[key]={...existing,rows,max,savedAt:new Date().toISOString(),autoSaved:true,
       subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,
       teacherEmail:currentUser.email||'',teacherName:currentUser.name||'',skills:safeArray(a.skills)};
     saveAllScores(all);
@@ -1262,16 +1265,18 @@ function renderScores(){
   if(!list.length){tb.innerHTML='<tr><td colspan="5">تعذر تجهيز الاختبار التشخيصي.</td></tr>';return;}
   if(!activeAssessmentId||!list.some(a=>a.id===activeAssessmentId))activeAssessmentId=list[0].id;
   const a=list.find(x=>x.id===activeAssessmentId)||list[0];
-  const max=100,all=loadAllScores(),locked=!!a.locked,key=assessmentKey(a.id),saved=all[key],draft=loadScoreDraft(key);
+  const max=Math.max(1,Number(a.max)||100),all=loadAllScores(),locked=!!a.locked,key=assessmentKey(a.id),saved=all[key],draft=loadScoreDraft(key);
   const savedMap=saved?Object.fromEntries(safeArray(saved.rows).map(r=>[r.name,r.score])):{};Object.assign(savedMap,draft);
   tb.innerHTML='';
   roster.forEach((name,i)=>{
-    const val=savedMap[name]??'';
-    const opts=['<option value="">—</option>'].concat(Array.from({length:101},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');
+    let val=savedMap[name]??'';
+    if(val!=='' && (+val<0 || +val>max)) val='';
+    const maxInt=Math.max(1,Math.floor(max));
+    const opts=['<option value="">—</option>'].concat(Array.from({length:maxInt+1},(_,x)=>`<option value="${x}" ${String(val)===String(x)?'selected':''}>${x}</option>`)).join('');
     const tr=document.createElement('tr');
     tr.innerHTML=`<td class="student-index">${i+1}</td><td><button type="button" class="student-name-link" data-student="${name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${name}</button></td><td><select class="score-select" ${locked?'disabled':''}>${opts}</select></td><td class="pct-cell">—</td><td class="level-cell">—</td>`;
     const sel=tr.querySelector('.score-select');
-    sel.dataset.scoreKey=key;sel.dataset.studentName=name;sel.dataset.max='100';sel.dataset.subject=subjectFilter.value;sel.dataset.grade=gradeFilter.value;sel.dataset.className=classFilter.value;
+    sel.dataset.scoreKey=key;sel.dataset.studentName=name;sel.dataset.max=String(max);sel.dataset.subject=subjectFilter.value;sel.dataset.grade=gradeFilter.value;sel.dataset.className=classFilter.value;
     tb.appendChild(tr);
   });
   $$('#scoreTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));
@@ -1429,7 +1434,8 @@ $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استع
       if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return;}
       const total=roster.length;
       if(!confirm(`سيتم حفظ واعتماد ${rows.length} نتيجة من أصل ${total}. ${rows.length<total?'الطلبة دون درجة سيبقون «بانتظار التشخيص».':''}\nهل تريد/تريدين المتابعة؟`))return;
-      const max=100,key=assessmentKey(a.id),all=loadAllScores(),existing=safeObject(all[key]);
+      const max=Math.max(1,Number(a.max)||100),key=assessmentKey(a.id),all=loadAllScores(),existing=safeObject(all[key]);
+      if(rows.some(r=>!Number.isFinite(+r.score)||+r.score<0||+r.score>max)){alert(`توجد درجة خارج النطاق 0–${max}. صححيها قبل الحفظ.`);return;}
       all[key]={...existing,rows,max,savedAt:new Date().toISOString(),approvedAt:new Date().toISOString(),autoSaved:false,
         subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,skills:safeArray(a.skills),
         teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
@@ -2747,7 +2753,7 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
   window.startRemeasure=function(interventionId){showView('remeasure'); populateRM(); try{const item=loadInterventions().find(i=>String(i.id)===String(interventionId));if(item&&item.students?.length){q('#rmStudentV98').value=item.students[0];const a=(item.actions||[item.action]).filter(Boolean)[0]; if(a){if(![...q('#rmSkillV98').options].some(o=>o.value===a)){q('#rmSkillV98').add(new Option(a,a));}q('#rmSkillV98').value=a;}}}catch(e){} tab('entry');};
   function install(){qa('.remeasure-tab-v98').forEach(b=>b.onclick=()=>tab(b.dataset.rtab)); q('#rmSaveV98')&&(q('#rmSaveV98').onclick=saveOne); q('#rmCancelV98')&&(q('#rmCancelV98').onclick=()=>{q('#rmScoreV98').value='';q('#rmNotesV98').value='';updateLevel();}); q('#rmScoreV98')?.addEventListener('input',updateLevel); q('#rmMaxV98')?.addEventListener('input',updateLevel); [q('#gradeFilter'),q('#classFilter'),q('#subjectFilter')].filter(Boolean).forEach(el=>el.addEventListener('change',()=>setTimeout(()=>{populateRM();renderRMTable()},0))); populateRM(); renderRMTable();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
-  window.MISBAR_BUILD='V98-REMEASURE-DESIGNED';
+  window.MISBAR_BUILD='V99-WEEKLY-SCORE-LIMIT-FIXED';
 })();
 </script>
 </body>
