@@ -1766,66 +1766,39 @@ function renderReports(){
   if(f.type==='full'||f.type==='evidence'){blocks.push(`<section class="report-section"><h4>الأدلة والشواهد</h4><table class="report-mini-table"><thead><tr><th>النوع</th><th>المادة</th><th>الشعبة</th><th>الملف</th><th>الإتاحة</th></tr></thead><tbody>${ev.map(e=>`<tr><td>${e.type||''}</td><td>${e.subject||''}</td><td>${e.className||''}</td><td>${e.fileName||''}</td><td>${e.privacy||'خاص'}</td></tr>`).join('')||'<tr><td colspan="5">لا توجد أدلة</td></tr>'}</tbody></table></section>`)}
   $('#reportPreview').innerHTML=blocks.join('');
 }
-function exportFullExcel(){
-  const rows=filteredDiagnosticRows(),ass=reportAssessments(),ints=reportInterventions(),ev=reportEvidence(),weekly=weeklyRowsForReport(); const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  const tbl=(title,heads,body)=>`<h2>${title}</h2><table border="1"><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${body||`<tr><td colspan="${heads.length}">لا توجد بيانات</td></tr>`}</tbody></table><br>`;
-  let body='';body+=tbl('ملخص النتائج',['المادة','الحلقة','الصف','الشعبة','الطالب/الطالبة','النسبة'],rows.map(r=>`<tr><td>${esc(r.subject)}</td><td>${esc(cycleLabel(r.cycle))}</td><td>${esc(r.grade)}</td><td>${esc(r.className)}</td><td>${esc(r.name)}</td><td>${r.pct}%</td></tr>`).join(''));body+=tbl('المهارات',['المادة','الشعبة','المهارة','الحالة'],ass.flatMap(a=>safeArray(a.skills).map(s=>`<tr><td>${esc(a.subject)}</td><td>${esc(a.className)}</td><td>${esc(s)}</td><td>${esc(a.status||'')}</td></tr>`)).join(''));body+=tbl('الإجراءات',['المادة','الشعبة','الإجراء','الطلبة'],ints.map(i=>`<tr><td>${esc(i.subject)}</td><td>${esc(i.className)}</td><td>${esc(i.action||safeArray(i.actions).join('، ')||'')}</td><td>${esc(safeArray(i.students).join('، '))}</td></tr>`).join(''));body+=tbl('Quiz الأسبوعي',['المادة','الشعبة','الطالب/الطالبة','Quiz','الدرجة','النسبة'],weekly.map(w=>`<tr><td>${esc(w.subject)}</td><td>${esc(w.className)}</td><td>${esc(w.name)}</td><td>${esc(w.quiz)}</td><td>${w.score}/${w.max}</td><td>${w.pct}%</td></tr>`).join(''));body+=tbl('الأدلة والشواهد',['النوع','المادة','الشعبة','الملف','الإتاحة'],ev.map(e=>`<tr><td>${esc(e.type)}</td><td>${esc(e.subject)}</td><td>${esc(e.className)}</td><td>${esc(e.fileName)}</td><td>${esc(e.privacy)}</td></tr>`).join(''));
-  const html=`<html dir="rtl"><head><meta charset="UTF-8">
-<style id="v49-approved-landing-fix">
-/* V49 — restore the approved Saif landing image as the sole public home screen.
-   Interactive hotspots remain real HTML buttons; the image is never duplicated by live text. */
-body:not(.app-mode){background:#eef6fb;overflow-x:hidden}
-body:not(.app-mode) .public-auth-entry{display:none!important}
-body:not(.app-mode) #publicSite>.hero,
-body:not(.app-mode) #publicSite>.section,
-body:not(.app-mode) #publicSite>footer{display:none!important}
-body:not(.app-mode) .approved-cover{
-  position:relative!important;
-  width:min(100%,1536px)!important;
-  min-height:0!important;
-  margin:0 auto!important;
-  padding:0!important;
-  display:block!important;
-  overflow:hidden!important;
-  background:#eef6fb!important;
-  border:0!important;
-}
-body:not(.app-mode) .approved-cover img{
-  display:block!important;
-  width:100%!important;
-  height:auto!important;
-  max-width:none!important;
-  max-height:none!important;
-  object-fit:contain!important;
-  object-position:center top!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-  filter:contrast(1.07) saturate(1.04) brightness(1.01)!important;
-}
-body:not(.app-mode) main{padding:0!important;margin:0!important}
-body:not(.app-mode) .cover-hotspot{position:absolute!important;z-index:8!important}
-/* hotspot positions matched to the approved 1280×853 artwork */
-body:not(.app-mode) .cover-signup{top:2.0%!important;left:22.1%!important;width:10.0%!important;height:5.3%!important}
-body:not(.app-mode) .cover-login{top:2.0%!important;left:9.0%!important;width:12.8%!important;height:5.3%!important}
-body:not(.app-mode) .cover-hero-signup{top:38.0%!important;left:35.2%!important;width:14.5%!important;height:5.4%!important}
-body:not(.app-mode) .cover-hero-login{top:38.0%!important;left:50.2%!important;width:15.7%!important;height:5.4%!important}
-body:not(.app-mode) .cover-saif{top:40.7%!important;right:18.1%!important;width:10.6%!important;height:6.0%!important}
-body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width:8.0%!important;height:5.2%!important}
-@media(max-width:760px){
- body:not(.app-mode) .approved-cover{width:100%!important}
- body:not(.app-mode) .approved-cover img{width:100%!important}
-}
-</style>
-</head><body>${body}
-<script id="v60-hardening">
-(function(){
-  try{localStorage.removeItem('misbarZayedSavedPasswordV1')}catch(e){}
-  window.addEventListener('DOMContentLoaded',()=>{
-    const p=document.getElementById('loginPassword'); if(p) p.value='';
+function exportDiagnosticRowsForTransfer(){
+  // V86: teacher transfer must not depend on the visible report filters.
+  // Read every saved diagnostic result belonging to the signed-in teacher,
+  // including older/orphaned diagnostic saves whose assessment card was later removed.
+  if(!isTeacher())return filteredDiagnosticRows().map(r=>({...r,score:r.pct,max:100}));
+  const scoreStore=loadAllScores(), assessments=loadAssessments(), byId=Object.fromEntries(assessments.map(a=>[a.id,a]));
+  const subs=safeArray(currentUser.subjects), cls=safeArray(currentUser.classes), rows=[];
+  Object.entries(scoreStore).forEach(([key,sv])=>{
+    if(sv?.imported)return;
+    const parts=key.split('|'), aid=parts[parts.length-1], a=byId[aid];
+    if(a&&(a.weekly||String(a.type||'').startsWith('اختبار قصير')||a.type==='إعادة القياس'))return;
+    const subject=sv.subject||parts[1]||'', grade=String(sv.grade||parts[2]||''), className=sv.className||parts[3]||'', max=Number(sv.max||a?.max||100)||100;
+    if(subs.length&&!subs.includes(subject))return;
+    if(cls.length&&!cls.includes(className))return;
+    safeArray(sv.rows).forEach(r=>{
+      const score=Number(r.score); if(!r.name||!Number.isFinite(score))return;
+      rows.push({subject,grade,className,cycle:cycleFromGrade(grade),name:r.name,score,max,pct:Math.round(score/max*100)});
+    });
   });
-})();
-<\/script>
-</body></html>`,blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;const who=(currentUser?.name||currentUser?.email||'مستخدم').replace(/[\\/:*?"<>|]/g,'-'); const scope=isTeacher()?'المعلم-'+who:'الإدارة'; a.download='مسبار-زايد-'+scope+'-'+new Date().toISOString().slice(0,10)+'.xls';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
+  return rows;
+}
+function exportFullExcel(){
+  const rows=exportDiagnosticRowsForTransfer(),ass=reportAssessments(),ints=reportInterventions(),ev=reportEvidence(),weekly=weeklyRowsForReport(); const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const tbl=(title,heads,body,id='')=>`<h2>${title}</h2><table ${id?`id="${id}"`:''} border="1"><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${body||`<tr><td colspan="${heads.length}">لا توجد بيانات</td></tr>`}</tbody></table><br>`;
+  const teacherName=esc(currentUser?.name||currentUser?.email||'مستخدم');
+  let body=`<table id="misbarExportMeta" border="1"><tbody><tr><th>نوع الملف</th><td>MISBAR_TEACHER_TRANSFER_V86</td></tr><tr><th>المعلم/المعلمة</th><td>${teacherName}</td></tr><tr><th>تاريخ التصدير</th><td>${new Date().toISOString()}</td></tr></tbody></table><br>`;
+  body+=tbl('ملخص النتائج',['المعلم/المعلمة','المادة','الحلقة','الصف','الشعبة','الطالب/الطالبة','الدرجة','الدرجة النهائية','النسبة'],rows.map(r=>`<tr><td>${teacherName}</td><td>${esc(r.subject)}</td><td>${esc(cycleLabel(r.cycle))}</td><td>${esc(r.grade)}</td><td>${esc(r.className)}</td><td>${esc(r.name)}</td><td>${Number.isFinite(Number(r.score))?r.score:r.pct}</td><td>${Number.isFinite(Number(r.max))?r.max:100}</td><td>${r.pct}%</td></tr>`).join(''),'misbarDiagnosticResults');
+  body+=tbl('المهارات',['المادة','الشعبة','المهارة','الحالة'],ass.flatMap(a=>safeArray(a.skills).map(s=>`<tr><td>${esc(a.subject)}</td><td>${esc(a.className)}</td><td>${esc(s)}</td><td>${esc(a.status||'')}</td></tr>`)).join(''));
+  body+=tbl('الإجراءات',['المادة','الشعبة','الإجراء','الطلبة'],ints.map(i=>`<tr><td>${esc(i.subject)}</td><td>${esc(i.className)}</td><td>${esc(i.action||safeArray(i.actions).join('، ')||'')}</td><td>${esc(safeArray(i.students).join('، '))}</td></tr>`).join(''));
+  body+=tbl('Quiz الأسبوعي',['المادة','الشعبة','الطالب/الطالبة','Quiz','الدرجة','النسبة'],weekly.map(w=>`<tr><td>${esc(w.subject)}</td><td>${esc(w.className)}</td><td>${esc(w.name)}</td><td>${esc(w.quiz)}</td><td>${w.score}/${w.max}</td><td>${w.pct}%</td></tr>`).join(''));
+  body+=tbl('الأدلة والشواهد',['النوع','المادة','الشعبة','الملف','الإتاحة'],ev.map(e=>`<tr><td>${esc(e.type)}</td><td>${esc(e.subject)}</td><td>${esc(e.className)}</td><td>${esc(e.fileName)}</td><td>${esc(e.privacy)}</td></tr>`).join(''));
+  const html=`<html dir="rtl"><head><meta charset="UTF-8"><title>مسبار زايد - المعلم - ${teacherName}</title></head><body>${body}</body></html>`,blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;const who=(currentUser?.name||currentUser?.email||'مستخدم').replace(/[\\/:*?"<>|]/g,'-'); const scope=isTeacher()?'المعلم-'+who:'الإدارة'; a.download='مسبار-زايد-'+scope+'-'+new Date().toISOString().slice(0,10)+'.xls';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
 }
 // V80: simple offline management import of teacher-exported Excel (.xls HTML tables)
 (function(){
@@ -1836,10 +1809,13 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
   function parsePct(t){const n=parseFloat(clean(t).replace('%',''));return Number.isFinite(n)?Math.max(0,Math.min(100,n)):null}
   function gradeFromClass(c){const m=String(c||'').match(/(\d{1,2})\s*G/i);return m?m[1]:''}
   function teacherLabel(doc,file){
+    const meta=[...doc.querySelectorAll('#misbarExportMeta tr')].find(tr=>clean(tr.cells?.[0]?.textContent)==='المعلم/المعلمة');
+    if(meta?.cells?.[1])return clean(meta.cells[1].textContent);
     const title=clean(doc.querySelector('title')?.textContent||'');
-    const m=(title+' '+file.name).match(/المعلم[- ـ:]?([^\.]+)/); return m?clean(m[1]):clean(file.name.replace(/\.(xls|html?)$/i,''));
+    const m=(title+' '+file.name).match(/المعلم\s*[- ـ:]\s*([^\.]+)/); return m?clean(m[1]):clean(file.name.replace(/\.(xls|html?)$/i,''));
   }
   function findResultsTable(doc){
+    const direct=doc.querySelector('#misbarDiagnosticResults'); if(direct)return direct;
     const hs=[...doc.querySelectorAll('h1,h2,h3')];
     const h=hs.find(x=>clean(x.textContent).includes('ملخص النتائج'));
     if(h){let n=h.nextElementSibling;while(n&&n.tagName!=='TABLE')n=n.nextElementSibling;if(n)return n}
@@ -1848,22 +1824,35 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
   async function importOne(file){
     const text=await file.text(), doc=new DOMParser().parseFromString(text,'text/html'), table=findResultsTable(doc);
     if(!table)throw new Error('لم أجد جدول ملخص النتائج');
-    const teacher=teacherLabel(doc,file), rows=[...table.querySelectorAll('tbody tr')];
-    const grouped={}; let count=0;
+    const fallbackTeacher=teacherLabel(doc,file);
+    const headers=[...table.querySelectorAll('thead th')].map(th=>clean(th.textContent));
+    const col=name=>headers.indexOf(name);
+    const hasV86=col('الطالب/الطالبة')>=0&&col('النسبة')>=0;
+    const rows=[...table.querySelectorAll('tbody tr')], grouped={}; let count=0;
     rows.forEach(tr=>{
       const c=[...tr.querySelectorAll('td')].map(td=>clean(td.textContent));
-      if(c.length<6||c[0]==='لا توجد بيانات')return;
-      const [subject,cycle,gradeRaw,className,name,pctRaw]=c, pct=parsePct(pctRaw), grade=clean(gradeRaw)||gradeFromClass(className);
+      if(!c.length||c.some(x=>x==='لا توجد بيانات'))return;
+      let teacher=fallbackTeacher,subject='',gradeRaw='',className='',name='',pct=null,score=null,max=100;
+      if(hasV86){
+        const at=n=>{const i=col(n);return i>=0?c[i]:''};
+        teacher=at('المعلم/المعلمة')||fallbackTeacher; subject=at('المادة'); gradeRaw=at('الصف'); className=at('الشعبة'); name=at('الطالب/الطالبة'); pct=parsePct(at('النسبة'));
+        const s=parseFloat(at('الدرجة')), m=parseFloat(at('الدرجة النهائية')); if(Number.isFinite(s))score=s;if(Number.isFinite(m)&&m>0)max=m;
+      }else if(c.length>=6){
+        // Compatibility with V80–V85 exports: مادة، حلقة، صف، شعبة، اسم، نسبة
+        [subject,,gradeRaw,className,name]=c; pct=parsePct(c[5]); score=pct; max=100;
+      }
+      const grade=clean(gradeRaw)||gradeFromClass(className);
       if(!subject||!className||!name||pct===null)return;
       const gkey=[teacher,subject,grade,className].join('|');
-      (grouped[gkey]??={teacher,subject,grade,className,rows:[]}).rows.push({name,score:pct}); count++;
+      const normalizedScore=(Number.isFinite(score)&&max>0)?score:pct;
+      (grouped[gkey]??={teacher,subject,grade,className,max,rows:[]}).rows.push({name,score:normalizedScore}); count++;
     });
     const store=loadAllScores();
     Object.values(grouped).forEach(g=>{
       const key=['ADMINIMPORT',g.teacher,g.subject,g.grade,g.className].join('|');
-      store[key]={subject:g.subject,grade:g.grade,className:g.className,max:100,imported:true,teacher:g.teacher,sourceFile:file.name,importedAt:Date.now(),rows:g.rows};
+      store[key]={subject:g.subject,grade:g.grade,className:g.className,max:g.max||100,imported:true,teacher:g.teacher,sourceFile:file.name,importedAt:Date.now(),rows:g.rows};
     });
-    saveAllScores(store); return {file:file.name,teacher,count,groups:Object.keys(grouped).length};
+    saveAllScores(store); return {file:file.name,teacher:fallbackTeacher,count,groups:Object.keys(grouped).length};
   }
   input.addEventListener('change',async()=>{
     const files=[...input.files]; if(!files.length)return;
