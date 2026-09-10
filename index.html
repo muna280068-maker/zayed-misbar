@@ -705,6 +705,14 @@ async function performLogin(e){
       users[legacyIndex]={...users[legacyIndex],passwordHash}; delete users[legacyIndex].password; saveUsers(users); user=users[legacyIndex];
     }
   }
+  // V82: حساب إدارة محلي جاهز - إصلاح بصمة كلمة المرور يعمل على أي جهاز بدون سحابة.
+  // لا تُخزن كلمة المرور كنص صريح؛ تتم مطابقة بصمتها فقط ثم يُحفظ الحساب محليًا على جهاز الإدارة.
+  if(!user && email==='principal@zayed-misbar.local' && passwordHash==='d432b0ad178e4bc6c6a2bb914215289ec20716edcedb1b0a22bbd84f77c83a68'){
+    user={name:'إدارة المدرسة',email:'principal@zayed-misbar.local',passwordHash,role:'مديرة المدرسة',subject:'',subjects:[],grades:[],classes:[],status:'active'};
+    const existing=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email);
+    if(existing>=0) users[existing]=user; else users.push(user);
+    saveUsers(users);
+  }
   if(!user){ if(status) status.textContent='بيانات الدخول غير صحيحة أو الحساب غير موجود على هذا الجهاز. إذا كان هذا أول استخدام، أنشئ حسابًا جديدًا.'; return; }
   try{localStorage.removeItem(SIGNED_OUT_KEY)}catch(err){}
   if($('#rememberLogin')?.checked){
