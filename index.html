@@ -689,6 +689,10 @@ async function performLogin(e){
   const status=$('#loginStatus');
   if(status) status.textContent='';
   if(!email||!password){ if(status) status.textContent='أدخل البريد الإلكتروني وكلمة المرور.'; return; }
+  // V73: حساب المديرة المسجل في Firebase يجب ألا يمر عبر الحساب المحلي القديم مطلقًا.
+  if(email==='muna.zebaiboh@moe.sch.ae' && typeof window.misbarFirebaseLogin==='function'){
+    return window.misbarFirebaseLogin(email,password);
+  }
   const users=loadUsers();
   const passwordHash=await misbarPasswordHash(password);
   let user=users.find(u=>String(u.email||'').trim().toLowerCase()===email && String(u.passwordHash||'')===passwordHash);
@@ -2334,7 +2338,7 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
 })();
 </script>
 
-<script type="module" id="firebase-auth-role-sync-v72">
+<script type="module" id="firebase-auth-role-sync-v73">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
@@ -2403,9 +2407,9 @@ async function applyFirebaseRole(fbUser,{openApp=true}={}){
   return user;
 }
 
-async function firebaseLogin(){
-  const email=(document.getElementById('loginEmail')?.value||'').trim().toLowerCase();
-  const password=document.getElementById('loginPassword')?.value||'';
+async function firebaseLogin(forcedEmail,forcedPassword){
+  const email=String(forcedEmail ?? document.getElementById('loginEmail')?.value ?? '').trim().toLowerCase();
+  const password=String(forcedPassword ?? document.getElementById('loginPassword')?.value ?? '');
   const status=document.getElementById('loginStatus');
   if(status){ status.style.color=''; status.textContent=''; }
   if(!email || !password){ if(status) status.textContent='أدخل البريد الإلكتروني وكلمة المرور.'; return; }
@@ -2421,9 +2425,12 @@ async function firebaseLogin(){
     if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found')) msg='البريد الإلكتروني أو كلمة المرور غير صحيحة في حساب Firebase.';
     else if(code.includes('too-many-requests')) msg='تمت محاولات كثيرة. انتظري قليلًا ثم حاولي مرة أخرى.';
     else if(String(err?.message||'').includes('missing-profile')) msg='تم التعرف على الحساب، لكن صلاحية الحساب غير موجودة في قاعدة البيانات.';
-    if(status) status.textContent=msg;
+    if(status) status.textContent=msg + (code ? ' ('+code+')' : '');
   }
 }
+
+// اجعل مسار Firebase متاحًا لمسار تسجيل الدخول الأساسي أيضًا.
+window.misbarFirebaseLogin=firebaseLogin;
 
 async function firebaseReset(){
   const email=(document.getElementById('recoveryEmail')?.value || document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
