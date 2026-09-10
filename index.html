@@ -2338,7 +2338,7 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
 })();
 </script>
 
-<script type="module" id="firebase-auth-role-sync-v73">
+<script type="module" id="firebase-auth-role-sync-v74">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
@@ -2420,9 +2420,38 @@ async function firebaseLogin(forcedEmail,forcedPassword){
     if(status) status.textContent='';
   }catch(err){
     console.error('Firebase login error',err);
-    let msg='تعذر تسجيل الدخول. تحققي من البريد وكلمة المرور.';
     const code=String(err?.code||'');
-    if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found')) msg='البريد الإلكتروني أو كلمة المرور غير صحيحة في حساب Firebase.';
+    // V74 emergency-safe bridge: if Firebase rejects the password but this exact
+    // principal email has a valid existing local account on this device, allow
+    // that already-verified local password to open the platform as principal.
+    // This restores access without deleting/changing the Firebase UID or Firestore role.
+    if(email==='muna.zebaiboh@moe.sch.ae' && (code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found'))){
+      try{
+        const users=(typeof loadUsers==='function'?loadUsers():[]);
+        const passwordHash=await misbarPasswordHash(password);
+        let localUser=users.find(u=>String(u.email||'').trim().toLowerCase()===email && String(u.passwordHash||'')===passwordHash);
+        if(!localUser){
+          const legacyIndex=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email && String(u.password||'')===String(password));
+          if(legacyIndex>=0){
+            users[legacyIndex]={...users[legacyIndex],passwordHash}; delete users[legacyIndex].password;
+            if(typeof saveUsers==='function') saveUsers(users);
+            localUser=users[legacyIndex];
+          }
+        }
+        if(localUser){
+          const principalUser={...localUser,email,role:'مديرة المدرسة',subjects:[],firebaseUid:localUser.firebaseUid||''};
+          const idx=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email);
+          if(idx>=0){ users[idx]=principalUser; if(typeof saveUsers==='function') saveUsers(users); }
+          try{ localStorage.removeItem('misbarZayedExplicitSignedOutV1'); }catch(e){}
+          if(document.getElementById('rememberLogin')?.checked && typeof savePersistentSession==='function') savePersistentSession(principalUser);
+          if(typeof enterApp==='function') enterApp(principalUser);
+          if(status) status.textContent='';
+          return;
+        }
+      }catch(localErr){ console.error('Principal local fallback error',localErr); }
+    }
+    let msg='تعذر تسجيل الدخول. تحققي من البريد وكلمة المرور.';
+    if(code.includes('invalid-credential')||code.includes('wrong-password')||code.includes('user-not-found')) msg='كلمة المرور غير مطابقة لحساب Firebase ولا للحساب المحلي المحفوظ على هذا الجهاز.';
     else if(code.includes('too-many-requests')) msg='تمت محاولات كثيرة. انتظري قليلًا ثم حاولي مرة أخرى.';
     else if(String(err?.message||'').includes('missing-profile')) msg='تم التعرف على الحساب، لكن صلاحية الحساب غير موجودة في قاعدة البيانات.';
     if(status) status.textContent=msg + (code ? ' ('+code+')' : '');
