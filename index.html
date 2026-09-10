@@ -313,7 +313,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <!-- V80: management Excel import -->
 </head>
 <body>
-<!-- ZAYED MISBAR V84 SIX SUBJECTS FIX: logout/session + 6 subjects + visible visitor QR -->
+<!-- ZAYED MISBAR V85 LEADERSHIP SIX SUBJECTS HARD FIX: logout/session + 6 subjects + visible visitor QR -->
 <header class="topbar" id="appTopbar" style="display:none">
 <div class="brand">
 <div class="brand-mark">م</div>
@@ -742,7 +742,7 @@ async function directAdminLogin(){
     if(status) status.textContent='رمز الإدارة غير صحيح.';
     return;
   }
-  const user={name:'إدارة المدرسة',email:'principal@zayed-misbar.local',role:'مديرة المدرسة',subject:'',subjects:[],grades:[],classes:[],status:'active'};
+  const user={name:'إدارة المدرسة',email:'principal@zayed-misbar.local',role:'مديرة المدرسة',subject:'العلوم',subjects:['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'],grades:[],classes:[],status:'active'};
   try{
     localStorage.removeItem(SIGNED_OUT_KEY);
     if($('#rememberLogin')?.checked) savePersistentSession(user);
@@ -880,7 +880,7 @@ window.addEventListener('popstate',()=>{if(!document.body.classList.contains('ap
 const subjectFilter=$('#subjectFilter'), gradeFilter=$('#gradeFilter'), classFilter=$('#classFilter');
 const subjectPopupBtn=$('#subjectPopupBtn'), subjectDialog=$('#subjectDialog'), subjectChoiceGrid=$('#subjectChoiceGrid');
 const ALL_SUBJECTS=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'];
-function allowedSubjects(){return isTeacher()?((currentUser.subjects&&currentUser.subjects.length)?currentUser.subjects:[currentUser.subject||'العلوم']):ALL_SUBJECTS;}
+function allowedSubjects(){if(!isTeacher())return ['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'];return (currentUser.subjects&&currentUser.subjects.length)?currentUser.subjects:[currentUser.subject||'العلوم'];}
 function renderSubjectChoices(){const list=allowedSubjects();subjectChoiceGrid.innerHTML=list.length?list.map(s=>`<button type="button" class="subject-choice ${s===subjectFilter.value?'active':''}" data-subject="${s}"><b>${s}</b><span>${s===subjectFilter.value?'المادة الحالية':'اضغط للاختيار'}</span></button>`).join(''):'<div class="subject-dialog-list-empty">لا توجد مواد مسندة لهذا الحساب.</div>';subjectChoiceGrid.querySelectorAll('.subject-choice').forEach(b=>b.onclick=()=>{subjectFilter.value=b.dataset.subject;currentUser.subject=b.dataset.subject;subjectPopupBtn.firstChild.textContent=b.dataset.subject+' ';subjectDialog.close();refreshAssessmentUI();$('#sideSubject').textContent=isTeacher()?b.dataset.subject:(currentUser.role==='مديرة النطاق'?'لوحة النطاق':'القيادة المدرسية');});}
 subjectPopupBtn.addEventListener('click',()=>{renderSubjectChoices();subjectDialog.showModal();});
 function syncSubjectPopup(){subjectPopupBtn.firstChild.textContent=(subjectFilter.value||'اختيار المادة')+' ';renderSubjectChoices();}
@@ -1871,7 +1871,7 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
     let ok=[],bad=[];
     for(const f of files){try{ok.push(await importOne(f))}catch(e){bad.push(f.name+' — '+e.message)}}
     btn.disabled=false; input.value='';
-    if(status){const n=ok.reduce((a,x)=>a+x.count,0);status.innerHTML=`تم استيراد <b>${ok.length}</b> ملف/ملفات و<b>${n}</b> نتيجة بنجاح.${bad.length?'<br>تعذر: '+bad.join('، '):''}<br><small>عند استيراد ملف محدث لنفس المعلم/المادة/الصف/الشعبة يتم استبدال المجموعة السابقة.</small>`}
+    if(status){const n=ok.reduce((a,x)=>a+x.count,0);const empty=(ok.length&&n===0)?'<br><b>الملف سليم، لكنه لا يحتوي نتائج تشخيصية محفوظة للتجميع.</b>':'';status.innerHTML=`تم استيراد <b>${ok.length}</b> ملف/ملفات و<b>${n}</b> نتيجة بنجاح.${empty}${bad.length?'<br>تعذر: '+bad.join('، '):''}<br><small>عند استيراد ملف محدث لنفس المعلم/المادة/الصف/الشعبة يتم استبدال المجموعة السابقة.</small>`}
     try{renderReports();renderLeadership()}catch(e){}
   });
 })();
