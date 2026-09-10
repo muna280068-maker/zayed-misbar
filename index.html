@@ -1991,7 +1991,94 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 })();
 <\/script>
 <div id="misbarVersionBadge" style="position:fixed;left:8px;bottom:8px;z-index:999999;font:700 11px Arial;background:#fff;border:1px solid #b8cbd8;border-radius:8px;padding:4px 7px;color:#315b73">V92</div>
-<div id="misbarBuildMarker" style="position:fixed;bottom:4px;left:6px;z-index:9999;font:10px Arial;color:#789;opacity:.55">V93</div></body></html>`;
+<div id="misbarBuildMarker" style="position:fixed;bottom:4px;left:6px;z-index:9999;font:10px Arial;color:#789;opacity:.55">V93</div>
+<style id="v100-visual-identity-lavender">
+/* V100 — visual-only refresh. Core V99 logic/data/export behavior is untouched. */
+:root{
+  --v100-lav:#9b72b6; --v100-lav-deep:#76528f; --v100-lav-soft:#f3eafb;
+  --v100-blue:#eaf6ff; --v100-pink:#fff0f4; --v100-green:#edf9f1;
+  --v100-yellow:#fff8df; --v100-purple:#f3edff; --v100-line:#dce8f2;
+}
+body.app-mode{background:linear-gradient(135deg,#f8fbff 0%,#fff 48%,#faf5ff 100%)}
+.app-shell{background:transparent!important;gap:0!important}
+.sidebar{
+  background:linear-gradient(180deg,#a77cc0 0%,#8e66aa 52%,#76528f 100%)!important;
+  color:#fff!important;border-left:0!important;box-shadow:-8px 0 28px rgba(88,57,110,.14);
+  position:relative;overflow:hidden
+}
+.sidebar:after{
+  content:"";position:absolute;inset:auto -55px -80px -55px;height:270px;
+  background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.22),transparent 62%);
+  pointer-events:none
+}
+.sidebar-title{background:rgba(255,255,255,.15)!important;border:1px solid rgba(255,255,255,.22)!important;
+  border-radius:18px!important;color:#fff!important;margin-bottom:12px!important}
+.sidebar-title span,.sidebar-title b{color:#fff!important}
+.side-link{
+  color:#fff!important;border:1px solid transparent!important;border-radius:13px!important;
+  background:transparent!important;margin:3px 0!important;font-weight:800!important;
+  transition:.18s ease!important
+}
+.side-link:hover{background:rgba(255,255,255,.13)!important;transform:translateX(-2px)}
+.side-link.active{
+  background:linear-gradient(90deg,#f5eaff,#fff)!important;color:#714b8b!important;
+  box-shadow:0 8px 22px rgba(68,39,86,.18)!important;border-color:rgba(255,255,255,.7)!important
+}
+.side-link.saif-side{background:rgba(255,255,255,.14)!important;border-color:rgba(255,255,255,.22)!important}
+.workspace{background:transparent!important;padding:18px 20px 28px!important}
+.workspace-head{
+  background:rgba(255,255,255,.94)!important;border:1px solid var(--v100-line)!important;
+  border-radius:20px!important;padding:14px 16px!important;box-shadow:0 8px 25px rgba(35,72,105,.07)!important;
+  margin-bottom:14px!important
+}
+.workspace-head h2{color:#174f86!important}
+.subject-popup-btn,.filters select,.control-card select,.control-card input{
+  border-color:#d7e5f2!important;box-shadow:0 3px 10px rgba(41,87,126,.04)
+}
+.panel,.kpi,.control-card,.score-summary div,.workflow-card,.assessment-card,.remeasure-card,
+.impact-kpis article,.analysis-kpis>div,.rm-progress-card,.evidence-card{
+  border-color:var(--v100-line)!important;border-radius:20px!important;
+  box-shadow:0 8px 24px rgba(37,75,110,.065)!important
+}
+.kpi-grid .kpi:nth-child(1){background:linear-gradient(135deg,#eef7ff,#fff)!important}
+.kpi-grid .kpi:nth-child(2){background:linear-gradient(135deg,#eefaf2,#fff)!important}
+.kpi-grid .kpi:nth-child(3){background:linear-gradient(135deg,#f5efff,#fff)!important}
+.kpi-grid .kpi:nth-child(4){background:linear-gradient(135deg,#fff2f5,#fff)!important}
+.kpi strong,.impact-kpis strong,.analysis-kpis strong{color:#174f86!important}
+.quick-actions{gap:10px!important}
+.quick-actions button{
+  border:1px solid #dce7f2!important;border-radius:17px!important;padding:14px 12px!important;
+  font-weight:900!important;color:#174f86!important;box-shadow:0 6px 18px rgba(35,72,105,.055)!important
+}
+.quick-actions button:nth-child(5n+1){background:linear-gradient(135deg,#eaf6ff,#fff)!important}
+.quick-actions button:nth-child(5n+2){background:linear-gradient(135deg,#f3edff,#fff)!important}
+.quick-actions button:nth-child(5n+3){background:linear-gradient(135deg,#edf9f1,#fff)!important}
+.quick-actions button:nth-child(5n+4){background:linear-gradient(135deg,#fff0f4,#fff)!important}
+.quick-actions button:nth-child(5n+5){background:linear-gradient(135deg,#fff8df,#fff)!important}
+.btn.primary{background:linear-gradient(135deg,#8e66aa,#76528f)!important;border-color:#76528f!important}
+.btn.primary:hover{filter:brightness(.97)}
+.btn.ghost{border-color:#d8e4ef!important;color:#315f88!important;background:#fff!important}
+.eyebrow{color:#8b61a7!important}
+table{background:#fff!important}
+thead th{background:linear-gradient(180deg,#eef7ff,#e8f2fb)!important;color:#174f86!important}
+tbody tr:hover{background:#fbf8ff!important}
+.level-chip.good,.rm-level-chip.good{background:#e7f7ee!important;color:#21724b!important}
+.level-chip.medium,.rm-level-chip.medium{background:#fff3d6!important;color:#9a6810!important}
+.level-chip.danger,.rm-level-chip.danger{background:#ffe9eb!important;color:#b23e4c!important}
+.context-strip span,.journey-mini span,.assessment-meta span{background:#f4effa!important;color:#704e86!important;border-color:#e3d6ec!important}
+.impact-note,.hint-box,.info-box{background:linear-gradient(135deg,#f5effb,#fbf9ff)!important;border-color:#e2d5ec!important}
+.modal-card,.dialog-card{border-radius:24px!important;box-shadow:0 24px 70px rgba(52,34,67,.22)!important}
+input:focus,select:focus,textarea:focus{outline:3px solid rgba(155,114,182,.14)!important;border-color:#9b72b6!important}
+@media(max-width:900px){
+  .workspace{padding:12px!important}
+  .sidebar{box-shadow:none}
+}
+</style>
+<script id="v100-build-marker">
+window.MISBAR_VISUAL_BUILD='V100-LAVENDER-VISUAL-IDENTITY';
+</script>
+
+</body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='misbar-zayed-results.xls';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
 }
