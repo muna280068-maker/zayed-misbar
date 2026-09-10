@@ -312,6 +312,23 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 </style>
 <!-- ZAYED MISBAR V10 assessment-create hard-fix -->
 <!-- V80: management Excel import -->
+
+<style id="v98-remeasure-style">
+/* V98 — Re-measurement page redesigned to match approved visual system */
+.remeasure-page-v98{display:grid;gap:16px;direction:rtl}
+.remeasure-info-v98{background:#eef7ff;border:1px solid #a9d1f4;border-radius:12px;padding:13px 18px;text-align:center;color:#1b5f99;font-size:14px;line-height:1.7}
+.remeasure-tabs-v98{display:flex;gap:8px;border-bottom:1px solid #d9e6ef;align-items:flex-end;flex-wrap:wrap}
+.remeasure-tab-v98{border:1px solid #cbdde9;border-bottom:0;background:#fff;color:#17639a;border-radius:12px 12px 0 0;padding:13px 20px;font-weight:900;cursor:pointer;min-width:155px}
+.remeasure-tab-v98.active{background:#1478bc;color:#fff;border-color:#1478bc}
+.remeasure-entry-v98,.remeasure-results-v98,.remeasure-progress-v98,.remeasure-log-v98{background:#fff;border:1px solid #dce8ef;border-radius:18px;padding:16px;box-shadow:0 4px 15px rgba(34,82,112,.04)}
+.remeasure-form-grid-v98{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
+.remeasure-form-grid-v98 label{font-weight:800;color:#213f55;font-size:13px;display:block}.remeasure-form-grid-v98 label>span{color:#d44949}
+.remeasure-form-grid-v98 select,.remeasure-form-grid-v98 input,.remeasure-form-grid-v98 textarea{width:100%;margin-top:7px;border:1px solid #cbdde9;border-radius:10px;padding:11px 12px;background:#fff;color:#26465c;font:inherit;box-sizing:border-box}
+.remeasure-form-grid-v98 input[readonly]{background:#f8fbfd;color:#547184}.rm-notes-v98{grid-column:2/5}.remeasure-help-v98{grid-column:1/2;grid-row:2/4;background:#f1fbf4;border:1px solid #ccebd6;border-radius:14px;padding:15px;color:#315c45;font-size:12px;line-height:1.9}.remeasure-help-v98 b{font-size:14px;color:#244f38}.remeasure-help-v98 ul{margin:8px 0 0;padding-right:18px}
+.remeasure-actions-v98{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}.remeasure-log-v98 h3{margin:0 0 14px;color:#123f60}.remeasure-table-v98{min-width:1100px}.remeasure-table-v98 td{font-size:12px}.remeasure-table-v98 th{background:#eaf5fc;color:#155e91}.rm-level-chip{display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}.rm-level-chip.mastery{background:#e6f5ec;color:#27714f}.rm-level-chip.support{background:#fff4df;color:#8a651e}.rm-level-chip.priority{background:#fff0ed;color:#a64b3c}.rm-empty-v98{text-align:center;padding:34px 12px;color:#6d8798}.rm-empty-v98 b{display:block;color:#315d78;margin-bottom:5px}.remeasure-summary-v98{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.remeasure-summary-v98 article{background:#f8fbfd;border:1px solid #dce8ef;border-radius:14px;padding:15px;text-align:center}.remeasure-summary-v98 strong{font-size:26px;color:#123f60;display:block}.remeasure-summary-v98 span{font-size:12px;color:#617786}.remeasure-progress-cards-v98{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rm-progress-card{border:1px solid #dce8ef;border-radius:14px;padding:14px}.rm-progress-card h4{margin:0 0 9px;color:#123f60}.rm-progress-values{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rm-progress-values span{background:#eef5f8;border-radius:999px;padding:6px 9px;font-size:12px}.rm-progress-values strong{color:#27714f}.rm-delete-v98{border:1px solid #e3bdbd;background:#fff;color:#a04b4b;border-radius:8px;padding:5px 8px;cursor:pointer}
+@media(max-width:1050px){.remeasure-form-grid-v98{grid-template-columns:repeat(2,minmax(0,1fr))}.rm-notes-v98{grid-column:1/-1}.remeasure-help-v98{grid-column:1/-1;grid-row:auto}}
+@media(max-width:650px){.remeasure-form-grid-v98,.remeasure-summary-v98,.remeasure-progress-cards-v98{grid-template-columns:1fr}.remeasure-tab-v98{min-width:0;flex:1}.rm-notes-v98,.remeasure-help-v98{grid-column:auto}.remeasure-actions-v98 .btn{width:100%}}
+</style>
 </head>
 <body>
 <!-- ZAYED MISBAR V85 LEADERSHIP SIX SUBJECTS HARD FIX: logout/session + 6 subjects + visible visitor QR -->
@@ -459,8 +476,41 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 </div>
 </div>
 <div class="view" id="view-remeasure">
-<div class="panel"><div class="panel-head"><div><span class="eyebrow">قبل وبعد</span><h3>إعادة القياس وقياس الأثر</h3><p class="hint">ابدئي إعادة القياس من الإجراء المكتمل، ثم يحسب مِسبار التحسن تلقائيًا بعد حفظ الدرجات الجديدة.</p></div></div>
-<div class="remeasure-list" id="remeasureList"></div>
+<div class="remeasure-page-v98">
+  <div class="remeasure-info-v98">ⓘ <strong>إعادة القياس</strong> تُستخدم لمقارنة نتائج الطالب/الطالبة قبل وبعد تنفيذ الإجراءات العلاجية، وقياس التحسن في المهارات والمفاهيم.</div>
+  <div class="remeasure-tabs-v98">
+    <button type="button" class="remeasure-tab-v98 active" data-rtab="entry">✚ إضافة نتيجة إعادة قياس</button>
+    <button type="button" class="remeasure-tab-v98" data-rtab="results">▥ عرض النتائج</button>
+    <button type="button" class="remeasure-tab-v98" data-rtab="progress">⌁ تقرير التحسن</button>
+  </div>
+
+  <section class="remeasure-entry-v98" id="remeasureEntryV98">
+    <div class="remeasure-form-grid-v98">
+      <label>الطالب/الطالبة <span>*</span><select id="rmStudentV98"><option value="">اختر الطالب/الطالبة</option></select></label>
+      <label>المهارة / المفهوم <span>*</span><select id="rmSkillV98"><option value="">اختر المهارة أو المفهوم</option></select></label>
+      <label>نوع الاختبار <span>*</span><select id="rmTypeV98"><option>اختبار إعادة القياس</option><option>اختبار قصير بعد العلاج</option><option>مهمة تطبيقية</option><option>ملاحظة أداء</option></select></label>
+      <label>تاريخ الاختبار <span>*</span><input id="rmDateV98" type="date"></label>
+      <label>الدرجة من <span>*</span><input id="rmMaxV98" type="number" min="1" max="1000" value="10"></label>
+      <label>الدرجة المحصلة <span>*</span><input id="rmScoreV98" type="number" min="0" step="0.5" placeholder="أدخل الدرجة"></label>
+      <label>مستوى الطالب/الطالبة بعد القياس <span>*</span><input id="rmLevelV98" type="text" readonly placeholder="يُحسب تلقائيًا"></label>
+      <label class="rm-notes-v98">ملاحظات (اختياري)<textarea id="rmNotesV98" rows="3" placeholder="اكتب ملاحظات مختصرة عن نتيجة الطالب/الطالبة..."></textarea></label>
+      <aside class="remeasure-help-v98"><b>💡 ملاحظات مهمة:</b><ul><li>أدخلي الدرجة بعد تنفيذ الإجراءات العلاجية.</li><li>يمكنك مقارنة النتيجة السابقة والجديدة من «تقرير التحسن».</li><li>يتم حفظ جميع نتائج إعادة القياس في سجل الأثر وملف الطالب/الطالبة.</li><li>استخدمي نفس المهارة/المفهوم لعرض التقدم بدقة.</li></ul></aside>
+    </div>
+    <div class="remeasure-actions-v98"><button type="button" class="btn primary" id="rmSaveV98">▣ حفظ نتيجة إعادة القياس</button><button type="button" class="btn ghost" id="rmCancelV98">إلغاء</button><span id="rmSavedV98" class="saved-note"></span></div>
+  </section>
+
+  <section class="remeasure-results-v98" id="remeasureResultsV98" hidden>
+    <div class="remeasure-summary-v98"><article><strong id="rmResultCountV98">0</strong><span>نتائج إعادة القياس</span></article><article><strong id="rmImprovedCountV98">0</strong><span>حققوا تحسنًا</span></article><article><strong id="rmAvgGainV98">—</strong><span>متوسط التحسن</span></article></div>
+  </section>
+
+  <section class="remeasure-progress-v98" id="remeasureProgressV98" hidden>
+    <div class="remeasure-progress-cards-v98" id="rmProgressCardsV98"></div>
+  </section>
+
+  <div class="remeasure-log-v98">
+    <h3>سجل إعادة القياس</h3>
+    <div class="impact-table-wrap"><table class="impact-table remeasure-table-v98"><thead><tr><th>م</th><th>اسم الطالب/الطالبة</th><th>المهارة / المفهوم</th><th>نوع الاختبار</th><th>التاريخ</th><th>الدرجة</th><th>الدرجة من</th><th>المستوى بعد القياس</th><th>ملاحظات</th><th>إجراءات</th></tr></thead><tbody id="rmTableBodyV98"></tbody></table></div>
+  </div>
 </div>
 </div>
 <div class="view" id="view-weekly">
@@ -2640,6 +2690,66 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
 })();
 </script>
 
+
+<script id="v98-remeasure-script">
+(function(){
+  const RM_KEY='misbar_remeasure_v98';
+  const q=s=>document.querySelector(s), qa=s=>Array.from(document.querySelectorAll(s));
+  const esc=v=>String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'&#92;','"':'&quot;'}[m]));
+  function ctx(){try{return contextKey()}catch(e){return [subjectFilter?.value,gradeFilter?.value,classFilter?.value].join('|')}}
+  function loadRM(){try{return JSON.parse(localStorage.getItem(RM_KEY)||'[]')}catch(e){return []}}
+  function saveRM(x){localStorage.setItem(RM_KEY,JSON.stringify(x))}
+  function contextRM(){return loadRM().filter(x=>x.context===ctx() && (!window.currentUser?.email || x.owner===window.currentUser.email))}
+  function pctLevel(p){return p>=80?['إتقان جيد','mastery']:p>=60?['يحتاج دعماً','support']:['أولوية تدخل','priority']}
+  function baselineForStudent(name){
+    try{
+      const ints=(typeof contextInterventions==='function'?contextInterventions():[]).filter(i=>(i.students||[]).includes(name));
+      for(const i of ints){const m=baselineMapForIntervention(i); if(m && Number.isFinite(Number(m[name]))) return Number(m[name]);}
+      const all=loadAllScores(); const asses=currentContextAssessments().filter(a=>a.type!=='إعادة القياس' && !a.weekly);
+      for(const a of asses){const ss=all[assessmentKey(a.id)]; const r=ss?.rows?.find(x=>x.name===name); if(r&&Number.isFinite(Number(r.score))){return Math.round(Number(r.score)/Number(ss.max||a.max||100)*100)}}
+    }catch(e){}
+    return null;
+  }
+  function skillOptions(){
+    let set=new Set();
+    try{contextInterventions().forEach(i=>{(i.actions||[i.action]).forEach(a=>a&&set.add(a));});}catch(e){}
+    try{currentContextAssessments().forEach(a=>(a.skills||[]).forEach(k=>k&&set.add(k)));}catch(e){}
+    ['المهارة المستهدفة بعد الإجراء العلاجي','المفهوم الذي تمت معالجته','إتقان المهارة بعد العلاج'].forEach(x=>set.add(x));
+    return [...set];
+  }
+  function populateRM(){
+    const stu=q('#rmStudentV98'), skill=q('#rmSkillV98'); if(!stu||!skill)return;
+    let names=[]; try{names=rosterForCurrentClass(gradeFilter.value,classFilter.value)}catch(e){try{names=roster||[]}catch(_){}}
+    const prev=stu.value; stu.innerHTML='<option value="">اختر الطالب/الطالبة</option>'+names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join(''); if(names.includes(prev))stu.value=prev;
+    const prevS=skill.value, skills=skillOptions(); skill.innerHTML='<option value="">اختر المهارة أو المفهوم</option>'+skills.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(''); if(skills.includes(prevS))skill.value=prevS;
+    if(q('#rmDateV98')&&!q('#rmDateV98').value) q('#rmDateV98').value=new Date().toISOString().slice(0,10);
+  }
+  function updateLevel(){const max=Number(q('#rmMaxV98')?.value),score=Number(q('#rmScoreV98')?.value),out=q('#rmLevelV98'); if(!out)return; if(!Number.isFinite(max)||max<=0||!Number.isFinite(score)){out.value='';return} const p=Math.round(score/max*100); out.value=pctLevel(p)[0]+' • '+p+'%';}
+  function renderRMTable(){
+    const body=q('#rmTableBodyV98'); if(!body)return; const list=contextRM().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+    q('#rmResultCountV98')&&(q('#rmResultCountV98').textContent=list.length);
+    let gains=[]; list.forEach(x=>{const b=baselineForStudent(x.student); if(b!==null)gains.push(x.pct-b)}); q('#rmImprovedCountV98')&&(q('#rmImprovedCountV98').textContent=gains.filter(g=>g>0).length); q('#rmAvgGainV98')&&(q('#rmAvgGainV98').textContent=gains.length?((gains.reduce((a,b)=>a+b,0)/gains.length).toFixed(1)+' نقطة'):'—');
+    if(!list.length){body.innerHTML='<tr><td colspan="10"><div class="rm-empty-v98"><b>لا توجد نتائج إعادة قياس حالياً.</b><span>أضيفي نتيجة جديدة عند بدء إعادة القياس.</span></div></td></tr>'; renderProgress(); return;}
+    body.innerHTML=list.map((x,i)=>{const [lev,cls]=pctLevel(x.pct);return `<tr><td>${i+1}</td><td>${esc(x.student)}</td><td>${esc(x.skill)}</td><td>${esc(x.type)}</td><td>${esc(x.date)}</td><td>${esc(x.score)}</td><td>${esc(x.max)}</td><td><span class="rm-level-chip ${cls}">${lev} • ${x.pct}%</span></td><td>${esc(x.notes||'—')}</td><td><button class="rm-delete-v98" data-rmid="${esc(x.id)}">حذف</button></td></tr>`}).join('');
+    qa('.rm-delete-v98').forEach(b=>b.onclick=()=>{if(confirm('هل تريد/تريدين حذف نتيجة إعادة القياس هذه؟')){saveRM(loadRM().filter(x=>x.id!==b.dataset.rmid));renderRMTable();}}); renderProgress();
+  }
+  function renderProgress(){const box=q('#rmProgressCardsV98'); if(!box)return; const list=contextRM(); if(!list.length){box.innerHTML='<div class="rm-empty-v98">لا توجد بيانات كافية لتقرير التحسن.</div>';return;} box.innerHTML=list.map(x=>{const b=baselineForStudent(x.student);const gain=b===null?null:x.pct-b;return `<article class="rm-progress-card"><h4>${esc(x.student)}</h4><div class="rm-progress-values"><span>قبل: ${b===null?'—':b+'%'}</span><span>بعد: ${x.pct}%</span><strong>${gain===null?'لا توجد نتيجة سابقة للمقارنة':(gain>=0?'+':'')+gain+' نقطة'}</strong></div><small>${esc(x.skill)}</small></article>`}).join('');}
+  function saveOne(){
+    const student=q('#rmStudentV98').value,skill=q('#rmSkillV98').value,type=q('#rmTypeV98').value,date=q('#rmDateV98').value,max=Number(q('#rmMaxV98').value),score=Number(q('#rmScoreV98').value),notes=q('#rmNotesV98').value.trim();
+    if(!student){alert('اختاري الطالب/الطالبة.');return} if(!skill){alert('اختاري المهارة أو المفهوم.');return} if(!date){alert('اختاري تاريخ الاختبار.');return} if(!Number.isFinite(max)||max<=0){alert('أدخلي الدرجة النهائية بشكل صحيح.');return} if(!Number.isFinite(score)||score<0||score>max){alert('أدخلي درجة صحيحة من 0 إلى '+max+'.');return}
+    const pct=Math.round(score/max*100), rec={id:'RM'+Date.now(),owner:window.currentUser?.email||'',context:ctx(),subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,student,skill,type,date,max,score,pct,notes,createdAt:new Date().toISOString()}; const all=loadRM(); all.push(rec); saveRM(all);
+    // keep existing impact path compatible for any matching intervention, without touching diagnostic score storage
+    try{const ints=loadInterventions(); const item=[...ints].reverse().find(i=>i.context===ctx()&&(i.students||[]).includes(student)); if(item){const aid='R'+Date.now(); const allScores=loadAllScores(); allScores[assessmentKey(aid)]={id:aid,type:'إعادة القياس',date:new Date().toISOString(),max,rows:[{name:student,score,max}]}; saveAllScores(allScores); item.remeasureAssessmentId=aid; item.status='done'; saveInterventions(ints);}}catch(e){}
+    q('#rmSavedV98').textContent='تم الحفظ ✓'; q('#rmScoreV98').value=''; q('#rmNotesV98').value=''; updateLevel(); renderRMTable(); setTimeout(()=>{if(q('#rmSavedV98'))q('#rmSavedV98').textContent=''},2500);
+  }
+  function tab(name){qa('.remeasure-tab-v98').forEach(b=>b.classList.toggle('active',b.dataset.rtab===name)); q('#remeasureEntryV98').hidden=name!=='entry'; q('#remeasureResultsV98').hidden=name!=='results'; q('#remeasureProgressV98').hidden=name!=='progress'; if(name!=='entry')renderRMTable();}
+  window.renderRemeasure=function(){populateRM();renderRMTable();};
+  window.startRemeasure=function(interventionId){showView('remeasure'); populateRM(); try{const item=loadInterventions().find(i=>String(i.id)===String(interventionId));if(item&&item.students?.length){q('#rmStudentV98').value=item.students[0];const a=(item.actions||[item.action]).filter(Boolean)[0]; if(a){if(![...q('#rmSkillV98').options].some(o=>o.value===a)){q('#rmSkillV98').add(new Option(a,a));}q('#rmSkillV98').value=a;}}}catch(e){} tab('entry');};
+  function install(){qa('.remeasure-tab-v98').forEach(b=>b.onclick=()=>tab(b.dataset.rtab)); q('#rmSaveV98')&&(q('#rmSaveV98').onclick=saveOne); q('#rmCancelV98')&&(q('#rmCancelV98').onclick=()=>{q('#rmScoreV98').value='';q('#rmNotesV98').value='';updateLevel();}); q('#rmScoreV98')?.addEventListener('input',updateLevel); q('#rmMaxV98')?.addEventListener('input',updateLevel); [q('#gradeFilter'),q('#classFilter'),q('#subjectFilter')].filter(Boolean).forEach(el=>el.addEventListener('change',()=>setTimeout(()=>{populateRM();renderRMTable()},0))); populateRM(); renderRMTable();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
+  window.MISBAR_BUILD='V98-REMEASURE-DESIGNED';
+})();
+</script>
 </body>
 </html>
 
