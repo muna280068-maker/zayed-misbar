@@ -313,7 +313,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <!-- V80: management Excel import -->
 </head>
 <body>
-<!-- ZAYED MISBAR V6 FINAL FRONT-END FIX: logout/session + 6 subjects + visible visitor QR -->
+<!-- ZAYED MISBAR V84 SIX SUBJECTS FIX: logout/session + 6 subjects + visible visitor QR -->
 <header class="topbar" id="appTopbar" style="display:none">
 <div class="brand">
 <div class="brand-mark">م</div>
@@ -376,6 +376,8 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <article class="subject-card math"><div class="subject-art"><span>أعداد • هندسة • حل مسائل</span></div><h4>الرياضيات</h4><p>تحليل المهارات الرياضية وتحديد أولويات الدعم.</p><button class="subject-enter">دخول المادة</button></article>
 <article class="subject-card arabic"><div class="subject-art"><span>قراءة • كتابة • فهم</span></div><h4>اللغة العربية</h4><p>رصد مستويات القراءة واللغة والمهارات المستهدفة.</p><button class="subject-enter">دخول المادة</button></article>
 <article class="subject-card english"><div class="subject-art"><span>Reading • Language • Skills</span></div><h4>اللغة الإنجليزية</h4><p>متابعة الإتقان واكتشاف الفجوات بصورة واضحة.</p><button class="subject-enter">دخول المادة</button></article>
+<article class="subject-card social"><div class="subject-art"><span>مجتمع • وطن • مهارات</span></div><h4>الدراسات الاجتماعية</h4><p>تشخيص المعارف والمهارات المرتبطة بالدراسات الاجتماعية.</p><button class="subject-enter">دخول المادة</button></article>
+<article class="subject-card islamic"><div class="subject-art"><span>قيم • فهم • تطبيق</span></div><h4>التربية الإسلامية</h4><p>تشخيص المعارف والمهارات الأساسية في التربية الإسلامية.</p><button class="subject-enter">دخول المادة</button></article>
 </div>
 </section>
 <section class="impact section" id="impact">
@@ -409,7 +411,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <div class="workspace">
 <div class="workspace-head">
 <div><span class="eyebrow" id="workspaceEyebrow">معلمة العلوم • الحلقة الثانية</span><h2 id="workspaceTitle">مرحبًا بك في مِسبار زايد</h2></div><div class="access-banner" id="accessBanner">صلاحيات العرض ستظهر هنا حسب الحساب.</div>
-<div class="subject-filter-wrap"><label>المادة</label><button class="subject-popup-btn" id="subjectPopupBtn" type="button">العلوم <span>⌄</span></button><select aria-hidden="true" class="subject-hidden-select" id="subjectFilter" tabindex="-1"><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option></select></div><div class="filters"><select id="gradeFilter">
+<div class="subject-filter-wrap"><label>المادة</label><button class="subject-popup-btn" id="subjectPopupBtn" type="button">العلوم <span>⌄</span></button><select aria-hidden="true" class="subject-hidden-select" id="subjectFilter" tabindex="-1"><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option><option>الدراسات الاجتماعية</option><option>التربية الإسلامية</option></select></div><div class="filters"><select id="gradeFilter">
 <option value="4">الصف الرابع</option><option value="5">الصف الخامس</option><option value="6">الصف السادس</option><option selected="" value="7">الصف السابع</option><option value="8">الصف الثامن</option>
 <option value="9-general">الصف التاسع - عام</option><option value="9-advanced">الصف التاسع - متقدم</option>
 <option value="10-general">الصف العاشر - عام</option><option value="10-advanced">الصف العاشر - متقدم</option>
@@ -499,7 +501,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <div class="leadership-dashboard">
 <div class="panel">
 <div class="panel-head"><div><span class="eyebrow">لوحة القيادة</span><h3>مقارنة المواد والحلقات الثلاث</h3><p class="hint">تُحسب المؤشرات من النتائج المحفوظة فعليًا. المقارنة بين الحلقات والمواد تعتمد النسبة المئوية حتى تكون عادلة.</p></div><div class="export-actions"><button class="btn ghost small" id="exportLeadershipCsv">تصدير للـExcel</button><button class="btn ghost small" id="printLeadership">طباعة الملخص</button></div></div>
-<div class="leadership-toolbar"><label>المادة<select id="leaderSubject"><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option></select></label><label>عرض المقارنة<select id="leaderMode"><option value="cycles">المادة بين الحلقات الثلاث</option><option value="subjects">المواد داخل كل حلقة</option></select></label><label id="leaderCycleWrap" style="display:none">الحلقة<select id="leaderCycle"><option value="cycle1">الحلقة الأولى</option><option value="cycle2">الحلقة الثانية</option><option value="cycle3">الحلقة الثالثة</option></select></label></div>
+<div class="leadership-toolbar"><label>المادة<select id="leaderSubject"><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option><option>الدراسات الاجتماعية</option><option>التربية الإسلامية</option></select></label><label>عرض المقارنة<select id="leaderMode"><option value="cycles">المادة بين الحلقات الثلاث</option><option value="subjects">المواد داخل كل حلقة</option></select></label><label id="leaderCycleWrap" style="display:none">الحلقة<select id="leaderCycle"><option value="cycle1">الحلقة الأولى</option><option value="cycle2">الحلقة الثانية</option><option value="cycle3">الحلقة الثالثة</option></select></label></div>
 </div>
 <div class="leader-kpis"><article><strong id="leaderStudents">0</strong><span>نتائج طلبة داخلة في المقارنة</span></article><article><strong id="leaderAvg">—</strong><span>متوسط الأداء</span></article><article><strong id="leaderMastery">—</strong><span>نسبة الإتقان</span></article><article><strong id="leaderPriority">—</strong><span>نسبة أولوية التدخل</span></article></div>
 <div class="compare-grid"><div class="chart-panel"><div class="chart-title"><div><span class="eyebrow">الرسم المقارن</span><h3 id="leaderChartTitle">العلوم بين الحلقات الثلاث</h3></div></div><div class="cycle-bars" id="leaderChart"></div></div><div class="chart-panel"><div class="chart-title"><div><span class="eyebrow">قراءة سريعة</span><h3>سيف يلخص</h3></div></div><div class="impact-note" id="leaderSaifSummary">أدخلوا نتائج حقيقية ليظهر الملخص الذكي هنا.</div></div></div>
@@ -516,7 +518,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 </div>
 <div class="report-toolbar">
 <label>نوع التقرير<select id="reportType"><option value="full">ملف أثر كامل</option><option value="results">نتائج الاختبارات التشخيصية</option><option value="skills">المهارات والفجوات</option><option value="interventions">الإجراءات العلاجية والإثرائية</option><option value="weekly">Quiz الأسبوعي</option><option value="evidence">الأدلة والشواهد</option></select></label>
-<label>المادة<select id="reportSubject"><option value="all">جميع المواد</option><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option></select></label>
+<label>المادة<select id="reportSubject"><option value="all">جميع المواد</option><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option><option>الدراسات الاجتماعية</option><option>التربية الإسلامية</option></select></label>
 <label>الحلقة<select id="reportCycle"><option value="all">جميع الحلقات</option><option value="cycle1">الحلقة الأولى</option><option value="cycle2">الحلقة الثانية</option><option value="cycle3">الحلقة الثالثة</option></select></label>
 <label>الشعبة<select id="reportClass"><option value="all">جميع الشعب المسموح بها</option></select></label>
 </div>
@@ -543,7 +545,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <label>الدور<select id="roleSelect"><option>معلم / معلمة</option></select></label><div class="note">يُنشأ الحساب من هذه الشاشة بصلاحية معلم / معلمة. جميع الحسابات والبيانات محفوظة على هذا الجهاز فقط.</div>
 <div id="teacherFields">
 <div class="reg-section"><strong>1. المادة أو المواد التي تدرّسها</strong><div class="choice-grid subject-picks" id="subjectPicks">
-<label><input type="checkbox" value="العلوم"/> العلوم</label><label><input type="checkbox" value="الرياضيات"/> الرياضيات</label><label><input type="checkbox" value="اللغة العربية"/> اللغة العربية</label><label><input type="checkbox" value="اللغة الإنجليزية"/> اللغة الإنجليزية</label>
+<label><input type="checkbox" value="العلوم"/> العلوم</label><label><input type="checkbox" value="الرياضيات"/> الرياضيات</label><label><input type="checkbox" value="اللغة العربية"/> اللغة العربية</label><label><input type="checkbox" value="اللغة الإنجليزية"/> اللغة الإنجليزية</label><label><input type="checkbox" value="الدراسات الاجتماعية"/> الدراسات الاجتماعية</label><label><input type="checkbox" value="التربية الإسلامية"/> التربية الإسلامية</label>
 </div></div>
 <div class="reg-section"><strong>2. الصفوف</strong><div class="choice-grid grade-picks" id="gradePicks"></div><div class="note">جميع الصفوف من الرابع إلى الثاني عشر تحتوي على 7 شعب (G1–G7)، ومن الصف التاسع إلى الثاني عشر يظهر المساران: عام ومتقدم.</div></div>
 <div class="reg-section"><strong>3. الشُعب التي تدرّسها</strong><div class="choice-grid class-picks" id="classPicks"><span class="note">اختاري الصفوف أولًا لتظهر الشعب.</span></div></div>
@@ -646,7 +648,7 @@ function applyAccess(){
     syncGradeFilters(); syncSubjectPopup();
   }else{
     $('#accessBanner').textContent=currentUser.role==='مديرة النطاق'?'حساب مديرة النطاق: تعرض المؤشرات والنتائج المصرح بها للمدارس التابعة للنطاق.':'حساب قيادة مدرسية: تظهر نتائج جميع طلاب المدرسة والمواد والصفوف وفق صلاحية الحساب.';
-    subjectFilter.innerHTML=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية'].map(v=>`<option>${v}</option>`).join('');
+    subjectFilter.innerHTML=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'].map(v=>`<option>${v}</option>`).join('');
     const all=['4','5','6','7','8','9-general','9-advanced','10-general','10-advanced','11-general','11-advanced','12-general','12-advanced'];
     gradeFilter.innerHTML=all.map(v=>`<option value="${v}">${gradeArabicName(v)}</option>`).join('');
     syncGradeFilters(); syncSubjectPopup();
@@ -877,7 +879,7 @@ window.addEventListener('popstate',()=>{if(!document.body.classList.contains('ap
 
 const subjectFilter=$('#subjectFilter'), gradeFilter=$('#gradeFilter'), classFilter=$('#classFilter');
 const subjectPopupBtn=$('#subjectPopupBtn'), subjectDialog=$('#subjectDialog'), subjectChoiceGrid=$('#subjectChoiceGrid');
-const ALL_SUBJECTS=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية'];
+const ALL_SUBJECTS=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'];
 function allowedSubjects(){return isTeacher()?((currentUser.subjects&&currentUser.subjects.length)?currentUser.subjects:[currentUser.subject||'العلوم']):ALL_SUBJECTS;}
 function renderSubjectChoices(){const list=allowedSubjects();subjectChoiceGrid.innerHTML=list.length?list.map(s=>`<button type="button" class="subject-choice ${s===subjectFilter.value?'active':''}" data-subject="${s}"><b>${s}</b><span>${s===subjectFilter.value?'المادة الحالية':'اضغط للاختيار'}</span></button>`).join(''):'<div class="subject-dialog-list-empty">لا توجد مواد مسندة لهذا الحساب.</div>';subjectChoiceGrid.querySelectorAll('.subject-choice').forEach(b=>b.onclick=()=>{subjectFilter.value=b.dataset.subject;currentUser.subject=b.dataset.subject;subjectPopupBtn.firstChild.textContent=b.dataset.subject+' ';subjectDialog.close();refreshAssessmentUI();$('#sideSubject').textContent=isTeacher()?b.dataset.subject:(currentUser.role==='مديرة النطاق'?'لوحة النطاق':'القيادة المدرسية');});}
 subjectPopupBtn.addEventListener('click',()=>{renderSubjectChoices();subjectDialog.showModal();});
@@ -1619,7 +1621,7 @@ function aggregateRecords(rows){
   return {count:rows.length,avg,mastery,priority};
 }
 function renderLeaderMatrix(all){
-  const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية'],cycles=['cycle1','cycle2','cycle3'];
+  const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'],cycles=['cycle1','cycle2','cycle3'];
   const body=$('#leaderMatrixBody'); if(!body)return;
   body.innerHTML=subjects.map(s=>`<tr><td><b>${s}</b></td>${cycles.map(c=>{const a=aggregateRecords(all.filter(r=>r.subject===s&&r.cycle===c));return `<td><span class="matrix-pill">${a.avg===null?'—':a.avg+'%'}</span><small style="display:block;color:#7a8c98;margin-top:4px">${a.count} نتيجة</small></td>`}).join('')}</tr>`).join('');
 }
@@ -1630,7 +1632,7 @@ function renderLeadership(){
     focus=all.filter(r=>r.subject===subject); groups=['cycle1','cycle2','cycle3'].map(c=>({label:cycleLabel(c),...aggregateRecords(focus.filter(r=>r.cycle===c))}));
     $('#leaderChartTitle').textContent=`${subject} بين الحلقات الثلاث`;
   }else{
-    const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية']; focus=all.filter(r=>r.cycle===cycle); groups=subjects.map(s=>({label:s,...aggregateRecords(focus.filter(r=>r.subject===s))}));
+    const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية']; focus=all.filter(r=>r.cycle===cycle); groups=subjects.map(s=>({label:s,...aggregateRecords(focus.filter(r=>r.subject===s))}));
     $('#leaderChartTitle').textContent=`المواد داخل ${cycleLabel(cycle)}`;
   }
   const total=aggregateRecords(focus); $('#leaderStudents').textContent=total.count; $('#leaderAvg').textContent=total.avg===null?'—':total.avg+'%'; $('#leaderMastery').textContent=total.mastery===null?'—':total.mastery+'%'; $('#leaderPriority').textContent=total.priority===null?'—':total.priority+'%';
@@ -1706,8 +1708,6 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
   try{localStorage.removeItem('misbarZayedSavedPasswordV1')}catch(e){}
   window.addEventListener('DOMContentLoaded',()=>{
     const p=document.getElementById('loginPassword'); if(p) p.value='';
-    document.querySelectorAll('option').forEach(o=>{if(['الدراسات الاجتماعية','التربية الإسلامية'].includes(o.textContent.trim())) o.remove();});
-    document.querySelectorAll('#subjectPicks label').forEach(l=>{if(/الدراسات الاجتماعية|التربية الإسلامية/.test(l.textContent)) l.remove();});
   });
 })();
 <\/script>
@@ -1822,8 +1822,6 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
   try{localStorage.removeItem('misbarZayedSavedPasswordV1')}catch(e){}
   window.addEventListener('DOMContentLoaded',()=>{
     const p=document.getElementById('loginPassword'); if(p) p.value='';
-    document.querySelectorAll('option').forEach(o=>{if(['الدراسات الاجتماعية','التربية الإسلامية'].includes(o.textContent.trim())) o.remove();});
-    document.querySelectorAll('#subjectPicks label').forEach(l=>{if(/الدراسات الاجتماعية|التربية الإسلامية/.test(l.textContent)) l.remove();});
   });
 })();
 <\/script>
@@ -1884,7 +1882,7 @@ function renderVisitorPreviewV38(){
   const all=diagnosticScoreRecords(),agg=aggregateRecords(all),ev=loadEvidence().filter(e=>e.privacy==='معتمد للزوار'),ints=loadInterventions().filter(i=>safeArray(i.evidenceIds).some(id=>ev.some(e=>e.id===id)));
   $('#visitorEvidenceCount').textContent=ev.length;$('#visitorInterventions').textContent=ints.length;$('#visitorMastery').textContent=agg.mastery===null?'—':agg.mastery+'%';$('#visitorAvg').textContent=agg.avg===null?'—':agg.avg+'%';
   $('#visitorEvidenceList').innerHTML=ev.length?ev.slice(-8).reverse().map(e=>`<div><b>${e.type||'دليل وشاهد'}</b><small>${e.subject||''} • ${e.className||''} • ${new Date(e.createdAt).toLocaleDateString('ar-AE')}</small></div>`).join(''):'<div>لا توجد أدلة معتمدة للنشر بعد.</div>';
-  const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية'],cycles=['cycle1','cycle2','cycle3'];let rows=[];subjects.forEach(s=>cycles.forEach(c=>{const a=aggregateRecords(all.filter(r=>r.subject===s&&r.cycle===c));if(a.count)rows.push({label:`${s} • ${cycleLabel(c)}`,avg:a.avg})}));$('#visitorCompare').innerHTML=rows.length?rows.map(r=>`<div class="visitor-compare-row"><b>${r.label}</b><div class="track"><div class="fill" style="width:${r.avg||0}%"></div></div><strong>${r.avg}%</strong></div>`).join(''):'<div class="leader-empty">ستظهر المقارنات هنا بعد اكتمال النتائج المعتمدة.</div>';
+  const subjects=['العلوم','الرياضيات','اللغة العربية','اللغة الإنجليزية','الدراسات الاجتماعية','التربية الإسلامية'],cycles=['cycle1','cycle2','cycle3'];let rows=[];subjects.forEach(s=>cycles.forEach(c=>{const a=aggregateRecords(all.filter(r=>r.subject===s&&r.cycle===c));if(a.count)rows.push({label:`${s} • ${cycleLabel(c)}`,avg:a.avg})}));$('#visitorCompare').innerHTML=rows.length?rows.map(r=>`<div class="visitor-compare-row"><b>${r.label}</b><div class="track"><div class="fill" style="width:${r.avg||0}%"></div></div><strong>${r.avg}%</strong></div>`).join(''):'<div class="leader-empty">ستظهر المقارنات هنا بعد اكتمال النتائج المعتمدة.</div>';
 }
 $('#visitorPreviewBtn').onclick=()=>{renderVisitorPreviewV38();$('#visitorDialog').showModal()};
 
@@ -1993,8 +1991,6 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
   try{localStorage.removeItem('misbarZayedSavedPasswordV1')}catch(e){}
   window.addEventListener('DOMContentLoaded',()=>{
     const p=document.getElementById('loginPassword'); if(p) p.value='';
-    document.querySelectorAll('option').forEach(o=>{if(['الدراسات الاجتماعية','التربية الإسلامية'].includes(o.textContent.trim())) o.remove();});
-    document.querySelectorAll('#subjectPicks label').forEach(l=>{if(/الدراسات الاجتماعية|التربية الإسلامية/.test(l.textContent)) l.remove();});
   });
 })();
 <\/script>
@@ -2108,8 +2104,6 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
   try{localStorage.removeItem('misbarZayedSavedPasswordV1')}catch(e){}
   window.addEventListener('DOMContentLoaded',()=>{
     const p=document.getElementById('loginPassword'); if(p) p.value='';
-    document.querySelectorAll('option').forEach(o=>{if(['الدراسات الاجتماعية','التربية الإسلامية'].includes(o.textContent.trim())) o.remove();});
-    document.querySelectorAll('#subjectPicks label').forEach(l=>{if(/الدراسات الاجتماعية|التربية الإسلامية/.test(l.textContent)) l.remove();});
   });
 })();
 <\/script>
@@ -2356,8 +2350,6 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
   try{localStorage.removeItem('misbarZayedSavedPasswordV1')}catch(e){}
   window.addEventListener('DOMContentLoaded',()=>{
     const p=document.getElementById('loginPassword'); if(p) p.value='';
-    document.querySelectorAll('option').forEach(o=>{if(['الدراسات الاجتماعية','التربية الإسلامية'].includes(o.textContent.trim())) o.remove();});
-    document.querySelectorAll('#subjectPicks label').forEach(l=>{if(/الدراسات الاجتماعية|التربية الإسلامية/.test(l.textContent)) l.remove();});
   });
 })();
 </script>
