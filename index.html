@@ -1408,14 +1408,20 @@ function renderGaps(){if(!$('#gapDynamic'))return;const lv=studentLevelsFromLate
 let interventionSourceLevel='danger';
 function openIntervention(level='danger'){
   try{
-    interventionSourceLevel=level;
     const lv=studentLevelsFromLatest();
-    const students=level==='medium'?lv.medium:level==='danger'?lv.danger:[...lv.danger,...lv.medium];
+    // عند فتح النافذة من قسم الإجراءات دون اختيار فئة محددة،
+    // نختار الفئة الفعلية ذات الطلبة تلقائيًا: أولوية التدخل أولًا، ثم يحتاج دعماً.
+    // هذا يمنع ظهور «تدخل علاجي مكثف» لطالبات 60–79% عندما لا توجد حالات أولوية تدخل.
+    let effectiveLevel=level;
+    if(level==='all') effectiveLevel=lv.danger.length?'danger':(lv.medium.length?'medium':'medium');
+    interventionSourceLevel=effectiveLevel;
+    const students=effectiveLevel==='medium'?lv.medium:lv.danger;
+    const supportLabel=effectiveLevel==='medium'?'دعم علاجي':'تدخل علاجي مكثف';
     const context=$('#interventionContext'), list=$('#interventionStudents'), dlg=$('#interventionDialog');
     if(!dlg){alert('تعذر فتح نافذة الإجراءات. أعيدي تحميل الصفحة.');return;}
-    if(context)context.innerHTML=`<span>${subjectFilter.value}</span><span>الصف ${gradeArabicName(gradeFilter.value)}</span><span>${classFilter.value}</span><span>${level==='medium'?'دعم علاجي':'تدخل علاجي مكثف'}</span>`;
+    if(context)context.innerHTML=`<span>${subjectFilter.value}</span><span>الصف ${gradeArabicName(gradeFilter.value)}</span><span>${classFilter.value}</span><span>${supportLabel}</span>`;
     if(list)list.innerHTML=students.length?students.map((s,i)=>`<label><input type="checkbox" value="${s.name.replace(/"/g,'&quot;')}" checked> <span>${s.name}</span><small>${s.pct}%</small></label>`).join(''):'<div class="empty-inline">لا يوجد طلبة في هذه الفئة حاليًا. يمكنك فتح النافذة واختيار الإجراء ثم العودة بعد إدخال النتائج.</div>';
-    $$('#supportLevelChoices button').forEach(b=>b.classList.toggle('selected',b.textContent===(level==='medium'?'دعم علاجي':'تدخل علاجي مكثف')));
+    $$('#supportLevelChoices button').forEach(b=>b.classList.toggle('selected',b.textContent===supportLabel));
     $$('#actionChoices button').forEach((b,i)=>b.classList.toggle('selected',i===0));
     if($('#interventionNote'))$('#interventionNote').value='';
     if(typeof dlg.showModal==='function'){
@@ -2206,7 +2212,7 @@ document.getElementById('uploadEvidenceBtn')?.addEventListener('click', function
   openEvidenceDialog('');
 });
 // V93 comprehensive QA marker
-window.MISBAR_BUILD='V94-GAPS-SUPPORT-FIX';
+window.MISBAR_BUILD='V95-INTERVENTION-DEFAULT-FIX';
 </script>
 
 <dialog class="modal-dialog certificate-dialog" dir="rtl" id="certificateDialog">
