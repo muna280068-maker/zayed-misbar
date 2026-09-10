@@ -310,6 +310,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 }
 </style>
 <!-- ZAYED MISBAR V10 assessment-create hard-fix -->
+<!-- V80: management Excel import -->
 </head>
 <body>
 <!-- ZAYED MISBAR V6 FINAL FRONT-END FIX: logout/session + 6 subjects + visible visitor QR -->
@@ -509,6 +510,10 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <div class="report-center">
 <div class="panel">
 <div class="panel-head"><div><span class="eyebrow">مركز التقارير والتصدير</span><h3>تقارير جاهزة للقيادة والمعلم/المعلمة</h3><p class="hint">تُطبق الصلاحيات تلقائيًا: المعلم/المعلمة يصدّر بيانات شعبه فقط، وتظهر للقيادة البيانات الموجودة على جهازها وفق الصلاحية.</p></div><div class="export-actions"><button class="btn primary small" id="exportFullExcel">تصدير تقرير Excel</button><button class="btn ghost small" id="printFullReport">طباعة / PDF</button></div></div>
+<div class="panel leadership-only" id="adminImportPanel" style="margin-top:14px">
+<div class="panel-head"><div><span class="eyebrow">تجميع نتائج المعلمين</span><h3>استيراد ملفات Excel إلى لوحة الإدارة</h3><p class="hint">اختاري ملفات Excel التي صدّرها المعلمون من مِسبار زايد. يمكن اختيار عدة ملفات معًا، ويُحدّث الاستيراد النتائج السابقة بدل تكرارها.</p></div><div class="export-actions"><button class="btn primary small" id="importTeacherExcel" type="button">استيراد نتائج المعلمين</button><input id="teacherExcelFiles" type="file" accept=".xls,.html,.htm" multiple hidden></div></div>
+<div class="impact-note" id="adminImportStatus">لم يتم استيراد ملفات في هذه الجلسة.</div>
+</div>
 <div class="report-toolbar">
 <label>نوع التقرير<select id="reportType"><option value="full">ملف أثر كامل</option><option value="results">نتائج الاختبارات التشخيصية</option><option value="skills">المهارات والفجوات</option><option value="interventions">الإجراءات العلاجية والإثرائية</option><option value="weekly">Quiz الأسبوعي</option><option value="evidence">الأدلة والشواهد</option></select></label>
 <label>المادة<select id="reportSubject"><option value="all">جميع المواد</option><option>العلوم</option><option>الرياضيات</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option></select></label>
@@ -1797,6 +1802,55 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <\/script>
 </body></html>`,blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;const who=(currentUser?.name||currentUser?.email||'مستخدم').replace(/[\\/:*?"<>|]/g,'-'); const scope=isTeacher()?'المعلم-'+who:'الإدارة'; a.download='مسبار-زايد-'+scope+'-'+new Date().toISOString().slice(0,10)+'.xls';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
 }
+// V80: simple offline management import of teacher-exported Excel (.xls HTML tables)
+(function(){
+  const input=document.getElementById('teacherExcelFiles'), btn=document.getElementById('importTeacherExcel'), status=document.getElementById('adminImportStatus');
+  if(!input||!btn)return;
+  btn.addEventListener('click',()=>input.click());
+  function clean(t){return String(t||'').replace(/\s+/g,' ').trim()}
+  function parsePct(t){const n=parseFloat(clean(t).replace('%',''));return Number.isFinite(n)?Math.max(0,Math.min(100,n)):null}
+  function gradeFromClass(c){const m=String(c||'').match(/(\d{1,2})\s*G/i);return m?m[1]:''}
+  function teacherLabel(doc,file){
+    const title=clean(doc.querySelector('title')?.textContent||'');
+    const m=(title+' '+file.name).match(/المعلم[- ـ:]?([^\.]+)/); return m?clean(m[1]):clean(file.name.replace(/\.(xls|html?)$/i,''));
+  }
+  function findResultsTable(doc){
+    const hs=[...doc.querySelectorAll('h1,h2,h3')];
+    const h=hs.find(x=>clean(x.textContent).includes('ملخص النتائج'));
+    if(h){let n=h.nextElementSibling;while(n&&n.tagName!=='TABLE')n=n.nextElementSibling;if(n)return n}
+    return [...doc.querySelectorAll('table')].find(t=>clean(t.textContent).includes('الطالب/الطالبة')&&clean(t.textContent).includes('النسبة'))||null;
+  }
+  async function importOne(file){
+    const text=await file.text(), doc=new DOMParser().parseFromString(text,'text/html'), table=findResultsTable(doc);
+    if(!table)throw new Error('لم أجد جدول ملخص النتائج');
+    const teacher=teacherLabel(doc,file), rows=[...table.querySelectorAll('tbody tr')];
+    const grouped={}; let count=0;
+    rows.forEach(tr=>{
+      const c=[...tr.querySelectorAll('td')].map(td=>clean(td.textContent));
+      if(c.length<6||c[0]==='لا توجد بيانات')return;
+      const [subject,cycle,gradeRaw,className,name,pctRaw]=c, pct=parsePct(pctRaw), grade=clean(gradeRaw)||gradeFromClass(className);
+      if(!subject||!className||!name||pct===null)return;
+      const gkey=[teacher,subject,grade,className].join('|');
+      (grouped[gkey]??={teacher,subject,grade,className,rows:[]}).rows.push({name,score:pct}); count++;
+    });
+    const store=loadAllScores();
+    Object.values(grouped).forEach(g=>{
+      const key=['ADMINIMPORT',g.teacher,g.subject,g.grade,g.className].join('|');
+      store[key]={subject:g.subject,grade:g.grade,className:g.className,max:100,imported:true,teacher:g.teacher,sourceFile:file.name,importedAt:Date.now(),rows:g.rows};
+    });
+    saveAllScores(store); return {file:file.name,teacher,count,groups:Object.keys(grouped).length};
+  }
+  input.addEventListener('change',async()=>{
+    const files=[...input.files]; if(!files.length)return;
+    btn.disabled=true; if(status)status.textContent='جارٍ استيراد النتائج…';
+    let ok=[],bad=[];
+    for(const f of files){try{ok.push(await importOne(f))}catch(e){bad.push(f.name+' — '+e.message)}}
+    btn.disabled=false; input.value='';
+    if(status){const n=ok.reduce((a,x)=>a+x.count,0);status.innerHTML=`تم استيراد <b>${ok.length}</b> ملف/ملفات و<b>${n}</b> نتيجة بنجاح.${bad.length?'<br>تعذر: '+bad.join('، '):''}<br><small>عند استيراد ملف محدث لنفس المعلم/المادة/الصف/الشعبة يتم استبدال المجموعة السابقة.</small>`}
+    try{renderReports();renderLeadership()}catch(e){}
+  });
+})();
+
 ['reportType','reportSubject','reportCycle','reportClass'].forEach(id=>$('#'+id)?.addEventListener('change',renderReports));$('#exportFullExcel')?.addEventListener('click',exportFullExcel);$('#exportTeacherExcel')?.addEventListener('click',exportFullExcel);$('#printFullReport')?.addEventListener('click',()=>{renderReports();window.print()});
 const _showViewV38=showView;showView=function(v){_showViewV38(v);if(v==='reports')setTimeout(renderReports,0);if(v==='leadership')setTimeout(renderLeadership,0)};
 function renderVisitorPreviewV38(){
