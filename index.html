@@ -2047,69 +2047,11 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 })();
 <\/script>
 <div id="misbarVersionBadge" style="position:fixed;left:8px;bottom:8px;z-index:999999;font:700 11px Arial;background:#fff;border:1px solid #b8cbd8;border-radius:8px;padding:4px 7px;color:#315b73">V92</div>
-<div id="misbarBuildMarker" style="position:fixed;bottom:4px;left:6px;z-index:9999;font:10px Arial;color:#789;opacity:.55">V93</div>
+<div id="misbarBuildMarker" style="position:fixed;bottom:4px;left:6px;z-index:9999;font:10px Arial;color:#789;opacity:.55">V95</div>
 
 
 
-<script id="misbar-v14-ui">
-document.addEventListener('DOMContentLoaded',()=>{
-  const sidebar=document.querySelector('#appShell .sidebar');
-  if(sidebar&&!sidebar.querySelector('.v14-appbrand')){
-    const d=document.createElement('div');d.className='v14-appbrand';
-    d.innerHTML='<div class="v14-logo">م</div><div class="v14-brandtext"><b>مِسبار زايد</b><span>ZAYED MISBAR</span><small>بالميثاق نبلغ الآفاق</small></div>';
-    sidebar.insertBefore(d,sidebar.firstChild);
-  }
-  const workspace=document.querySelector('#appShell .workspace');
-  const wh=workspace?.querySelector('.workspace-head');
-  if(workspace&&wh&&!workspace.querySelector('.v14-header')){
-    const h=document.createElement('div');h.className='v14-header';
-    h.innerHTML='<div class="v14-header-title"><h1>مِسبار زايد | منصة رحلة التقدّم الأكاديمي</h1><p>نرصد التقدّم • نعالج الفجوات • نقيس الأثر</p></div><div class="v14-saif"><div><b>مرحبًا بك</b><small>أنا سيف مساعدك الذكي</small></div><div class="bot">🤖</div></div>';
-    workspace.insertBefore(h,wh);
-    const sync=document.createElement('div');sync.className='v14-syncstrip';sync.innerHTML='<span>☁️ المزامنة السحابية مفعلة</span><span>الدرجات والبيانات تُحفظ في Google Sheets وتُسترجع عند تسجيل الدخول</span>';
-    wh.insertAdjacentElement('afterend',sync);
-  }
-});
-</script>
 
-<script>
-(function(){
-  function escParent(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function parentLevel(v){return v==null?'بانتظار البيانات':v>=80?'متقن':v>=60?'في طور التقدّم':'يحتاج دعمًا';}
-  function parentChartSvg(points){
-    if(!points.length) return '<div class="empty">لا توجد نتائج كافية لرسم مستوى الطالبة حتى الآن.</div>';
-    const W=760,H=260,pad=52,maxX=Math.max(points.length-1,1),x=i=>pad+i*(W-pad*2)/maxX,y=v=>H-pad-(v/100)*(H-pad*2);
-    let grid=''; [0,20,40,60,80,100].forEach(v=>grid+=`<line x1="${pad}" y1="${y(v)}" x2="${W-pad}" y2="${y(v)}" stroke="#dbe7ef"/><text x="${pad-10}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="#61778a">${v}%</text>`);
-    const poly=points.map((p,i)=>`${x(i)},${y(p.pct)}`).join(' ');
-    const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.pct)}" r="6" fill="#176a8a"/><text x="${x(i)}" y="${y(p.pct)-12}" text-anchor="middle" font-size="12" font-weight="700" fill="#174d7e">${p.pct}%</text><text x="${x(i)}" y="${H-18}" text-anchor="middle" font-size="11" fill="#536d80">${escParent(p.label)}</text>`).join('');
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="الرسم البياني لتطور المستوى الأكاديمي">${grid}<line x1="${pad}" y1="${y(80)}" x2="${W-pad}" y2="${y(80)}" stroke="#78a86b" stroke-dasharray="6 6"/><polyline points="${poly}" fill="none" stroke="#176a8a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
-  }
-  function openParentReport(){
-    const name=(window.activeStudentName||document.getElementById('studentProfileSelect')?.value||'').trim();
-    if(!name){alert('اختاري الطالبة أولًا لعرض تقرير ولي الأمر.');return;}
-    const pts=studentSeries(name), base=pts[0]?.pct, last=pts[pts.length-1]?.pct;
-    const delta=(base!=null&&last!=null)?last-base:null, high=pts.length?Math.max(...pts.map(p=>p.pct)):null;
-    const trend=delta==null?'بانتظار متابعة إضافية':delta>0?'تحسّن ملحوظ':delta<0?'يحتاج متابعة ودعم':'مستوى مستقر';
-    const ints=studentInterventionsFor(name);
-    const actions=ints.length?ints.slice(-4).map(i=>`<li>${escParent(i.action||'إجراء دعم تعليمي')}</li>`).join(''):'<li>لا توجد إجراءات علاجية مسجلة حتى الآن.</li>';
-    const results=pts.length?pts.map(p=>`<tr><td>${escParent(p.label)}</td><td>${escParent(p.raw)}</td><td>${p.pct}%</td><td>${parentLevel(p.pct)}</td></tr>`).join(''):'<tr><td colspan="4">لا توجد نتائج محفوظة.</td></tr>';
-    const subject=document.getElementById('subjectFilter')?.value||'—', grade=document.getElementById('gradeFilter')?.value||'—', cls=document.getElementById('classFilter')?.value||'—';
-    const teacher=(window.currentUser&&currentUser.name)||'المعلم/المعلمة';
-    const summary=last==null?'لم تُسجل بيانات كافية بعد لإصدار قراءة للمستوى.':`المستوى الحالي: ${parentLevel(last)} (${last}%). ${delta==null?'تحتاج الطالبة إلى متابعة إضافية لقياس اتجاه النمو.':`التغير منذ أول قياس ${delta>=0?'+':''}${delta} نقطة مئوية، والاتجاه العام: ${trend}.`}`;
-    const w=window.open('','_blank'); if(!w){alert('يرجى السماح بالنوافذ المنبثقة لفتح تقرير ولي الأمر.');return;}
-    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير ولي الأمر - ${escParent(name)}</title><style>
-      @page{size:A4 portrait;margin:12mm}*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#eef5f9;color:#173653}.page{width:100%;max-width:900px;margin:18px auto;background:white;padding:28px;border-radius:22px;border:1px solid #d8e5ed}.head{text-align:center;border-bottom:3px solid #d8b55a;padding-bottom:16px}.head h1{margin:0;color:#174d7e;font-size:26px}.head h2{margin:5px 0 0;font-size:19px}.school{color:#667d8e;margin-top:5px}.info{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:18px 0}.info div,.kpis div{background:#f4f8fb;border:1px solid #dce8ef;border-radius:12px;padding:10px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:15px 0}.kpis strong{display:block;font-size:22px;color:#174d7e}.kpis span{font-size:12px;color:#657b8d}.card{border:1px solid #dce8ef;border-radius:16px;padding:16px;margin-top:14px}.card h3{margin:0 0 10px;color:#174d7e}.chart svg{width:100%;height:auto}.summary{background:#f6f9ef;border-right:5px solid #91a95e;padding:12px;border-radius:10px;line-height:1.9}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #dce8ef;padding:8px;text-align:center}th{background:#edf5fa}ul{margin:0;padding-right:22px}.footer{margin-top:18px;padding-top:12px;border-top:1px solid #dce8ef;display:flex;justify-content:space-between;color:#667d8e;font-size:12px}.actions{text-align:center;margin:18px}.actions button{border:0;border-radius:10px;padding:10px 18px;background:#174d7e;color:#fff;font-weight:700;cursor:pointer}@media print{body{background:#fff}.page{margin:0;max-width:none;border:0;border-radius:0;padding:0}.actions{display:none}}
-    </style></head><body><div class="actions"><button onclick="window.print()">طباعة / حفظ PDF</button></div><main class="page"><header class="head"><h1>مِسبار زايد | منصة رحلة التقدّم الأكاديمي</h1><h2>تقرير رحلة التقدّم الأكاديمي للطالبة</h2><div class="school">مجمع زايد التعليمي – الساف</div></header>
-    <section class="info"><div><b>اسم الطالبة:</b> ${escParent(name)}</div><div><b>المادة:</b> ${escParent(subject)}</div><div><b>الصف:</b> ${escParent(grade)}</div><div><b>الشعبة:</b> ${escParent(cls)}</div></section>
-    <section class="kpis"><div><strong>${base==null?'—':base+'%'}</strong><span>أول قياس</span></div><div><strong>${last==null?'—':last+'%'}</strong><span>المستوى الحالي</span></div><div><strong>${delta==null?'—':(delta>=0?'+':'')+delta}</strong><span>مقدار التغير</span></div><div><strong>${high==null?'—':high+'%'}</strong><span>أعلى نتيجة</span></div></section>
-    <section class="card"><h3>الرسم البياني لتطور المستوى</h3><div class="chart">${parentChartSvg(pts)}</div><div class="summary">${escParent(summary)}</div></section>
-    <section class="card"><h3>نتائج التقييمات</h3><table><thead><tr><th>التقييم</th><th>الدرجة</th><th>النسبة</th><th>المستوى</th></tr></thead><tbody>${results}</tbody></table></section>
-    <section class="card"><h3>الدعم والإجراءات التعليمية</h3><ul>${actions}</ul></section>
-    <footer class="footer"><span>المعلم/المعلمة: ${escParent(teacher)}</span><span>تاريخ التقرير: ${new Date().toLocaleDateString('ar-AE')}</span></footer></main></body></html>`);
-    w.document.close();
-  }
-  document.getElementById('parentReportBtn')?.addEventListener('click',openParentReport);
-})();
-</script>
 
 </body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -3071,6 +3013,69 @@ body:not(.app-mode) .approved-cover{
   document.addEventListener('DOMContentLoaded',()=>{if(cloudToken())updateCloudBadge(navigator.onLine?'متصل':'دون اتصال')});
 })();
 </script>
+
+
+<!-- MISBAR V1.5 UI + Parent Report functional scripts -->
+<script id="misbar-v14-ui">
+document.addEventListener('DOMContentLoaded',()=>{
+  const sidebar=document.querySelector('#appShell .sidebar');
+  if(sidebar&&!sidebar.querySelector('.v14-appbrand')){
+    const d=document.createElement('div');d.className='v14-appbrand';
+    d.innerHTML='<div class="v14-logo">م</div><div class="v14-brandtext"><b>مِسبار زايد</b><span>ZAYED MISBAR</span><small>بالميثاق نبلغ الآفاق</small></div>';
+    sidebar.insertBefore(d,sidebar.firstChild);
+  }
+  const workspace=document.querySelector('#appShell .workspace');
+  const wh=workspace?.querySelector('.workspace-head');
+  if(workspace&&wh&&!workspace.querySelector('.v14-header')){
+    const h=document.createElement('div');h.className='v14-header';
+    h.innerHTML='<div class="v14-header-title"><h1>مِسبار زايد | منصة رحلة التقدّم الأكاديمي</h1><p>نرصد التقدّم • نعالج الفجوات • نقيس الأثر</p></div><div class="v14-saif"><div><b>مرحبًا بك</b><small>أنا سيف مساعدك الذكي</small></div><div class="bot">🤖</div></div>';
+    workspace.insertBefore(h,wh);
+    const sync=document.createElement('div');sync.className='v14-syncstrip';sync.innerHTML='<span>☁️ المزامنة السحابية مفعلة</span><span>الدرجات والبيانات تُحفظ في Google Sheets وتُسترجع عند تسجيل الدخول</span>';
+    wh.insertAdjacentElement('afterend',sync);
+  }
+});
+</script>
+
+<script id="misbar-parent-report-v15">
+(function(){
+  function escParent(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function parentLevel(v){return v==null?'بانتظار البيانات':v>=80?'متقن':v>=60?'في طور التقدّم':'يحتاج دعمًا';}
+  function parentChartSvg(points){
+    if(!points.length) return '<div class="empty">لا توجد نتائج كافية لرسم مستوى الطالبة حتى الآن.</div>';
+    const W=760,H=260,pad=52,maxX=Math.max(points.length-1,1),x=i=>pad+i*(W-pad*2)/maxX,y=v=>H-pad-(v/100)*(H-pad*2);
+    let grid=''; [0,20,40,60,80,100].forEach(v=>grid+=`<line x1="${pad}" y1="${y(v)}" x2="${W-pad}" y2="${y(v)}" stroke="#dbe7ef"/><text x="${pad-10}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="#61778a">${v}%</text>`);
+    const poly=points.map((p,i)=>`${x(i)},${y(p.pct)}`).join(' ');
+    const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.pct)}" r="6" fill="#176a8a"/><text x="${x(i)}" y="${y(p.pct)-12}" text-anchor="middle" font-size="12" font-weight="700" fill="#174d7e">${p.pct}%</text><text x="${x(i)}" y="${H-18}" text-anchor="middle" font-size="11" fill="#536d80">${escParent(p.label)}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="الرسم البياني لتطور المستوى الأكاديمي">${grid}<line x1="${pad}" y1="${y(80)}" x2="${W-pad}" y2="${y(80)}" stroke="#78a86b" stroke-dasharray="6 6"/><polyline points="${poly}" fill="none" stroke="#176a8a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
+  }
+  function openParentReport(){
+    const name=(window.activeStudentName||document.getElementById('studentProfileSelect')?.value||'').trim();
+    if(!name){alert('اختاري الطالبة أولًا لعرض تقرير ولي الأمر.');return;}
+    const pts=studentSeries(name), base=pts[0]?.pct, last=pts[pts.length-1]?.pct;
+    const delta=(base!=null&&last!=null)?last-base:null, high=pts.length?Math.max(...pts.map(p=>p.pct)):null;
+    const trend=delta==null?'بانتظار متابعة إضافية':delta>0?'تحسّن ملحوظ':delta<0?'يحتاج متابعة ودعم':'مستوى مستقر';
+    const ints=studentInterventionsFor(name);
+    const actions=ints.length?ints.slice(-4).map(i=>`<li>${escParent(i.action||'إجراء دعم تعليمي')}</li>`).join(''):'<li>لا توجد إجراءات علاجية مسجلة حتى الآن.</li>';
+    const results=pts.length?pts.map(p=>`<tr><td>${escParent(p.label)}</td><td>${escParent(p.raw)}</td><td>${p.pct}%</td><td>${parentLevel(p.pct)}</td></tr>`).join(''):'<tr><td colspan="4">لا توجد نتائج محفوظة.</td></tr>';
+    const subject=document.getElementById('subjectFilter')?.value||'—', grade=document.getElementById('gradeFilter')?.value||'—', cls=document.getElementById('classFilter')?.value||'—';
+    const teacher=(window.currentUser&&currentUser.name)||'المعلم/المعلمة';
+    const summary=last==null?'لم تُسجل بيانات كافية بعد لإصدار قراءة للمستوى.':`المستوى الحالي: ${parentLevel(last)} (${last}%). ${delta==null?'تحتاج الطالبة إلى متابعة إضافية لقياس اتجاه النمو.':`التغير منذ أول قياس ${delta>=0?'+':''}${delta} نقطة مئوية، والاتجاه العام: ${trend}.`}`;
+    const w=window.open('','_blank'); if(!w){alert('يرجى السماح بالنوافذ المنبثقة لفتح تقرير ولي الأمر.');return;}
+    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير ولي الأمر - ${escParent(name)}</title><style>
+      @page{size:A4 portrait;margin:12mm}*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#eef5f9;color:#173653}.page{width:100%;max-width:900px;margin:18px auto;background:white;padding:28px;border-radius:22px;border:1px solid #d8e5ed}.head{text-align:center;border-bottom:3px solid #d8b55a;padding-bottom:16px}.head h1{margin:0;color:#174d7e;font-size:26px}.head h2{margin:5px 0 0;font-size:19px}.school{color:#667d8e;margin-top:5px}.info{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:18px 0}.info div,.kpis div{background:#f4f8fb;border:1px solid #dce8ef;border-radius:12px;padding:10px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:15px 0}.kpis strong{display:block;font-size:22px;color:#174d7e}.kpis span{font-size:12px;color:#657b8d}.card{border:1px solid #dce8ef;border-radius:16px;padding:16px;margin-top:14px}.card h3{margin:0 0 10px;color:#174d7e}.chart svg{width:100%;height:auto}.summary{background:#f6f9ef;border-right:5px solid #91a95e;padding:12px;border-radius:10px;line-height:1.9}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #dce8ef;padding:8px;text-align:center}th{background:#edf5fa}ul{margin:0;padding-right:22px}.footer{margin-top:18px;padding-top:12px;border-top:1px solid #dce8ef;display:flex;justify-content:space-between;color:#667d8e;font-size:12px}.actions{text-align:center;margin:18px}.actions button{border:0;border-radius:10px;padding:10px 18px;background:#174d7e;color:#fff;font-weight:700;cursor:pointer}@media print{body{background:#fff}.page{margin:0;max-width:none;border:0;border-radius:0;padding:0}.actions{display:none}}
+    </style></head><body><div class="actions"><button onclick="window.print()">طباعة / حفظ PDF</button></div><main class="page"><header class="head"><h1>مِسبار زايد | منصة رحلة التقدّم الأكاديمي</h1><h2>تقرير رحلة التقدّم الأكاديمي للطالبة</h2><div class="school">مجمع زايد التعليمي – الساف</div></header>
+    <section class="info"><div><b>اسم الطالبة:</b> ${escParent(name)}</div><div><b>المادة:</b> ${escParent(subject)}</div><div><b>الصف:</b> ${escParent(grade)}</div><div><b>الشعبة:</b> ${escParent(cls)}</div></section>
+    <section class="kpis"><div><strong>${base==null?'—':base+'%'}</strong><span>أول قياس</span></div><div><strong>${last==null?'—':last+'%'}</strong><span>المستوى الحالي</span></div><div><strong>${delta==null?'—':(delta>=0?'+':'')+delta}</strong><span>مقدار التغير</span></div><div><strong>${high==null?'—':high+'%'}</strong><span>أعلى نتيجة</span></div></section>
+    <section class="card"><h3>الرسم البياني لتطور المستوى</h3><div class="chart">${parentChartSvg(pts)}</div><div class="summary">${escParent(summary)}</div></section>
+    <section class="card"><h3>نتائج التقييمات</h3><table><thead><tr><th>التقييم</th><th>الدرجة</th><th>النسبة</th><th>المستوى</th></tr></thead><tbody>${results}</tbody></table></section>
+    <section class="card"><h3>الدعم والإجراءات التعليمية</h3><ul>${actions}</ul></section>
+    <footer class="footer"><span>المعلم/المعلمة: ${escParent(teacher)}</span><span>تاريخ التقرير: ${new Date().toLocaleDateString('ar-AE')}</span></footer></main></body></html>`);
+    w.document.close();
+  }
+  document.getElementById('parentReportBtn')?.addEventListener('click',openParentReport);
+})();
+</script>
+
 </body>
 </html>
 
