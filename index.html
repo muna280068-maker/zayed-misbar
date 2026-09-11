@@ -746,10 +746,43 @@ function sanitizeStoredUser(user){
   const u={...safeObject(user)}; delete u.password; return u;
 }
 const MISBAR_CLOUD_URL='https://script.google.com/macros/s/AKfycbwIoQz55Ocv24PHikIzWNg3fWJGTf9wTGFpZkt9fF5p00NUDnLZIuk_YXT0pKQtoxvb/exec';
+// Apps Script Web Apps redirect cross-origin POST responses to googleusercontent.com.
+// Some browsers block reading that redirected response from GitHub Pages even though
+// the request itself reaches the backend.  We therefore send POSTs in no-cors mode,
+// tag each request with a requestId, then read the small result through JSONP.
+function cloudRequestId(){
+  try{return crypto.randomUUID().replace(/-/g,'')+Date.now().toString(36)}catch(_){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2)}
+}
+function cloudJsonp(params={}, timeoutMs=15000){
+  return new Promise((resolve,reject)=>{
+    const cb='__misbar_cb_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
+    const q=new URLSearchParams();
+    Object.entries(params).forEach(([k,v])=>q.set(k,typeof v==='string'?v:JSON.stringify(v)));
+    q.set('callback',cb);
+    const s=document.createElement('script');
+    let done=false;
+    const clean=()=>{if(done)return;done=true;try{delete window[cb]}catch(_){window[cb]=undefined}try{s.remove()}catch(_){}};
+    const timer=setTimeout(()=>{clean();reject(new Error('CLOUD_TIMEOUT'))},timeoutMs);
+    window[cb]=(payload)=>{clearTimeout(timer);clean();resolve(payload)};
+    s.onerror=()=>{clearTimeout(timer);clean();reject(new Error('CLOUD_JSONP_FAILED'))};
+    s.src=MISBAR_CLOUD_URL+'?'+q.toString();
+    document.head.appendChild(s);
+  });
+}
+async function cloudGet(action,data={}){
+  return await cloudJsonp({action,...data});
+}
 async function cloudPost(action, data={}){
-  const body=new URLSearchParams({action,...Object.fromEntries(Object.entries(data).map(([k,v])=>[k,typeof v==='string'?v:JSON.stringify(v)]))});
-  const r=await fetch(MISBAR_CLOUD_URL,{method:'POST',body,redirect:'follow'});
-  return await r.json();
+  const requestId=cloudRequestId();
+  const body=new URLSearchParams({action,requestId,...Object.fromEntries(Object.entries(data).map(([k,v])=>[k,typeof v==='string'?v:JSON.stringify(v)]))});
+  await fetch(MISBAR_CLOUD_URL,{method:'POST',body,mode:'no-cors',redirect:'follow'});
+  const started=Date.now();
+  while(Date.now()-started<15000){
+    const res=await cloudJsonp({action:'result',requestId},5000);
+    if(res&&res.ready)return res.result||{ok:false,error:'EMPTY_RESULT'};
+    await new Promise(r=>setTimeout(r,450));
+  }
+  throw new Error('CLOUD_RESULT_TIMEOUT');
 }
 function cloudToken(){ try{return localStorage.getItem('misbarCloudTokenV1')||''}catch(e){return''} }
 function saveCloudToken(t){ try{if(t)localStorage.setItem('misbarCloudTokenV1',t);else localStorage.removeItem('misbarCloudTokenV1')}catch(e){} }
@@ -785,7 +818,7 @@ async function performLogin(e){
     const passwordHash=await misbarPasswordHash(password);
     const res=await cloudPost('login',{email,passwordHash});
     if(!res.ok){if(status)status.textContent='بيانات الدخول غير صحيحة. إذا كان هذا أول تفعيل لحساب صاحبة المنصة استخدمي زر الاستعادة.';return}
-    saveCloudToken(res.token);await hydrateFromCloud(res.snapshot);
+    saveCloudToken(res.token);const pulled=await cloudGet('pull',{token:res.token});if(pulled&&pulled.ok)await hydrateFromCloud(pulled.snapshot);
     const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email),user={...res.user,passwordHash};if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
     try{localStorage.removeItem(SIGNED_OUT_KEY);localStorage.setItem(LAST_EMAIL_KEY,email);if($('#rememberLogin')?.checked)savePersistentSession(user)}catch(_){ }
     updateCloudBadge('متصل');enterApp(user);scheduleCloudPush();
@@ -793,7 +826,7 @@ async function performLogin(e){
 }
 async function directAdminLogin(){
   const code=window.prompt('أدخل رمز إدارة المدرسة:');if(code===null)return;const status=$('#loginStatus');
-  try{const accessHash=await misbarPasswordHash(code);const res=await cloudPost('adminAccess',{accessHash});if(!res.ok){if(status)status.textContent='رمز الإدارة غير صحيح.';return}saveCloudToken(res.token);await hydrateFromCloud(res.snapshot);const user=res.user;const users=loadUsers(),i=users.findIndex(u=>u.email===user.email);if(i>=0)users[i]=user;else users.push(user);saveUsers(users);savePersistentSession(user);enterApp(user);updateCloudBadge('متصل')}catch(e){if(status)status.textContent='تعذر الاتصال بالسحابة.'}
+  try{const accessHash=await misbarPasswordHash(code);const res=await cloudPost('adminAccess',{accessHash});if(!res.ok){if(status)status.textContent='رمز الإدارة غير صحيح.';return}saveCloudToken(res.token);const pulled=await cloudGet('pull',{token:res.token});if(pulled&&pulled.ok)await hydrateFromCloud(pulled.snapshot);const user=res.user;const users=loadUsers(),i=users.findIndex(u=>u.email===user.email);if(i>=0)users[i]=user;else users.push(user);saveUsers(users);savePersistentSession(user);enterApp(user);updateCloudBadge('متصل')}catch(e){if(status)status.textContent='تعذر الاتصال بالسحابة.'}
 }
 $('#adminDirectLogin').onclick=directAdminLogin;
 async function ownerRecoveryLogin(){
