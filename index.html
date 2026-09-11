@@ -4,8 +4,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<!-- ZAYED MISBAR V1.3 - CLOUD AUTH + PER-ACCOUNT SYNC + DIAGNOSTIC ERROR DETAIL -->
-<title>مِسبار زايد | ZAYED MISBAR</title>
+<!-- ZAYED MISBAR V1.4 - CLOUD SYNC GRADES + VISUAL REDESIGN -->
+<title>مِسبار زايد | منصة رحلة التقدّم الأكاديمي</title>
 <!-- V77 LOCAL STABLE: Firebase removed; accounts and data stored on this device -->
 <style>
 :root{--navy:#173653;--blue:#477da6;--sky:#dcebf4;--cream:#f7f2e8;--gold:#c6a35f;--ink:#17324a;--muted:#698095;--white:#fff;--line:#d9e5ec;--shadow:0 18px 50px rgba(23,54,83,.12)}
@@ -330,6 +330,28 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 @media(max-width:650px){.remeasure-form-grid-v98,.remeasure-summary-v98,.remeasure-progress-cards-v98{grid-template-columns:1fr}.remeasure-tab-v98{min-width:0;flex:1}.rm-notes-v98,.remeasure-help-v98{grid-column:auto}.remeasure-actions-v98 .btn{width:100%}}
 </style>
 <!-- V99: Weekly Quiz score dropdown follows assessment max; values above max are blocked. -->
+
+<style id="misbar-v14-visual">
+/* ===== MISBAR V1.4 visual system: target mockup-inspired ===== */
+body.app-mode{background:linear-gradient(180deg,#eef8ff 0%,#f8fbff 58%,#fffaf2 100%)!important;color:#123b64!important}
+body.app-mode #appShell{grid-template-columns:220px 1fr!important;background:transparent!important;inset:0!important;height:100vh!important}
+body.app-mode .sidebar{background:rgba(255,255,255,.96)!important;color:#123b64!important;border-left:1px solid #d9eafb!important;box-shadow:8px 0 28px rgba(38,92,145,.08)!important;padding:16px 12px 20px!important}
+.v14-appbrand{display:flex;align-items:center;gap:10px;padding:8px 8px 16px;margin-bottom:8px;border-bottom:1px solid #e4eef7}.v14-logo{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#2f8fd4,#7466c8);display:grid;place-items:center;color:#fff;font-size:24px;font-weight:900;box-shadow:0 10px 26px rgba(55,112,176,.24)}.v14-brandtext b{display:block;font-size:20px;color:#0b4775}.v14-brandtext span{font-size:10px;letter-spacing:1.4px;color:#7d91a8}.v14-brandtext small{display:block;color:#b08538;font-weight:800;margin-top:2px}
+body.app-mode .sidebar-title{background:#f3f8ff!important;color:#174c7b!important;border:1px solid #deebf7!important;border-radius:16px!important;padding:10px 12px!important;margin:10px 0 12px!important}.sidebar-title span{color:#7890a7!important}.sidebar-title b{color:#174c7b!important}
+body.app-mode .side-link{color:#174d7e!important;background:transparent!important;border:1px solid transparent!important;border-radius:12px!important;margin:3px 0!important;padding:10px 12px!important;position:relative!important}
+body.app-mode .side-link:hover{background:#f3f8ff!important;border-color:#e0ebf6!important}.side-link.active{background:linear-gradient(90deg,#e9f5ff,#f5f0ff)!important;color:#1c69a2!important;border-color:#d7e8f7!important;box-shadow:0 6px 18px rgba(68,126,180,.10)!important}
+body.app-mode .side-link.saif-side{margin-top:12px!important;background:linear-gradient(135deg,#f0ecff,#e8f8ff)!important;border-color:#d9d0f5!important;color:#6f4aa8!important}
+body.app-mode .workspace{padding:14px 18px 28px!important;background:linear-gradient(180deg,rgba(248,252,255,.84),rgba(250,252,255,.96))!important}
+.v14-header{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;background:rgba(255,255,255,.94);border:1px solid #dcebf7;border-radius:22px;padding:14px 18px;margin-bottom:12px;box-shadow:0 10px 30px rgba(34,94,145,.08)}.v14-header-title{text-align:center}.v14-header-title h1{margin:0;color:#123e72;font-size:28px;font-weight:900}.v14-header-title p{margin:2px 0 0;color:#426f98;font-weight:800}.v14-saif{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#eef9ff,#f5f1ff);border:1px solid #dbeafa;border-radius:18px;padding:8px 12px}.v14-saif .bot{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#5bb4e8,#6357c9);color:#fff;font-size:24px;box-shadow:0 8px 18px rgba(67,101,180,.22)}.v14-saif b{display:block;color:#173f72}.v14-saif small{color:#708aa4}
+body.app-mode .workspace-head{background:rgba(255,255,255,.92)!important;border:1px solid #dcebf7!important;border-radius:20px!important;padding:14px 16px!important;box-shadow:0 10px 24px rgba(45,99,145,.07)!important;margin-bottom:12px!important}.workspace-head h2{font-size:25px!important;color:#0f4776!important}.workspace-head .access-banner{background:#f1f7fd!important;border-color:#d5e6f4!important;color:#315f86!important}.filters select,.subject-popup-btn{background:#fff!important;border-color:#cfe1f1!important;color:#174d7d!important}
+body.app-mode .panel,body.app-mode .kpi,body.app-mode .assessment-card,body.app-mode .control-card,body.app-mode .score-summary div{border:1px solid #d9e9f6!important;box-shadow:0 10px 24px rgba(41,90,135,.07)!important;background:rgba(255,255,255,.96)!important}.panel{border-radius:20px!important}.kpi{border-radius:18px!important}.kpi:nth-child(1){background:linear-gradient(145deg,#f4f9ff,#edf6ff)!important}.kpi:nth-child(2){background:linear-gradient(145deg,#f2fbf8,#eaf8f2)!important}.kpi:nth-child(3){background:linear-gradient(145deg,#faf7ff,#f3eeff)!important}.kpi:nth-child(4){background:linear-gradient(145deg,#fff7f7,#fff0f1)!important;border-right:0!important}.kpi strong{color:#123f6c!important}.kpi span{color:#71879a!important}
+body.app-mode .btn.primary{background:linear-gradient(135deg,#4a8fc8,#875bbb)!important;color:#fff!important;box-shadow:0 8px 18px rgba(105,89,176,.20)!important}.btn.ghost{background:#fff!important;color:#2f6f9f!important;border-color:#cfe0ee!important}.panel-head h3{color:#133f70!important}.eyebrow{color:#4c88ba!important}
+body.app-mode table{border-radius:14px;overflow:hidden}body.app-mode th{background:#eef7ff!important;color:#315e84!important}body.app-mode td{background:#fff!important}.table-wrap{border-color:#d7e7f3!important}.score-select{border-color:#c7dfee!important}
+#misbarCloudBadge{background:#e9f8ef!important;color:#267149!important;border:1px solid #cbead7!important}
+.v14-syncstrip{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(90deg,#eef9f4,#f7fffb);border:1px solid #ccebd9;border-radius:14px;padding:9px 12px;margin:0 0 12px;color:#2f6f50;font-size:12px;font-weight:800}.v14-syncstrip span:last-child{color:#6f8192;font-weight:600}
+body.app-mode .workspace:after{content:'مِسبار زايد .. بالميثاق نبلغ الآفاق';display:block;text-align:center;margin:18px 0 2px;padding:22px;border-radius:20px;background:linear-gradient(180deg,#f8fbff,#f7ead3);color:#174c7b;font-size:22px;font-weight:900;border:1px solid #e5e8e8}
+@media(max-width:1000px){body.app-mode #appShell{grid-template-columns:1fr!important}.v14-header{grid-template-columns:1fr}.v14-saif{justify-self:center}.v14-header-title h1{font-size:22px}.sidebar{border-left:0!important;border-bottom:1px solid #dceaf5!important}}
+</style>
 </head>
 <body>
 <!-- ZAYED MISBAR V85 LEADERSHIP SIX SUBJECTS HARD FIX: logout/session + 6 subjects + visible visitor QR -->
@@ -456,7 +478,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <div class="view" id="view-scores">
 <div class="panel">
 <div class="panel-head"><div><span class="eyebrow">إدخال الدرجات</span><h3 id="scoreTitle">التشخيص الأول</h3><div class="saved-note" id="savedNote"></div></div><div class="roster-actions"><label class="btn ghost small file-btn">استيراد قائمة الطالبات<input accept=".csv,.txt,text/csv,text/plain" id="rosterFile" type="file"/></label><button class="btn ghost small" id="manageRosterBtn">إدارة الطالبات</button><button class="btn ghost small" id="exportTeacherExcel" type="button">تصدير Excel الخاص بي</button><button class="btn primary small" id="saveScores">حفظ واعتماد</button></div></div>
-<p class="hint">اختاري الدرجة فقط لكل طالب/طالبة؛ تُحفظ الدرجة تلقائيًا فور اختيارها، ويمكن استخدام «حفظ واعتماد» لاعتماد النتائج وقفلها. بعد الحفظ يمكن تنزيل ملف Excel خاص بحسابك مباشرة دون أي ربط خارجي. تحفظ هذه النسخة بيانات كل مستخدم على جهازه، لذلك لا تنتقل بيانات المعلمين تلقائيًا إلى جهاز الإدارة. يُحسب المستوى تلقائيًا: 80% فأعلى متقن، 60–79% يحتاج دعماً، وأقل من 60% أولوية تدخل علاجي.</p>
+<p class="hint">اختاري الدرجة لكل طالب/طالبة؛ تُحفظ محليًا فورًا وتُزامَن تلقائيًا مع سحابة مِسبار زايد. ويمكن استخدام «حفظ واعتماد» لاعتماد النتائج وقفلها، ثم تظهر البيانات نفسها عند تسجيل الدخول من أي جهاز أو نافذة أخرى. يُحسب المستوى تلقائيًا: 80% فأعلى متقن، 60–79% يحتاج دعماً، وأقل من 60% أولوية تدخل علاجي.</p>
 <div class="score-controls"><div class="control-card"><label>الاختبار</label><select id="assessmentSelect"></select></div><div class="control-card"><label>الدرجة النهائية <small style="display:block;color:#6b7f8f;font-weight:500">موحّدة لجميع المواد</small></label><select disabled="" id="maxScoreSelect"><option value="100">100</option></select></div><div class="control-card"><label>المادة</label><input disabled="" id="scoreSubject"/></div><div class="control-card"><label>الشعبة</label><input disabled="" id="scoreClass"/></div></div>
 <div class="score-summary"><div><span>عدد الطلبة</span><strong id="sumCount">0</strong></div><div><span>متقن</span><strong id="sumGood">0</strong></div><div><span>يحتاج دعماً</span><strong id="sumMedium">0</strong></div><div><span>أولوية تدخل</span><strong id="sumDanger">0</strong></div></div>
 <div class="table-wrap"><table id="scoreTable"><thead><tr><th>#</th><th>الطالب/الطالبة</th><th>الدرجة</th><th>النسبة</th><th>المستوى</th></tr></thead><tbody></tbody></table></div>
@@ -536,7 +558,7 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <div class="student-profile-shell">
 <div class="panel student-profile-head">
 <div><span class="eyebrow">ملف التعلم الفردي</span><h3 id="studentProfileName">اختاري طالبًا/طالبة</h3><p class="hint" id="studentProfileContext">يمكن فتح الملف بالضغط على اسم الطالب/الطالبة من جدول الدرجات أو سجل الأثر.</p></div>
-<div class="student-profile-actions"><select id="studentProfileSelect"></select><button class="btn ghost small" id="printStudentProfile">طباعة الملف</button></div>
+<div class="student-profile-actions"><select id="studentProfileSelect"></select><button class="btn primary small" id="parentReportBtn">تقرير ولي الأمر</button><button class="btn ghost small" id="printStudentProfile">طباعة الملف</button></div>
 </div>
 <div class="student-profile-kpis"><article><strong id="spBaseline">—</strong><span>التشخيص</span></article><article><strong id="spLatest">—</strong><span>آخر متابعة</span></article><article><strong id="spDelta">—</strong><span>التغير</span></article><article><strong id="spState">—</strong><span>الحالة الحالية</span></article></div>
 <div class="profile-grid">
@@ -1097,7 +1119,7 @@ try{
 }catch(e){}
 
 function loadRosterOverrides(){try{return safeObject(JSON.parse(localStorage.getItem(ROSTER_OVERRIDES_KEY)||'{}'))}catch{return {}}}
-function saveRosterOverrides(v){localStorage.setItem(ROSTER_OVERRIDES_KEY,JSON.stringify(v))}
+function saveRosterOverrides(v){localStorage.setItem(ROSTER_OVERRIDES_KEY,JSON.stringify(v));scheduleCloudPush()}
 function rosterClassKey(){return classFilter?.value||''}
 function rosterForCurrentClass(){const k=rosterClassKey(),o=loadRosterOverrides();if(Array.isArray(o[k]))return [...o[k]];if(Array.isArray(BUILTIN_ROSTERS[k]))return [...BUILTIN_ROSTERS[k]];return []}
 let roster=[];
@@ -1143,9 +1165,9 @@ function renderRosterManager(){const box=$('#rosterManageList');if(!box)return;$
 
 let activeAssessmentId='';
 function loadAssessments(){try{const v=JSON.parse(localStorage.getItem(ASSESSMENTS_KEY)||'[]');return safeArray(v).map(a=>({...safeObject(a),skills:safeArray(a?.skills),max:Number(a?.max)||100}))}catch{return[]}}
-function saveAssessments(v){localStorage.setItem(ASSESSMENTS_KEY,JSON.stringify(v))}
+function saveAssessments(v){localStorage.setItem(ASSESSMENTS_KEY,JSON.stringify(v));scheduleCloudPush()}
 function loadAllScores(){try{const raw=safeObject(JSON.parse(localStorage.getItem(SCORES_KEY)||'{}'));const out={};Object.entries(raw).forEach(([k,v])=>{const o=safeObject(v);out[k]={...o,rows:safeArray(o.rows).map(r=>safeObject(r))};});return out}catch{return{}}}
-function saveAllScores(v){localStorage.setItem(SCORES_KEY,JSON.stringify(v))}
+function saveAllScores(v){localStorage.setItem(SCORES_KEY,JSON.stringify(v));scheduleCloudPush()}
 function contextKey(){return [currentUser.email||'demo',subjectFilter?.value||currentUser.subject,gradeFilter?.value||'',classFilter?.value||''].join('|')}
 function assessmentKey(id){return contextKey()+'|'+id}
 function currentContextAssessments(){
@@ -1446,7 +1468,7 @@ $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استع
   const btn=document.getElementById('saveScores');
   if(!btn)return;
   btn.onclick=null;
-  btn.addEventListener('click',function(ev){
+  btn.addEventListener('click',async function(ev){
     ev.preventDefault();
     ev.stopImmediatePropagation();
     try{
@@ -1476,9 +1498,11 @@ $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استع
       a.status=rows.length===total?'completed':'in_progress';a.locked=true;a.approvedAt=new Date().toISOString();ass[idx]=a;saveAssessments(ass);
       const verify=loadAllScores()[key];
       if(!verify||safeArray(verify.rows).length!==rows.length)throw new Error('فشل التحقق من النتائج بعد الحفظ');
-      const note=document.getElementById('savedNote');if(note)note.textContent=`✓ تم الحفظ والاعتماد • ${rows.length} نتيجة`;
+      const note=document.getElementById('savedNote');if(note)note.textContent=`✓ تم الحفظ محليًا • جارٍ المزامنة السحابية`;
+      const cloudSaved=await pushCloudNow();
+      if(note)note.textContent=cloudSaved?`✓ تم الحفظ والمزامنة السحابية • ${rows.length} نتيجة`:`⚠️ تم الحفظ محليًا وتعذرت المزامنة السحابية`;
       renderAssessmentCards();renderScores();updateOverviewStudentCount();
-      alert(`تم حفظ واعتماد ${rows.length} نتيجة بنجاح.`);
+      alert(cloudSaved?`تم حفظ واعتماد ${rows.length} نتيجة ومزامنتها مع السحابة بنجاح.`:`تم حفظ واعتماد ${rows.length} نتيجة على هذا الجهاز، لكن تعذرت المزامنة السحابية. أعيدي المحاولة عند استقرار الاتصال.`);
     }catch(err){
       console.error('V93 save/approve failed',err);
       alert('تعذر حفظ واعتماد الدرجات: '+(err?.message||'خطأ غير معروف'));
@@ -1487,9 +1511,9 @@ $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استع
 })();
 
 function loadInterventions(){try{const v=JSON.parse(localStorage.getItem(INTERVENTIONS_KEY)||'[]');return safeArray(v).map(i=>({...safeObject(i),students:safeArray(i?.students),actions:safeArray(i?.actions),evidenceIds:safeArray(i?.evidenceIds)}))}catch{return[]}}
-function saveInterventions(v){localStorage.setItem(INTERVENTIONS_KEY,JSON.stringify(v))}
+function saveInterventions(v){localStorage.setItem(INTERVENTIONS_KEY,JSON.stringify(v));scheduleCloudPush()}
 function loadEvidence(){try{const v=JSON.parse(localStorage.getItem(EVIDENCE_KEY)||'[]');return safeArray(v).map(e=>safeObject(e))}catch{return[]}}
-function saveEvidence(v){localStorage.setItem(EVIDENCE_KEY,JSON.stringify(v))}
+function saveEvidence(v){localStorage.setItem(EVIDENCE_KEY,JSON.stringify(v));scheduleCloudPush()}
 function latestSavedAssessment(){const list=currentContextAssessments();const all=loadAllScores();const saved=list.map(a=>({a,s:all[assessmentKey(a.id)]})).filter(x=>x.s).sort((x,y)=>String(y.s.savedAt).localeCompare(String(x.s.savedAt)));return saved[0]||null}
 function studentLevelsFromLatest(){const x=latestSavedAssessment();if(!x)return {good:[],medium:[],danger:[],all:[],assessment:null};const max=x.s.max||x.a.max||subjectMaxScore(subjectFilter.value);const out={good:[],medium:[],danger:[],all:[],assessment:x.a};x.s.rows.forEach(r=>{const pct=Math.round(r.score/max*100),[,cls]=scoreLevel(r.score,max);const item={name:r.name,score:r.score,pct};out[cls].push(item);out.all.push({...item,level:cls})});return out}
 function renderGaps(){if(!$('#gapDynamic'))return;const lv=studentLevelsFromLatest();const total=rosterForCurrentClass().length,diagnosed=lv.all.length,pending=Math.max(0,total-diagnosed);$('#gapContext').innerHTML=`<span>${subjectFilter.value}</span><span>الصف ${gradeArabicName(gradeFilter.value)}</span><span>${classFilter.value}</span>${lv.assessment?`<span>${lv.assessment.type}</span>`:''}`;$('#gapRosterTotal').textContent=total;$('#gapDiagnosed').textContent=diagnosed;$('#gapPending').textContent=pending;$('#gapGoodCount').textContent=lv.good.length;$('#gapMediumCount').textContent=lv.medium.length;$('#gapDangerCount').textContent=lv.danger.length;const box=$('#gapDynamic');if(!lv.assessment){box.innerHTML='<div class="empty-inline" style="grid-column:1/-1">احفظي نتائج اختبار تشخيصي أولًا ليظهر التحليل تلقائيًا.</div>';return}const avg=a=>a.length?Math.round(a.reduce((s,x)=>s+x.pct,0)/a.length):0;box.innerHTML=`<div class="gap-card danger"><b>أولوية تدخل</b><strong>${avg(lv.danger)}%</strong><span>${lv.danger.length} طالب/طالبة</span><small>يقترح سيف: تدخل علاجي مباشر ومجموعة دعم صغيرة</small><details><summary>عرض الطلبة</summary><div>${lv.danger.map(x=>`${x.name} • ${x.pct}%`).join('<br>')||'لا يوجد'}</div></details><button class="btn primary small choose-action" data-level="danger" type="button" onclick="openIntervention('danger')">اختيار إجراء</button></div><div class="gap-card medium"><b>يحتاج دعماً</b><strong>${avg(lv.medium)}%</strong><span>${lv.medium.length} طالب/طالبة</span><small>يقترح سيف: دعم علاجي موجّه ثم متابعة قصيرة</small><details><summary>عرض الطلبة</summary><div>${lv.medium.map(x=>`${x.name} • ${x.pct}%`).join('<br>')||'لا يوجد'}</div></details><button class="btn ghost small choose-action" data-level="medium" type="button" onclick="openIntervention('medium')">اختيار إجراء</button></div><div class="gap-card good"><b>إتقان جيد</b><strong>${avg(lv.good)}%</strong><span>${lv.good.length} طالب/طالبة</span><small>يستمرون في مسار الإثراء والمتابعة.</small><details><summary>عرض الطلبة</summary><div>${lv.good.map(x=>`${x.name} • ${x.pct}%`).join('<br>')||'لا يوجد'}</div></details></div>`;$$('.choose-action').forEach(b=>b.onclick=()=>openIntervention(b.dataset.level))}
@@ -2025,6 +2049,67 @@ body:not(.app-mode) .cover-impact{top:2.0%!important;right:35.0%!important;width
 <div id="misbarVersionBadge" style="position:fixed;left:8px;bottom:8px;z-index:999999;font:700 11px Arial;background:#fff;border:1px solid #b8cbd8;border-radius:8px;padding:4px 7px;color:#315b73">V92</div>
 <div id="misbarBuildMarker" style="position:fixed;bottom:4px;left:6px;z-index:9999;font:10px Arial;color:#789;opacity:.55">V93</div>
 
+
+
+<script id="misbar-v14-ui">
+document.addEventListener('DOMContentLoaded',()=>{
+  const sidebar=document.querySelector('#appShell .sidebar');
+  if(sidebar&&!sidebar.querySelector('.v14-appbrand')){
+    const d=document.createElement('div');d.className='v14-appbrand';
+    d.innerHTML='<div class="v14-logo">م</div><div class="v14-brandtext"><b>مِسبار زايد</b><span>ZAYED MISBAR</span><small>بالميثاق نبلغ الآفاق</small></div>';
+    sidebar.insertBefore(d,sidebar.firstChild);
+  }
+  const workspace=document.querySelector('#appShell .workspace');
+  const wh=workspace?.querySelector('.workspace-head');
+  if(workspace&&wh&&!workspace.querySelector('.v14-header')){
+    const h=document.createElement('div');h.className='v14-header';
+    h.innerHTML='<div class="v14-header-title"><h1>مِسبار زايد | منصة رحلة التقدّم الأكاديمي</h1><p>نرصد التقدّم • نعالج الفجوات • نقيس الأثر</p></div><div class="v14-saif"><div><b>مرحبًا بك</b><small>أنا سيف مساعدك الذكي</small></div><div class="bot">🤖</div></div>';
+    workspace.insertBefore(h,wh);
+    const sync=document.createElement('div');sync.className='v14-syncstrip';sync.innerHTML='<span>☁️ المزامنة السحابية مفعلة</span><span>الدرجات والبيانات تُحفظ في Google Sheets وتُسترجع عند تسجيل الدخول</span>';
+    wh.insertAdjacentElement('afterend',sync);
+  }
+});
+</script>
+
+<script>
+(function(){
+  function escParent(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function parentLevel(v){return v==null?'بانتظار البيانات':v>=80?'متقن':v>=60?'في طور التقدّم':'يحتاج دعمًا';}
+  function parentChartSvg(points){
+    if(!points.length) return '<div class="empty">لا توجد نتائج كافية لرسم مستوى الطالبة حتى الآن.</div>';
+    const W=760,H=260,pad=52,maxX=Math.max(points.length-1,1),x=i=>pad+i*(W-pad*2)/maxX,y=v=>H-pad-(v/100)*(H-pad*2);
+    let grid=''; [0,20,40,60,80,100].forEach(v=>grid+=`<line x1="${pad}" y1="${y(v)}" x2="${W-pad}" y2="${y(v)}" stroke="#dbe7ef"/><text x="${pad-10}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="#61778a">${v}%</text>`);
+    const poly=points.map((p,i)=>`${x(i)},${y(p.pct)}`).join(' ');
+    const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.pct)}" r="6" fill="#176a8a"/><text x="${x(i)}" y="${y(p.pct)-12}" text-anchor="middle" font-size="12" font-weight="700" fill="#174d7e">${p.pct}%</text><text x="${x(i)}" y="${H-18}" text-anchor="middle" font-size="11" fill="#536d80">${escParent(p.label)}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="الرسم البياني لتطور المستوى الأكاديمي">${grid}<line x1="${pad}" y1="${y(80)}" x2="${W-pad}" y2="${y(80)}" stroke="#78a86b" stroke-dasharray="6 6"/><polyline points="${poly}" fill="none" stroke="#176a8a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
+  }
+  function openParentReport(){
+    const name=(window.activeStudentName||document.getElementById('studentProfileSelect')?.value||'').trim();
+    if(!name){alert('اختاري الطالبة أولًا لعرض تقرير ولي الأمر.');return;}
+    const pts=studentSeries(name), base=pts[0]?.pct, last=pts[pts.length-1]?.pct;
+    const delta=(base!=null&&last!=null)?last-base:null, high=pts.length?Math.max(...pts.map(p=>p.pct)):null;
+    const trend=delta==null?'بانتظار متابعة إضافية':delta>0?'تحسّن ملحوظ':delta<0?'يحتاج متابعة ودعم':'مستوى مستقر';
+    const ints=studentInterventionsFor(name);
+    const actions=ints.length?ints.slice(-4).map(i=>`<li>${escParent(i.action||'إجراء دعم تعليمي')}</li>`).join(''):'<li>لا توجد إجراءات علاجية مسجلة حتى الآن.</li>';
+    const results=pts.length?pts.map(p=>`<tr><td>${escParent(p.label)}</td><td>${escParent(p.raw)}</td><td>${p.pct}%</td><td>${parentLevel(p.pct)}</td></tr>`).join(''):'<tr><td colspan="4">لا توجد نتائج محفوظة.</td></tr>';
+    const subject=document.getElementById('subjectFilter')?.value||'—', grade=document.getElementById('gradeFilter')?.value||'—', cls=document.getElementById('classFilter')?.value||'—';
+    const teacher=(window.currentUser&&currentUser.name)||'المعلم/المعلمة';
+    const summary=last==null?'لم تُسجل بيانات كافية بعد لإصدار قراءة للمستوى.':`المستوى الحالي: ${parentLevel(last)} (${last}%). ${delta==null?'تحتاج الطالبة إلى متابعة إضافية لقياس اتجاه النمو.':`التغير منذ أول قياس ${delta>=0?'+':''}${delta} نقطة مئوية، والاتجاه العام: ${trend}.`}`;
+    const w=window.open('','_blank'); if(!w){alert('يرجى السماح بالنوافذ المنبثقة لفتح تقرير ولي الأمر.');return;}
+    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير ولي الأمر - ${escParent(name)}</title><style>
+      @page{size:A4 portrait;margin:12mm}*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#eef5f9;color:#173653}.page{width:100%;max-width:900px;margin:18px auto;background:white;padding:28px;border-radius:22px;border:1px solid #d8e5ed}.head{text-align:center;border-bottom:3px solid #d8b55a;padding-bottom:16px}.head h1{margin:0;color:#174d7e;font-size:26px}.head h2{margin:5px 0 0;font-size:19px}.school{color:#667d8e;margin-top:5px}.info{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:18px 0}.info div,.kpis div{background:#f4f8fb;border:1px solid #dce8ef;border-radius:12px;padding:10px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:15px 0}.kpis strong{display:block;font-size:22px;color:#174d7e}.kpis span{font-size:12px;color:#657b8d}.card{border:1px solid #dce8ef;border-radius:16px;padding:16px;margin-top:14px}.card h3{margin:0 0 10px;color:#174d7e}.chart svg{width:100%;height:auto}.summary{background:#f6f9ef;border-right:5px solid #91a95e;padding:12px;border-radius:10px;line-height:1.9}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #dce8ef;padding:8px;text-align:center}th{background:#edf5fa}ul{margin:0;padding-right:22px}.footer{margin-top:18px;padding-top:12px;border-top:1px solid #dce8ef;display:flex;justify-content:space-between;color:#667d8e;font-size:12px}.actions{text-align:center;margin:18px}.actions button{border:0;border-radius:10px;padding:10px 18px;background:#174d7e;color:#fff;font-weight:700;cursor:pointer}@media print{body{background:#fff}.page{margin:0;max-width:none;border:0;border-radius:0;padding:0}.actions{display:none}}
+    </style></head><body><div class="actions"><button onclick="window.print()">طباعة / حفظ PDF</button></div><main class="page"><header class="head"><h1>مِسبار زايد | منصة رحلة التقدّم الأكاديمي</h1><h2>تقرير رحلة التقدّم الأكاديمي للطالبة</h2><div class="school">مجمع زايد التعليمي – الساف</div></header>
+    <section class="info"><div><b>اسم الطالبة:</b> ${escParent(name)}</div><div><b>المادة:</b> ${escParent(subject)}</div><div><b>الصف:</b> ${escParent(grade)}</div><div><b>الشعبة:</b> ${escParent(cls)}</div></section>
+    <section class="kpis"><div><strong>${base==null?'—':base+'%'}</strong><span>أول قياس</span></div><div><strong>${last==null?'—':last+'%'}</strong><span>المستوى الحالي</span></div><div><strong>${delta==null?'—':(delta>=0?'+':'')+delta}</strong><span>مقدار التغير</span></div><div><strong>${high==null?'—':high+'%'}</strong><span>أعلى نتيجة</span></div></section>
+    <section class="card"><h3>الرسم البياني لتطور المستوى</h3><div class="chart">${parentChartSvg(pts)}</div><div class="summary">${escParent(summary)}</div></section>
+    <section class="card"><h3>نتائج التقييمات</h3><table><thead><tr><th>التقييم</th><th>الدرجة</th><th>النسبة</th><th>المستوى</th></tr></thead><tbody>${results}</tbody></table></section>
+    <section class="card"><h3>الدعم والإجراءات التعليمية</h3><ul>${actions}</ul></section>
+    <footer class="footer"><span>المعلم/المعلمة: ${escParent(teacher)}</span><span>تاريخ التقرير: ${new Date().toLocaleDateString('ar-AE')}</span></footer></main></body></html>`);
+    w.document.close();
+  }
+  document.getElementById('parentReportBtn')?.addEventListener('click',openParentReport);
+})();
+</script>
 
 </body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
