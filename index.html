@@ -608,8 +608,8 @@ body:not(.app-mode) #coverVisitorQr small{display:block!important;font-size:11px
 <div class="reg-summary" id="regSummary">لم يتم اختيار تكليفات بعد.</div>
 </div>
 </div>
-<div hidden="" id="loginFields"><label>البريد الإلكتروني<input autocomplete="username" id="loginEmail" placeholder="name@school.ae" type="email"/></label><label>كلمة المرور<input autocomplete="current-password" id="loginPassword" placeholder="••••••••" type="password"/></label><label style="display:flex;align-items:center;gap:9px;margin-top:12px;font-weight:700"><input checked="" id="rememberLogin" style="width:auto;margin:0" type="checkbox"/> تذكّر البريد والبقاء مسجّلًا على هذا الجهاز</label><div class="note" style="margin-top:4px">لا يتم حفظ كلمة المرور. عند تفعيل الخيار، يحتفظ مِسبار بالبريد والجلسة فقط على هذا الجهاز. استخدم «خروج» على الأجهزة المشتركة.</div><div class="note" id="loginStatus" style="margin-top:8px;color:#8a3b12"></div><button class="btn primary full" id="loginSubmit" style="margin-top:12px" type="button">دخول المنصة</button><button class="btn full" id="adminDirectLogin" style="margin-top:8px" type="button">دخول إدارة المدرسة</button></div>
-<button class="btn primary full" id="authContinue" type="button">متابعة</button><p class="note">حساب المعلم/المعلمة في هذه النسخة محفوظ على الجهاز الحالي. لا تُحفظ كلمة المرور تلقائيًا. المزامنة بين أجهزة متعددة تتطلب تفعيل قاعدة البيانات السحابية.</p></form></dialog>
+<div hidden="" id="loginFields"><label>البريد الإلكتروني<input autocomplete="username" id="loginEmail" placeholder="name@school.ae" type="email"/></label><label>كلمة المرور<input autocomplete="current-password" id="loginPassword" placeholder="••••••••" type="password"/></label><label style="display:flex;align-items:center;gap:9px;margin-top:12px;font-weight:700"><input checked="" id="rememberLogin" style="width:auto;margin:0" type="checkbox"/> تذكّر البريد والبقاء مسجّلًا على هذا الجهاز</label><div class="note" style="margin-top:4px">لا يتم حفظ كلمة المرور. عند تفعيل الخيار، يحتفظ مِسبار بالبريد والجلسة فقط على هذا الجهاز. استخدم «خروج» على الأجهزة المشتركة.</div><div class="note" id="loginStatus" style="margin-top:8px;color:#8a3b12"></div><button class="btn primary full" id="loginSubmit" style="margin-top:12px" type="button">دخول المنصة</button><button class="btn ghost full" id="ownerRecoveryLogin" style="margin-top:8px;border-color:#c6a35f;background:#fffaf0" type="button">دخول صاحبة المنصة / استعادة على متصفح جديد</button><button class="btn full" id="adminDirectLogin" style="margin-top:8px" type="button">دخول إدارة المدرسة</button></div>
+<button class="btn primary full" id="authContinue" type="button">متابعة</button><p class="note">الحسابات في هذه النسخة محفوظة محليًا على المتصفح. صاحبة المنصة يمكنها استخدام زر «دخول صاحبة المنصة / استعادة على متصفح جديد» لاستعادة الوصول. المزامنة الكاملة بين الأجهزة تتطلب تفعيل قاعدة البيانات السحابية.</p></form></dialog>
 <dialog id="subjectDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('subjectDialog').close()">×</button><span class="eyebrow">المواد المسندة لك</span><h3>اختيار المادة</h3><p class="subject-dialog-note">تظهر للمعلم/المعلمة المواد المسجلة في الحساب فقط، بينما تظهر للقيادة جميع المواد الست.</p><div class="subject-choice-grid" id="subjectChoiceGrid"></div></div></dialog>
 <dialog id="assessmentDialog"><div class="modal-card"><button class="close" onclick="document.getElementById('assessmentDialog').close()">×</button><span class="eyebrow">إضافة اختبار تشخيصي</span><h3>إعداد الاختبار</h3><div class="modal-grid"><label>نوع الاختبار<select id="newAssessmentType"><option>التشخيص الأول</option><option>التشخيص الثاني</option><option>تشخيص مهارة</option><option>إعادة القياس</option></select></label><label>الدرجة النهائية <small style="display:block;color:#6b7f8f;font-weight:500">جميع المواد من 100</small><select disabled="" id="newAssessmentMax"><option value="100">100</option></select></label><label>المادة<input disabled="" id="newAssessmentSubject"/></label><label>الشعبة<input disabled="" id="newAssessmentClass"/></label><label class="full-span">التاريخ<input id="newAssessmentDate" type="date"/></label><div class="full-span"><span class="field-label">المهارات المستهدفة</span><div class="choice-grid" id="assessmentSkillChoices"></div><small class="hint">اختاري مهارة واحدة أو أكثر. يمكن تعديلها قبل اعتماد النتائج.</small></div></div><div class="modal-actions"><button class="btn ghost" onclick="document.getElementById('assessmentDialog').close()">إلغاء</button><button class="btn primary" id="confirmAssessment" type="button" onclick="return window.createDiagnosticAssessmentNow(event)">إنشاء الاختبار</button></div></div></dialog>
 <dialog id="saifDialog"><div class="saif-chat"><button class="close" onclick="document.getElementById('saifDialog').close()">×</button><div class="saif-avatar big">س</div><h3>اسأل سيف</h3><p>أجيب صوتيًا ونصيًا، وأتنقل داخل مِسبار وفق صلاحيتك.</p><div class="voice-status" id="voiceStatus">جاهز للمحادثة • اضغطي 🎙️ واسمحي باستخدام الميكروفون عند الطلب</div><div class="saif-input-row"><input id="saifInput" placeholder="مثال: افتح فجوات التعلّم" type="text"><button class="btn primary" id="sendSaif">إرسال</button><button class="btn ghost" id="micSaif">🎙️</button></input></div><div class="saif-response" id="saifResponse">مرحبًا، أنا سيف. كيف أساعدك؟</div></div></dialog>
@@ -815,6 +815,45 @@ async function directAdminLogin(){
   enterApp(user);
 }
 $('#adminDirectLogin').onclick=directAdminLogin;
+
+// V105: owner recovery flow for a new browser/device.
+// Uses the temporary recovery phrase only to bootstrap a fresh local account, then asks the owner to set a new local password.
+async function ownerRecoveryLogin(){
+  const status=$('#loginStatus'); if(status){ status.style.color='#8a3b12'; status.textContent=''; }
+  const ownerEmail='muna.zebaiboh@moe.sch.ae';
+  const recoveryHash='5ce351fa59307338f6c8cb6b35e5a057faa11e171d30fc0fccf1e1f44db1dfa4';
+  const code=window.prompt('أدخلي رمز الاسترداد المؤقت الخاص بصاحبة المنصة:');
+  if(code===null) return;
+  const codeHash=await misbarPasswordHash(code);
+  if(codeHash!==recoveryHash){
+    if(status) status.textContent='رمز الاسترداد غير صحيح.';
+    return;
+  }
+  const p1=window.prompt('اكتبي كلمة مرور جديدة لهذا المتصفح (6 أحرف على الأقل):');
+  if(p1===null) return;
+  if(String(p1).length<6){ if(status) status.textContent='كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل.'; return; }
+  const p2=window.prompt('أعيدي كتابة كلمة المرور الجديدة للتأكيد:');
+  if(p2===null) return;
+  if(p1!==p2){ if(status) status.textContent='كلمتا المرور غير متطابقتين.'; return; }
+  const passwordHash=await misbarPasswordHash(p1);
+  const user={name:'منى خميس علي',email:ownerEmail,passwordHash,role:'معلم / معلمة',subject:'العلوم',subjects:['العلوم'],grades:['6','7'],classes:['6G1','6G2','6G3','7G3'],status:'active'};
+  const users=loadUsers();
+  const idx=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===ownerEmail);
+  if(idx>=0) users[idx]=user; else users.push(user);
+  saveUsers(users);
+  try{
+    localStorage.removeItem(SIGNED_OUT_KEY);
+    localStorage.setItem(LAST_EMAIL_KEY,ownerEmail);
+    localStorage.removeItem(SAVED_PASSWORD_KEY);
+    if($('#rememberLogin')?.checked) savePersistentSession(user); else clearPersistentSession();
+  }catch(err){}
+  if($('#loginEmail')) $('#loginEmail').value=ownerEmail;
+  if($('#loginPassword')) $('#loginPassword').value='';
+  if(status){ status.style.color='#176b42'; status.textContent='تمت استعادة حساب صاحبة المنصة بنجاح وفتح الحساب.'; }
+  try{ enterApp(user); }catch(err){ console.error(err); if(status){ status.style.color='#8a3b12'; status.textContent='تم حفظ الحساب، لكن تعذر فتح المنصة. أعيدي تحميل الصفحة ثم سجلي الدخول بكلمة المرور الجديدة.'; } }
+}
+$('#ownerRecoveryLogin').onclick=ownerRecoveryLogin;
+
 async function handleAuthSubmit(e){
   if(e) e.preventDefault();
   if(authMode==='signup'){
