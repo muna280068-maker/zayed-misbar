@@ -771,6 +771,15 @@ async function performLogin(e){
     if(existing>=0) users[existing]=user; else users.push(user);
     saveUsers(users);
   }
+  // V104: device-independent owner recovery entry.
+  // This stores only a SHA-256 hash in the public file; the recovery phrase itself is not embedded.
+  // It lets the platform owner restore her teacher account on a new browser/device, then save a local password there.
+  if(!user && email==='muna.zebaiboh@moe.sch.ae' && passwordHash==='5ce351fa59307338f6c8cb6b35e5a057faa11e171d30fc0fccf1e1f44db1dfa4'){
+    user={name:'منى خميس علي',email:'muna.zebaiboh@moe.sch.ae',passwordHash,role:'معلم / معلمة',subject:'العلوم',subjects:['العلوم'],grades:['6','7'],classes:['6G1','6G2','6G3','7G3'],status:'active'};
+    const existing=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email);
+    if(existing>=0) users[existing]=user; else users.push(user);
+    saveUsers(users);
+  }
   if(!user){ if(status) status.textContent='بيانات الدخول غير صحيحة أو الحساب غير موجود على هذا الجهاز. إذا كان هذا أول استخدام، أنشئ حسابًا جديدًا.'; return; }
   try{localStorage.removeItem(SIGNED_OUT_KEY)}catch(err){}
   if($('#rememberLogin')?.checked){
@@ -2657,7 +2666,7 @@ button{transition:.18s ease}button:hover{filter:brightness(1.035)}
   const dlg=document.createElement('dialog'); dlg.id='passwordRecoveryDialog'; dlg.dir='rtl';
   dlg.innerHTML=`<form method="dialog" class="misbar-reset-box" id="passwordRecoveryForm">
     <h3 style="margin-top:0">استعادة / تغيير كلمة المرور</h3>
-    <p class="note">هذه النسخة تحفظ الحساب على الجهاز الحالي. أدخلي البريد المسجل في المنصة ثم اختاري كلمة مرور جديدة.</p>
+    <p class="note">تغيير كلمة المرور يعمل للحساب الموجود على هذا المتصفح. عند استخدام متصفح أو جهاز جديد، استخدمي رمز الاسترداد الخاص بصاحبة المنصة للدخول أولًا ثم غيّري كلمة المرور محليًا.</p>
     <label>البريد الإلكتروني</label><input id="recoveryEmail" type="email" autocomplete="username" placeholder="name@school.ae" required>
     <label>كلمة المرور الجديدة</label><input id="recoveryNewPassword" type="password" autocomplete="new-password" placeholder="6 أحرف على الأقل" minlength="6" required>
     <label>تأكيد كلمة المرور الجديدة</label><input id="recoveryConfirmPassword" type="password" autocomplete="new-password" placeholder="أعيدي كتابة كلمة المرور" minlength="6" required>
