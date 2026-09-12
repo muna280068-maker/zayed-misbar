@@ -1,3 +1,4 @@
+const MISBAR_RELEASE_CHANNEL='APPS_SCRIPT_STABLE_2026_09_12';
 
 /* ===== MISBAR extracted script 1: main ===== */
 
@@ -194,10 +195,28 @@ async function legacyCloudPost(action,data={}){
     throw new Error('CLOUD_RESULT_TIMEOUT');
   }finally{try{form&&form.remove()}catch(_){}try{iframe&&iframe.remove()}catch(_){}}
 }
+function hasNativeAppsScriptRpc(){
+  return !!(window.google && google.script && google.script.run);
+}
+function appsScriptRpc(payload,timeoutMs=20000){
+  if(!hasNativeAppsScriptRpc()) return Promise.reject(new Error('APPS_SCRIPT_RPC_UNAVAILABLE'));
+  return new Promise((resolve,reject)=>{
+    let done=false;
+    const timer=setTimeout(()=>{if(done)return;done=true;reject(new Error('APPS_SCRIPT_RPC_TIMEOUT'));},timeoutMs);
+    try{
+      google.script.run
+        .withSuccessHandler(result=>{if(done)return;done=true;clearTimeout(timer);resolve(result||{ok:false,error:'EMPTY_RESULT'});})
+        .withFailureHandler(err=>{if(done)return;done=true;clearTimeout(timer);reject(new Error(String(err&&err.message||err||'SERVER_ERROR')));})
+        .misbarRpc(payload||{});
+    }catch(err){if(!done){done=true;clearTimeout(timer);reject(err);}}
+  });
+}
 async function cloudGet(action,data={}){
+  if(hasNativeAppsScriptRpc()) return await appsScriptRpc({action,...data},20000);
   try{return await bridgeRpc({action,...data},18000)}catch(err){console.warn('Bridge GET fallback',err);return await cloudJsonp({action,...data},12000)}
 }
 async function cloudPost(action,data={}){
+  if(hasNativeAppsScriptRpc()) return await appsScriptRpc({action,...data},25000);
   try{return await bridgeRpc({action,...data},22000)}catch(err){console.warn('Bridge POST fallback',err);return await legacyCloudPost(action,data)}
 }
 function cloudToken(){ try{return localStorage.getItem('misbarCloudTokenV1')||''}catch(e){return''} }
@@ -215,7 +234,14 @@ function applyCloudSnapshot(snapshot){
 let cloudPushTimer=null, cloudApplying=false;
 async function pushCloudNow(){
   const token=cloudToken(); if(!token||cloudApplying)return false;
-  try{const res=await cloudPost('push',{token,snapshot:cloudSnapshot()});updateCloudBadge(res.ok?'متصل ومحفوظ':'تعذر الحفظ');return !!res.ok}catch(e){updateCloudBadge('غير متصل');return false}
+  const snap=cloudSnapshot();
+  try{
+    const em=String(currentUser?.email||loadPersistentSession()?.email||'').trim().toLowerCase();
+    if(em){try{localStorage.setItem('misbarDeviceBackup::'+em,JSON.stringify({savedAt:Date.now(),snapshot:snap}))}catch(_){}}
+    const res=await cloudPost('push',{token,snapshot:snap});
+    updateCloudBadge(res.ok?'متصل ومحفوظ':'تعذر الحفظ');
+    return !!res.ok;
+  }catch(e){updateCloudBadge('غير متصل');return false}
 }
 function scheduleCloudPush(){if(!cloudToken()||cloudApplying)return;clearTimeout(cloudPushTimer);cloudPushTimer=setTimeout(pushCloudNow,900)}
 function updateCloudBadge(text){
@@ -231,7 +257,21 @@ function clearCloudSyncedData(){
     keys.forEach(k=>localStorage.removeItem(k));
   }catch(e){console.warn('Could not clear previous account data',e)}
 }
-async function hydrateFromCloud(snapshot){cloudApplying=true;try{clearCloudSyncedData();applyCloudSnapshot(snapshot||{});localStorage.setItem('misbarCloudHydratedV1','1')}finally{cloudApplying=false}}
+async function hydrateFromCloud(snapshot){
+  cloudApplying=true;
+  try{
+    clearCloudSyncedData();
+    let source=snapshot&&typeof snapshot==='object'?snapshot:{};
+    if(!Object.keys(source).length){
+      const em=String(currentUser?.email||loadPersistentSession()?.email||document.getElementById('loginEmail')?.value||'').trim().toLowerCase();
+      if(em){
+        try{const b=JSON.parse(localStorage.getItem('misbarDeviceBackup::'+em)||'null');if(b&&b.snapshot&&typeof b.snapshot==='object')source=b.snapshot}catch(_){}
+      }
+    }
+    applyCloudSnapshot(source);
+    localStorage.setItem('misbarCloudHydratedV1','1');
+  }finally{cloudApplying=false}
+}
 async function performLogin(e){
   if(e)e.preventDefault();
   const email=$('#loginEmail').value.trim().toLowerCase(),password=$('#loginPassword').value,status=$('#loginStatus'),btn=$('#loginSubmit');
