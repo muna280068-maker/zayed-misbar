@@ -242,19 +242,30 @@ async function performLogin(e){
   try{
     if(status)status.textContent='جارٍ التحقق من الحساب السحابي...';
     const passwordHash=await misbarPasswordHash(password);
-    const res=await cloudPost('login',{email,passwordHash});
+    // Do not leave the teacher waiting for the long generic bridge timeout.
+    // Try the fast RPC path briefly, then use the reliable POST+result fallback.
+    let res;
+    try{res=await bridgeRpc({action:'login',email,passwordHash},6500)}
+    catch(_){res=await legacyCloudPost('login',{email,passwordHash})}
     if(!res||!res.ok){if(status)status.textContent='بيانات الدخول غير صحيحة أو الحساب غير مفعّل.';return}
     saveCloudToken(res.token);
-    if(status)status.textContent='تم التحقق. جارٍ تحميل بيانات الحساب...';
-    const pulled=await cloudGet('pull',{token:res.token});
-    if(!pulled||!pulled.ok)throw new Error('CLOUD_PULL_FAILED');
-    await hydrateFromCloud(pulled.snapshot||{});
     const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email),user={...res.user,passwordHash};
     if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
     try{localStorage.removeItem(SIGNED_OUT_KEY);localStorage.setItem(LAST_EMAIL_KEY,email);if($('#rememberLogin')?.checked)savePersistentSession(user)}catch(_){ }
-    updateCloudBadge('متصل');
+    // Open immediately from the per-account cache; cloud data refreshes safely in the background.
+    restoreAccountSnapshot(email);
+    updateCloudBadge('متصل • جارٍ تحديث البيانات');
     enterApp(user);
-    scheduleCloudPush();
+    cloudGet('pull',{token:res.token}).then(async pulled=>{
+      if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');
+      await hydrateFromCloud(pulled.snapshot||{});
+      try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }
+      updateCloudBadge('متصل ومحفوظ');
+      cacheAccountSnapshot(email);
+    }).catch(err=>{
+      console.warn('Background cloud pull failed',err);
+      updateCloudBadge('متصل • البيانات المحفوظة على الجهاز');
+    });
   }catch(err){
     console.error('MISBAR login failed',err);
     saveCloudToken('');
@@ -2393,4 +2404,71 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
   document.getElementById('settingsCloseBtn')?.addEventListener('click',close);
   document.getElementById('settingsLogoutBtn')?.addEventListener('click',()=>{close();document.getElementById('logoutBtn')?.click()});
 })();
-window.MISBAR_BUILD='FINAL-RELEASE-2026-09-12';
+/* ===== MISBAR V102 — working six-assessment score matrix ===== */
+(()=>{
+  const matrixTypes=['التشخيص الأولي','تكويني 1','تكويني 2','تكويني 3','تكويني 4','تكويني 5'];
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function ensureMatrixAssessments(){
+    ensureDefaultAssessment();
+    const ctx=contextKey(),all=loadAssessments();let changed=false;
+    const list=matrixTypes.map((type,i)=>{
+      let a=all.find(x=>x.context===ctx&&(i===0?/^التشخيص/.test(String(x.type||'')):String(x.type||'')===type));
+      if(!a){
+        a={id:defaultAssessmentIdForContext(ctx)+'_M'+i,context:ctx,type,max:10,date:new Date().toISOString().slice(0,10),status:'in_progress',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true};
+        all.push(a);changed=true;
+      }
+      return a;
+    });
+    if(changed)saveAssessments(all);
+    return list;
+  }
+  function matrixMaps(assessments){
+    const all=loadAllScores();
+    return assessments.map(a=>{
+      const saved=all[assessmentKey(a.id)];
+      return new Map(safeArray(saved?.rows).map(r=>[String(r.name),Number(r.score)]));
+    });
+  }
+  function rowSummary(tr){
+    const vals=[...tr.querySelectorAll('.matrix-score-select')].map(s=>s.value===''?null:Number(s.value));
+    const entered=vals.filter(Number.isFinite),avg=entered.length?entered.reduce((a,b)=>a+b,0)/entered.length:null;
+    const avgCell=tr.querySelector('.matrix-average'),level=tr.querySelector('.matrix-level-cell'),trend=tr.querySelector('.matrix-trend-cell'),skill=tr.querySelector('.matrix-skill-cell');
+    avgCell.textContent=avg===null?'—':avg.toFixed(1);
+    if(avg===null){level.innerHTML='—';trend.textContent='—';trend.className='matrix-trend-cell';skill.textContent='—';return;}
+    const [label,cls]=scoreLevel(avg,10);level.innerHTML=`<span class="matrix-level ${cls}">${label}</span>`;
+    const first=vals.find(Number.isFinite),last=[...vals].reverse().find(Number.isFinite),delta=Number.isFinite(first)&&Number.isFinite(last)?last-first:0;
+    trend.textContent=entered.length<2?'—':delta>0?'↑ تحسن':delta<0?'↓ انخفاض':'— ثابت';
+    trend.className='matrix-trend-cell matrix-trend '+(delta>0?'up':delta<0?'down':'flat');
+    const lowest=vals.reduce((best,v,i)=>Number.isFinite(v)&&(!best||v<best.v)?{v,i}:best,null);
+    skill.textContent=lowest?(['الاستقصاء العلمي','تفسير البيانات','المفاهيم العلمية','التطبيق والاستدلال'][lowest.i%4]||'تحتاج متابعة'):'—';
+  }
+  function saveMatrixCell(sel){
+    const name=sel.dataset.student,aid=sel.dataset.assessment,key=assessmentKey(aid),all=loadAllScores(),old=safeObject(all[key]),map=new Map(safeArray(old.rows).map(r=>[String(r.name),Number(r.score)]));
+    if(sel.value==='')map.delete(name);else map.set(name,Number(sel.value));
+    all[key]={...old,rows:[...map].map(([n,score])=>({name:n,score})),max:10,savedAt:new Date().toISOString(),autoSaved:true,subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
+    saveAllScores(all);rowSummary(sel.closest('tr'));
+    const note=document.querySelector('.matrix-save-note');if(note)note.textContent=`✓ تم حفظ درجة ${name} تلقائيًا`;
+  }
+  function renderMatrix(){
+    const tb=document.querySelector('#scoreMatrixTable tbody');if(!tb)return;
+    roster=rosterForCurrentClass();
+    if(!roster.length){tb.innerHTML='<tr><td colspan="13" style="padding:22px">لا توجد أسماء لهذه الشعبة. اضغطي «إدارة الطالبات» ثم «استعادة القائمة الأصلية».</td></tr>';return;}
+    const assessments=ensureMatrixAssessments(),maps=matrixMaps(assessments),options=['<option value="">—</option>',...Array.from({length:11},(_,i)=>`<option value="${i}">${i}</option>`)].join('');
+    tb.innerHTML=roster.map((name,i)=>{
+      const cells=assessments.map((a,j)=>{const v=maps[j].get(name);return `<td><select class="matrix-score-select" data-assessment="${esc(a.id)}" data-student="${esc(name)}" ${a.locked?'disabled':''}>${options.replace(`value="${v}"`,`value="${v}" selected`)}</select></td>`}).join('');
+      return `<tr><td>${i+1}</td><td class="student-name">${esc(name)}</td>${cells}<td class="matrix-average">—</td><td class="matrix-level-cell">—</td><td class="matrix-skill-cell">—</td><td class="matrix-trend-cell">—</td><td><button type="button" class="btn ghost small matrix-quick" data-student="${esc(name)}">إجراء</button></td></tr>`;
+    }).join('');
+    tb.querySelectorAll('tr').forEach(rowSummary);
+    tb.querySelectorAll('.matrix-score-select').forEach(s=>s.addEventListener('change',()=>saveMatrixCell(s)));
+    tb.querySelectorAll('.matrix-quick').forEach(b=>b.addEventListener('click',()=>{activeStudentName=b.dataset.student;showView('interventions')}));
+  }
+  const originalRenderScores=renderScores;
+  renderScores=function(){originalRenderScores();renderMatrix();};
+  document.getElementById('clearMatrixVisual')?.addEventListener('click',()=>{
+    if(!confirm('مسح جميع درجات الاختبارات الستة للشعبة الحالية؟'))return;
+    const all=loadAllScores();ensureMatrixAssessments().forEach(a=>delete all[assessmentKey(a.id)]);saveAllScores(all);renderMatrix();
+  });
+  document.getElementById('exportMatrixVisual')?.addEventListener('click',()=>document.getElementById('exportTeacherExcel')?.click());
+})();
+
+window.MISBAR_BUILD='FINAL-RELEASE-2026-09-12-V102';
