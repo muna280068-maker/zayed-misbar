@@ -538,7 +538,7 @@ function defaultAssessmentIdForContext(ctx=contextKey()){
   for(let i=0;i<ctx.length;i++){h^=ctx.charCodeAt(i);h=Math.imul(h,16777619)}
   return 'AUTO_DIAGNOSTIC_'+(h>>>0).toString(36).toUpperCase();
 }
-function subjectMaxScore(subject){return 100}
+function subjectMaxScore(subject){return 10}
 function syncSubjectMaxUI(){const max=subjectMaxScore(subjectFilter?.value);if($('#maxScoreSelect'))$('#maxScoreSelect').value=String(max);if($('#newAssessmentMax'))$('#newAssessmentMax').value=String(max);return max}
 function assessmentSkillsForSubject(subject){
   const map={
@@ -572,28 +572,40 @@ function ensureDefaultAssessment(){
   try{
     const ctx=contextKey();
     let all=loadAssessments();
+    const wanted=[
+      ['التشخيص الأولي','diagnostic'],
+      ['التكويني 1','formative'],['التكويني 2','formative'],['التكويني 3','formative'],['التكويني 4','formative'],['التكويني 5','formative']
+    ];
+    let changed=false;
+    // Rename the legacy first diagnostic so old links/data remain attached to the same assessment id.
+    all.forEach(a=>{if(a.context===ctx && a.type==='التشخيص الأول'){a.type='التشخيص الأولي';changed=true;}});
     let list=all.filter(a=>a.context===ctx);
-    if(!list.length){
-      const id=defaultAssessmentIdForContext(ctx);
-      const a={id,context:ctx,type:'التشخيص الأول',max:100,date:new Date().toISOString().slice(0,10),status:'in_progress',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true};
-      all.push(a);
-      saveAssessments(all);
-      const check=loadAssessments().find(x=>x.id===id&&x.context===ctx);
-      if(!check)throw new Error('تعذر إنشاء سجل التشخيص الافتراضي');
-      list=[check];
-      // Migrate scores created by V89-V92 under the temporary DIRECT_DIAGNOSTIC key.
-      const store=loadAllScores(), oldKey=ctx+'|DIRECT_DIAGNOSTIC', newKey=ctx+'|'+id;
-      if(store[oldKey]&&!store[newKey]){
-        store[newKey]={...safeObject(store[oldKey]),migratedFrom:'DIRECT_DIAGNOSTIC'};
-        saveAllScores(store);
+    wanted.forEach(([type,kind],idx)=>{
+      if(!list.some(a=>a.type===type)){
+        const id=idx===0?defaultAssessmentIdForContext(ctx):('F'+(idx)+'_'+Math.abs([...ctx].reduce((h,c)=>((h<<5)-h)+c.charCodeAt(0)|0,0)));
+        const a={id,context:ctx,type,max:10,date:new Date().toISOString().slice(0,10),status:'not_started',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true,kind,sequence:idx};
+        all.push(a);list.push(a);changed=true;
       }
-    }
-    if(!activeAssessmentId||!list.some(a=>a.id===activeAssessmentId))activeAssessmentId=list[0].id;
+    });
+    // V21 migration: this section no longer uses /100. Preserve percentages by scaling legacy /100 scores to /10.
+    const store=loadAllScores(); let scoresChanged=false;
+    list.forEach(a=>{
+      const key=ctx+'|'+a.id, saved=store[key];
+      if(Number(a.max)!==10){
+        const oldMax=Math.max(1,Number(a.max)||100);
+        if(saved?.rows?.length){saved.rows=safeArray(saved.rows).map(r=>({...r,score:Math.max(0,Math.min(10,Math.round((Number(r.score)||0)/oldMax*100)/10))}));saved.max=10;store[key]=saved;scoresChanged=true;}
+        a.max=10;changed=true;
+      } else if(saved && Number(saved.max)!==10){saved.max=10;store[key]=saved;scoresChanged=true;}
+    });
+    if(changed)saveAssessments(all);
+    if(scoresChanged)saveAllScores(store);
+    list=all.filter(a=>a.context===ctx).sort((a,b)=>{
+      const order=x=>wanted.findIndex(([t])=>t===x.type);
+      const ai=order(a),bi=order(b);return (ai<0?99:ai)-(bi<0?99:bi);
+    });
+    if(!activeAssessmentId||!list.some(a=>a.id===activeAssessmentId))activeAssessmentId=list[0]?.id||'';
     return list;
-  }catch(err){
-    console.error('Default assessment creation failed',err);
-    return currentContextAssessments();
-  }
+  }catch(err){console.error('Measurement journey creation failed',err);return currentContextAssessments();}
 }
 function assessmentUiStatus(a,saved){if(a.locked)return['معتمد','locked'];if(!saved||!saved.rows?.length)return['لم يبدأ','draft'];const total=rosterForCurrentClass().length||roster.length,entered=saved.rows.length;if(entered<total)return[`جارٍ الإدخال ${entered}/${total}`,'progress'];return['مكتمل','done']}
 function renderAssessmentCards(){if(!$('#assessmentCards'))return;const list=ensureDefaultAssessment();$('#assessmentContext').textContent=`${subjectFilter.value} • الصف ${gradeArabicName(gradeFilter.value)} • ${classFilter.value}`;const box=$('#assessmentCards');if(!list.length){box.innerHTML='<div class="assessment-empty">لا توجد اختبارات لهذه الشعبة بعد.</div>';return}const scores=loadAllScores();box.innerHTML=list.map(a=>{const saved=scores[assessmentKey(a.id)],st=assessmentUiStatus(a,saved),skills=safeArray(a.skills).map(s=>`<span>${s}</span>`).join('');return `<article class="assessment-card ${a.locked?'locked-card':''}"><div class="assessment-meta"><span>${subjectFilter.value}</span><span>${classFilter.value}</span><span>من ${a.max}</span></div><h4>${a.type}</h4><small>${a.date||'بدون تاريخ'}</small><span class="assessment-status ${st[1]}">${st[0]}</span>${skills?`<div class="assessment-skills">${skills}</div>`:''}<div class="card-actions"><button class="btn ghost small open-assessment" data-id="${a.id}">فتح</button><button class="btn primary small score-assessment" data-id="${a.id}">${a.locked?'عرض النتائج':'إدخال الدرجات'}</button></div></article>`}).join('');$$('.open-assessment,.score-assessment').forEach(b=>b.onclick=()=>{activeAssessmentId=b.dataset.id;showView('scores');prepareScores()})}
@@ -740,14 +752,14 @@ function prepareScores(){
       $('#maxScoreSelect').innerHTML=`<option value="${Number(a.max)||10}">${Number(a.max)||10}</option>`;
       $('#maxScoreSelect').value=String(Number(a.max)||10);
     }else{
-      const expected=100;
+      const expected=10;
       if(a.max!==expected){
         a.max=expected;
         const all=loadAssessments(),idx=all.findIndex(x=>x.id===a.id);
         if(idx>=0){all[idx].max=expected;saveAssessments(all)}
       }
-      $('#maxScoreSelect').innerHTML='<option value="100">100</option>';
-      $('#maxScoreSelect').value='100';
+      $('#maxScoreSelect').innerHTML='<option value="10">10</option>';
+      $('#maxScoreSelect').value='10';
     }
   }
   $('#scoreSubject').value=subjectFilter.value;
@@ -755,7 +767,7 @@ function prepareScores(){
   renderScores();
 }
 function refreshAssessmentUI(){if(!subjectFilter||!gradeFilter||!classFilter)return;currentUser.subject=subjectFilter.value||currentUser.subject;syncRosterFromClass();syncSubjectMaxUI();cleanupDuplicateAssessments();renderAssessmentCards();if($('#view-scores').classList.contains('active'))prepareScores()}
-$('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);$('#newAssessmentMax').value='100';const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';const defaultSkills=assessmentSkillsForSubject(subjectFilter.value);renderAssessmentSkillChoices(defaultSkills);$('#assessmentDialog').showModal()};
+$('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);$('#newAssessmentMax').value='10';const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';const defaultSkills=assessmentSkillsForSubject(subjectFilter.value);renderAssessmentSkillChoices(defaultSkills);$('#assessmentDialog').showModal()};
 function repairStoredPlatformData(){
   try{
     saveAssessments(loadAssessments());
@@ -791,7 +803,7 @@ window.createDiagnosticAssessmentNow=function(event){
       prepareScores();
       return false;
     }
-    const a={id:'A'+Date.now(),context:ctx,type:type,max:100,date:date,status:'not_started',skills:[...skills],locked:false};
+    const a={id:'A'+Date.now(),context:ctx,type:type,max:10,date:date,status:'not_started',skills:[...skills],locked:false};
     const all=loadAssessments();
     all.push(a);
     saveAssessments(all);
@@ -814,7 +826,7 @@ window.createDiagnosticAssessmentNow=function(event){
 };
 
 $('#goScoresBtn').onclick=()=>{showView('scores');prepareScores()};
-$('#assessmentSelect').addEventListener('change',()=>{activeAssessmentId=$('#assessmentSelect').value;const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);if(a)$('#maxScoreSelect').value=String(subjectMaxScore(subjectFilter.value));prepareScores()});
+$('#assessmentSelect').addEventListener('change',()=>{activeAssessmentId=$('#assessmentSelect').value;const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);if(a)$('#maxScoreSelect').value=String(Number(a.max)||10);prepareScores()});
 $('#maxScoreSelect').addEventListener('change',()=>{syncSubjectMaxUI();renderScores()});
 if($('#useDemoRoster')) $('#useDemoRoster').remove();
 $('#rosterFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{const text=String(reader.result||'').replace(/^\uFEFF/,'');const names=text.split(/\r?\n/).map(line=>line.split(',')[0].trim()).filter(Boolean).filter(x=>!/^name|اسم|student/i.test(x));if(!names.length){alert('لم أتمكن من قراءة أسماء من الملف. استخدمي CSV أو TXT ويكون الاسم في العمود الأول.');return}roster=names.slice(0,200);persistCurrentRoster();renderScores();updateOverviewStudentCount();};reader.readAsText(f,'UTF-8')});
