@@ -1137,7 +1137,7 @@ body:not(.app-mode) .approved-cover{
 }
 </style>
 <!-- MISBAR V1.5 UI + Parent Report functional scripts -->
-<script defer="defer" src="app.js?v=20260912-25"></script>
+<script defer="defer" src="app.js?v=20260912-26"></script>
 <style id="misbar-v18-exact-approved-layout">
 /* Exact approved dashboard visual rebuild — 2026-09-12 */
 body.app-mode{background:#f4f9fd!important;color:#123f72!important}
@@ -1258,10 +1258,6 @@ body.app-mode .view{padding-bottom:16px!important}
 /* MISBAR V25: remove legacy duplicate header */
 body.misbar-v22.app-mode .v14-header{display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;}
 </style>
-</body>
-</html>
-
-
 <style id="misbar-v24-header-fix">
 /* MISBAR V25 — keep the approved 1400×200 header fully visible and remove legacy crop. */
 body.misbar-v22.app-mode .approved-hero{
@@ -1285,5 +1281,26 @@ body.misbar-v22.app-mode .workspace{scroll-padding-top:0!important;}
   body.misbar-v22.app-mode .approved-hero{height:clamp(105px,calc(100vw/7),145px)!important;min-height:105px!important;margin:0 -10px 10px!important;background-size:100% 100%!important;}
 }
 </style>
-<div data-misbar-build-marker="1" style="position:fixed;left:8px;bottom:6px;z-index:99999;font:10px Arial;color:#5b7890;opacity:.22;pointer-events:none">MISBAR V25 2026-09-12</div>
-<!-- MISBAR V25 approved visual 2026-09-12 -->
+<!-- MISBAR V26 comprehensive stability fix 2026-09-12 -->
+<style id="misbar-v26-stability-fix">
+/* V26 — final approved dashboard stability fixes */
+body.app-mode #appShell .workspace{scroll-behavior:auto!important;overscroll-behavior:none!important;}
+body.misbar-v22.app-mode .approved-hero{
+  display:block!important;position:relative!important;width:calc(100% + 32px)!important;
+  aspect-ratio:7/1!important;height:auto!important;min-height:0!important;max-height:none!important;
+  flex:0 0 auto!important;margin:0 -16px 12px!important;
+  background-size:100% 100%!important;background-position:center top!important;background-repeat:no-repeat!important;
+  border:0!important;border-radius:0!important;overflow:hidden!important;
+}
+body.app-mode .dashboard-filters{grid-template-columns:minmax(150px,1.2fr) minmax(118px,.82fr) minmax(138px,.92fr)!important;}
+body.app-mode .filter-field select,body.app-mode .subject-popup-btn{font-size:15px!important;text-overflow:ellipsis!important;overflow:hidden!important;white-space:nowrap!important;}
+body.app-mode #gradeFilter{min-width:138px!important;}
+body.app-mode .process-journey-nav{min-height:48px!important;overflow:visible!important;align-items:stretch!important;}
+body.app-mode .process-journey-nav button{min-height:48px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;line-height:1.25!important;}
+body.app-mode .journey-motto{min-height:48px!important;display:flex!important;align-items:center!important;justify-content:center!important;}
+body.app-mode [data-misbar-build-marker]{display:none!important;}
+@media(max-width:1180px){body.misbar-v22.app-mode .approved-hero{width:calc(100% + 32px)!important;margin-inline:-16px!important;}body.app-mode .dashboard-filters{grid-template-columns:minmax(145px,1.15fr) minmax(115px,.82fr) minmax(135px,.92fr)!important;}}
+@media(max-width:820px){body.misbar-v22.app-mode .approved-hero{width:calc(100% + 20px)!important;margin:0 -10px 10px!important;aspect-ratio:7/1!important;}body.app-mode #gradeFilter{min-width:0!important;}}
+</style>
+</body>
+</html>
