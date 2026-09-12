@@ -2293,9 +2293,16 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
 
 // إعدادات الحساب: ربط زر القائمة بنافذة تعرض بيانات المستخدم الحالي.
 (()=>{
-  const btn=document.getElementById('settingsBtn');
-  const dlg=document.getElementById('settingsDialog');
-  if(!btn||!dlg)return;
+  const btn=document.getElementById('settingsBtn')||document.querySelector('.visual-settings');
+  if(!btn)return;
+  btn.id='settingsBtn';
+  let dlg=document.getElementById('settingsDialog');
+  if(!dlg){
+    dlg=document.createElement('dialog');
+    dlg.id='settingsDialog';
+    dlg.innerHTML='<div class="modal-card" style="padding:28px;position:relative;background:#fff;direction:rtl"><button class="close" id="closeSettings" type="button">×</button><h3 style="margin:0 0 18px;color:#123f60">إعدادات الحساب</h3><div style="display:grid;gap:10px"><p><b>الاسم:</b> <span id="settingsName">—</span></p><p><b>البريد الإلكتروني:</b> <span id="settingsEmail">—</span></p><p><b>الدور:</b> <span id="settingsRole">—</span></p><p><b>المادة:</b> <span id="settingsSubjects">—</span></p><p><b>الصفوف:</b> <span id="settingsGrades">—</span></p><p><b>الشُّعب:</b> <span id="settingsClasses">—</span></p></div><div style="display:flex;gap:10px;margin-top:20px"><button class="btn ghost" id="settingsCloseBtn" type="button">إغلاق</button><button class="btn primary" id="settingsLogoutBtn" type="button">تسجيل الخروج</button></div></div>';
+    document.body.appendChild(dlg);
+  }
   const close=()=>dlg.close();
   btn.addEventListener('click',()=>{
     const u=currentUser||{};
