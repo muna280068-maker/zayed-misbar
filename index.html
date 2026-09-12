@@ -717,7 +717,7 @@ body.app-mode #subjectFilter{min-width:220px!important}
 <button class="side-link" data-view="reports">التقارير</button>
 <button class="side-link" data-view="recognition">♜  الشهادات</button>
 <button class="side-link saif-side" id="sideSaif">اسأل سيف</button>
-<button class="side-link visual-settings" type="button">⚙  الإعدادات</button><div class="sidebar-education-note" id="sidebarEducationNote">🌱 التعليم لا يغيّر العالم فقط... بل يصنع جيلاً يصنع المستقبل</div></aside>
+<button class="side-link visual-settings" id="settingsBtn" type="button">⚙  الإعدادات</button><div class="sidebar-education-note" id="sidebarEducationNote">🌱 التعليم لا يغيّر العالم فقط... بل يصنع جيلاً يصنع المستقبل</div></aside>
 <div class="workspace"><div class="approved-hero" id="approvedHero"></div>
 <div class="workspace-head">
 <div class="workspace-intro"><span class="eyebrow" id="workspaceEyebrow">معلمة العلوم • الحلقة الثانية</span><h2 id="workspaceTitle">مرحبًا بك في مِسبار زايد</h2></div>
@@ -895,6 +895,7 @@ body.app-mode #subjectFilter{min-width:220px!important}
 </main>
 <footer><div class="footer-top"><div><strong>مِسبار زايد</strong><span>منصة رحلة التقدّم الأكاديمي</span></div><div class="trust"><span>حماية وخصوصية البيانات</span><span>صلاحيات وصول دقيقة</span><span>ذكاء اصطناعي بمراجعة بشرية</span></div></div><div class="credits">جميع الحقوق محفوظة لمجمع زايد التعليمي – الساف | بإشراف الأستاذة مديرة المدرسة حبيبة المزروعي</div></footer>
 <div class="ticker"><div>في مِسبار زايد… لا نتوقف عند اكتشاف الفجوة؛ نتتبع رحلتها حتى إغلاقها وقياس أثر التدخل.    •    تشخيص أدق   •   تدخل أذكى   •   أثر قابل للقياس   •   تعليم مستدام</div></div>
+<dialog id="settingsDialog"><div class="modal-card" style="padding:28px;position:relative;background:#fff;direction:rtl"><button class="close" id="closeSettings" type="button">×</button><h3 style="margin:0 0 18px;color:#123f60">إعدادات الحساب</h3><div style="display:grid;gap:10px"><p><b>الاسم:</b> <span id="settingsName">—</span></p><p><b>البريد الإلكتروني:</b> <span id="settingsEmail">—</span></p><p><b>الدور:</b> <span id="settingsRole">—</span></p><p><b>المادة:</b> <span id="settingsSubjects">—</span></p><p><b>الصفوف:</b> <span id="settingsGrades">—</span></p><p><b>الشُّعب:</b> <span id="settingsClasses">—</span></p></div><div style="display:flex;gap:10px;margin-top:20px"><button class="btn ghost" id="settingsCloseBtn" type="button">إغلاق</button><button class="btn primary" id="settingsLogoutBtn" type="button">تسجيل الخروج</button></div></div></dialog>
 <dialog id="authDialog"><form autocomplete="on" class="auth-form" id="authForm"><button class="close" onclick="document.getElementById('authDialog').close()" type="button">×</button><h3 id="authTitle">إنشاء حساب</h3>
 <div id="signupFields">
 <label>الاسم الكامل<input id="signupName" placeholder="اكتبي اسمك الكامل" type="text"/></label>
