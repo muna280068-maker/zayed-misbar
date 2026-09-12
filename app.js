@@ -708,7 +708,86 @@ function renderScores(){
   updateLevels();
   if($('#saveScores')){$('#saveScores').textContent=locked?'فتح للتعديل':'حفظ واعتماد';$('#saveScores').classList.toggle('warn',locked)}
   if($('#savedNote'))$('#savedNote').innerHTML=locked?'<span class="locked-note">النتائج معتمدة ومقفلة ضد التعديل غير المقصود.</span>':'';
+  renderScoreMatrix();
 }
+
+// V22: approved all-measurements matrix view.
+function matrixAssessmentList(){
+  const list=ensureDefaultAssessment();
+  const order=['التشخيص الأولي','تكويني 1','تكويني 2','تكويني 3','تكويني 4','تكويني 5'];
+  return list.slice().sort((a,b)=>order.indexOf(a.type)-order.indexOf(b.type)).slice(0,6);
+}
+function matrixScoreMap(a){
+  const key=assessmentKey(a.id),all=loadAllScores(),saved=safeObject(all[key]),draft=loadScoreDraft(key);
+  const map=Object.fromEntries(safeArray(saved.rows).map(r=>[String(r.name),Number(r.score)]));
+  Object.entries(draft).forEach(([n,v])=>{if(v!==''&&Number.isFinite(Number(v)))map[n]=Number(v)});
+  return map;
+}
+function matrixWeakestSkill(name,list,maps){
+  let low=Infinity, label='—';
+  list.forEach((a,i)=>{const v=maps[i]?.[name];if(Number.isFinite(v)&&v<low){low=v;label=(safeArray(a.skills)[0]||a.type||'—')}});
+  return label;
+}
+function matrixRowStats(name,list,maps){
+  const vals=list.map((a,i)=>maps[i]?.[name]).filter(v=>Number.isFinite(v));
+  if(!vals.length)return{avg:null,level:'',levelCls:'',trend:'—',trendCls:'flat'};
+  const avg=vals.reduce((x,y)=>x+y,0)/vals.length;
+  const [level,levelCls]=scoreLevel(avg,10);
+  let trend='→',trendCls='flat';
+  if(vals.length>1){const d=vals[vals.length-1]-vals[0];if(d>=1){trend='↗';trendCls='up'}else if(d<=-1){trend='↘';trendCls='down'}}
+  return{avg,level,levelCls,trend,trendCls};
+}
+function renderScoreMatrix(){
+  const tb=document.querySelector('#scoreMatrixTable tbody');if(!tb)return;
+  const list=matrixAssessmentList();
+  if(!list.length){tb.innerHTML='<tr><td colspan="13">لا توجد قياسات بعد.</td></tr>';return;}
+  const maps=list.map(matrixScoreMap);
+  tb.innerHTML='';
+  roster.forEach((name,i)=>{
+    const st=matrixRowStats(name,list,maps),weak=matrixWeakestSkill(name,list,maps);
+    const cells=list.map((a,ai)=>{
+      const val=maps[ai]?.[name];
+      const opts=['<option value="">—</option>'].concat(Array.from({length:11},(_,x)=>`<option value="${x}" ${Number.isFinite(val)&&Number(val)===x?'selected':''}>${x}</option>`)).join('');
+      return `<td><select class="matrix-score-select" data-assessment-id="${a.id}" data-student-name="${String(name).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" ${a.locked?'disabled':''}>${opts}</select></td>`;
+    }).join('');
+    const tr=document.createElement('tr');
+    tr.dataset.student=name;
+    tr.innerHTML=`<td>${i+1}</td><td class="student-name"><button type="button" class="student-name-link" data-student="${String(name).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${name}</button></td>${cells}<td class="matrix-average">${st.avg==null?'—':st.avg.toFixed(1)}</td><td><span class="matrix-level ${st.levelCls}">${st.level||'—'}</span></td><td class="matrix-weak">${weak}</td><td><span class="matrix-trend ${st.trendCls}">${st.trend}</span></td><td><select class="matrix-action-select"><option>تحديد إجراء</option><option>دعم فردي</option><option>مجموعة علاجية</option><option>إثراء</option><option>متابعة</option></select></td>`;
+    tb.appendChild(tr);
+  });
+  $$('#scoreMatrixTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));
+}
+function saveMatrixScoreImmediate(sel){
+  try{
+    const id=sel.dataset.assessmentId,name=sel.dataset.studentName;
+    const list=ensureDefaultAssessment(),a=list.find(x=>x.id===id);
+    if(!a||!name)return false;
+    const key=assessmentKey(a.id),all=loadAllScores(),existing=safeObject(all[key]);
+    const map=new Map(safeArray(existing.rows).map(r=>[String(r.name),Number(r.score)]));
+    if(sel.value==='')map.delete(name);else map.set(name,Number(sel.value));
+    const rows=[...map.entries()].filter(([,v])=>Number.isFinite(v)).map(([name,score])=>({name,score}));
+    all[key]={...existing,rows,max:10,savedAt:new Date().toISOString(),autoSaved:true,subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,teacherEmail:currentUser.email||'',teacherName:currentUser.name||'',skills:safeArray(a.skills)};
+    saveAllScores(all);
+    localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
+    scheduleCloudPush();
+    const note=$('#savedNote');if(note)note.textContent=`✓ تم حفظ درجة ${name} تلقائيًا`;
+    return true;
+  }catch(err){console.error('Matrix score save failed',err);return false;}
+}
+document.addEventListener('change',function(e){
+  const sel=e.target?.closest?.('#scoreMatrixTable select.matrix-score-select');
+  if(!sel)return;
+  saveMatrixScoreImmediate(sel);
+  renderScoreMatrix();
+},true);
+setTimeout(()=>{
+  const clear=document.getElementById('clearMatrixVisual');
+  if(clear)clear.onclick=()=>{if(!confirm('هل تريدين مسح الدرجات الظاهرة لهذه الشعبة؟'))return;const list=matrixAssessmentList(),all=loadAllScores();list.forEach(a=>{const k=assessmentKey(a.id);if(all[k])all[k]={...all[k],rows:[],savedAt:new Date().toISOString()};localStorage.removeItem(scoreDraftKey(k))});saveAllScores(all);renderScores();};
+  const exp=document.getElementById('exportMatrixVisual');
+  if(exp)exp.onclick=()=>document.getElementById('exportTeacherExcel')?.click();
+  const settings=document.querySelector('.visual-settings');if(settings)settings.onclick=()=>{alert('قسم الإعدادات سيحتوي إعدادات الحساب والعرض.');};
+},0);
+
 // Capture score changes at document level so saving survives any table re-render.
 document.addEventListener('change',function(e){
   const sel=e.target?.closest?.('#scoreTable select.score-select');
