@@ -16,51 +16,6 @@ function safeArray(v){
 }
 function safeObject(v){return v&&typeof v==='object'&&!Array.isArray(v)?v:{};}
 
-// V26 — strict account isolation and authoritative profile normalization.
-function normalizeAuthenticatedUser(user,email=''){
-  const u={...safeObject(user)};
-  const em=String(email||u.email||'').trim().toLowerCase();
-  u.email=em;
-  u.role=u.role||'معلم / معلمة';
-  u.subjects=safeArray(u.subjects?.length?u.subjects:(u.subject?[u.subject]:[]));
-  u.grades=safeArray(u.grades);
-  u.classes=safeArray(u.classes);
-  // Repair the dedicated cloud test account to its originally registered Mathematics profile.
-  if(em==='meeerah30@gmail.com'){
-    u.subject='الرياضيات';
-    u.subjects=['الرياضيات'];
-    u.grades=['6'];
-    if(!u.classes.length || u.classes.some(c=>String(c).startsWith('7'))) u.classes=['6G1','6G2','6G3'];
-    u.name=u.name||'أ. معلم تجريبي – اختبار السحابة';
-    u.role='معلم / معلمة';
-  }else if(u.subjects.length){
-    u.subject=u.subjects[0];
-  }else{
-    u.subject=u.subject||'العلوم';
-    u.subjects=[u.subject];
-  }
-  return u;
-}
-function clearUserScopedCache(){
-  const keep=new Set([USERS_KEY,SESSION_KEY,LAST_EMAIL_KEY,SAVED_PASSWORD_KEY,SIGNED_OUT_KEY,'misbarCloudTokenV1','misbarCloudHydratedV1']);
-  try{
-    const keys=[];
-    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&!keep.has(k)&&(k.startsWith('misbarZayed')||k.startsWith('misbar_')))keys.push(k)}
-    keys.forEach(k=>localStorage.removeItem(k));
-  }catch(e){}
-}
-function resetAppScroll(){
-  const run=()=>{
-    try{
-      const ws=document.querySelector('#appShell .workspace');
-      if(ws){ws.scrollTop=0;ws.scrollLeft=0; if(ws.scrollTo)ws.scrollTo({top:0,left:0,behavior:'auto'});}
-      if(appShell){appShell.scrollTop=0;appShell.scrollLeft=0;}
-      window.scrollTo({top:0,left:0,behavior:'auto'});
-    }catch(e){}
-  };
-  run();requestAnimationFrame(run);setTimeout(run,40);setTimeout(run,180);
-}
-
 const authDialog=$('#authDialog'), saifDialog=$('#saifDialog');
 const appShell=$('#appShell'), publicSite=$('#publicSite'), publicNav=$('#publicNav'), publicActions=$('#publicActions'), userChip=$('#userChip');
 let currentUser={name:'مستخدم مِسبار',role:'معلم / معلمة',subject:'العلوم',subjects:['العلوم'],grades:[],classes:[],email:''};
@@ -143,8 +98,8 @@ function detachPublicLanding(){ if(publicSite && publicSite.isConnected){ public
 function restorePublicLanding(){ if(publicSite && !publicSite.isConnected && publicSiteAnchor.parentNode){ publicSiteAnchor.parentNode.insertBefore(publicSite, publicSiteAnchor.nextSibling); } }
 
 function enterApp(user){
-  currentUser=normalizeAuthenticatedUser(user||currentUser,(user||currentUser)?.email||'');
-  authDialog.close(); publicSite.hidden=true; publicSite.style.display='none'; detachPublicLanding(); publicNav.hidden=true; publicActions.hidden=true; userChip.hidden=false; $('#appTopbar').style.display='flex'; appShell.hidden=false; appShell.style.display='grid'; document.documentElement.classList.add('app-open'); document.body.classList.add('app-mode'); document.body.style.overflow='hidden'; resetAppScroll();
+  currentUser={...safeObject(user||currentUser),subjects:safeArray((user||currentUser)?.subjects?.length?(user||currentUser).subjects:[(user||currentUser)?.subject||'العلوم']),grades:safeArray((user||currentUser)?.grades),classes:safeArray((user||currentUser)?.classes)};
+  authDialog.close(); publicSite.hidden=true; publicSite.style.display='none'; detachPublicLanding(); publicNav.hidden=true; publicActions.hidden=true; userChip.hidden=false; $('#appTopbar').style.display='flex'; appShell.hidden=false; appShell.style.display='grid'; document.documentElement.classList.add('app-open'); document.body.classList.add('app-mode'); document.body.style.overflow='hidden'; window.scrollTo(0,0);
   $('#chipName').textContent=currentUser.name.startsWith('أ.')?currentUser.name:`أ. ${currentUser.name}`;
   $('#chipRole').textContent=isTeacher()?`معلم/معلمة ${safeArray(currentUser.subjects?.length?currentUser.subjects:[currentUser.subject]).join('، ')}`:currentUser.role;
   $('#sideSubject').textContent=isTeacher()?safeArray(currentUser.subjects?.length?currentUser.subjects:[currentUser.subject]).join('، '):(currentUser.role==='مديرة النطاق'?'لوحة النطاق':'القيادة المدرسية');
@@ -152,7 +107,6 @@ function enterApp(user){
   $('#workspaceEyebrow').textContent=isTeacher()?`معلم/معلمة ${safeArray(currentUser.subjects?.length?currentUser.subjects:[currentUser.subject]).join('، ')}`:currentUser.role;
   applyAccess();
   showView('overview',{fromHistory:true});
-  resetAppScroll();
   history.replaceState({view:'overview'},'', '#page-overview');
 }
 async function misbarPasswordHash(value){
@@ -199,42 +153,46 @@ function cloudJsonp(params={}, timeoutMs=15000){
 async function cloudGet(action,data={}){
   return await cloudJsonp({action,...data});
 }
-function cloudSubmitForm(action, requestId, data={}){
-  // A normal hidden HTML form is more reliable than cross-origin fetch for
-  // Google Apps Script Web Apps in browsers that block/hold redirected no-cors POSTs.
-  // The response is intentionally ignored; cloudPost reads the result by JSONP.
-  const frameName='misbar_cloud_post_'+requestId;
-  const iframe=document.createElement('iframe');
-  iframe.name=frameName; iframe.setAttribute('aria-hidden','true');
-  iframe.style.cssText='position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:-9999px;border:0';
-  const form=document.createElement('form');
-  form.method='POST'; form.action=MISBAR_CLOUD_URL; form.target=frameName;
-  form.style.display='none';
-  const payload={action,requestId,...data};
-  Object.entries(payload).forEach(([k,v])=>{
-    const input=document.createElement('input'); input.type='hidden'; input.name=k;
-    input.value=typeof v==='string'?v:JSON.stringify(v); form.appendChild(input);
-  });
-  document.body.appendChild(iframe); document.body.appendChild(form);
-  try{ form.submit(); }catch(err){ form.remove(); iframe.remove(); throw err; }
-  setTimeout(()=>{try{form.remove()}catch(_){}},500);
-  setTimeout(()=>{try{iframe.remove()}catch(_){}},30000);
-}
 async function cloudPost(action, data={}){
   const requestId=cloudRequestId();
-  cloudSubmitForm(action,requestId,data);
-  const started=Date.now();
-  let lastErr=null;
-  while(Date.now()-started<20000){
-    try{
-      const res=await cloudJsonp({action:'result',requestId},4000);
-      if(res&&res.ready)return res.result||{ok:false,error:'EMPTY_RESULT'};
-    }catch(err){ lastErr=err; }
-    await new Promise(r=>setTimeout(r,550));
+  const frameName='misbar_post_'+requestId;
+  let iframe=null, form=null;
+  try{
+    iframe=document.createElement('iframe');
+    iframe.name=frameName;
+    iframe.style.display='none';
+    iframe.setAttribute('aria-hidden','true');
+    document.body.appendChild(iframe);
+
+    form=document.createElement('form');
+    form.method='POST';
+    form.action=MISBAR_CLOUD_URL;
+    form.target=frameName;
+    form.style.display='none';
+    const payload={action,requestId,...data};
+    Object.entries(payload).forEach(([k,v])=>{
+      const input=document.createElement('input');
+      input.type='hidden'; input.name=k;
+      input.value=typeof v==='string'?v:JSON.stringify(v);
+      form.appendChild(input);
+    });
+    document.body.appendChild(form);
+    form.submit();
+
+    const started=Date.now();
+    let lastErr=null;
+    while(Date.now()-started<25000){
+      try{
+        const res=await cloudJsonp({action:'result',requestId},5000);
+        if(res&&res.ready)return res.result||{ok:false,error:'EMPTY_RESULT'};
+      }catch(err){ lastErr=err; }
+      await new Promise(r=>setTimeout(r,450));
+    }
+    throw lastErr||new Error('CLOUD_RESULT_TIMEOUT');
+  }finally{
+    try{form&&form.remove()}catch(_){}
+    try{iframe&&iframe.remove()}catch(_){}
   }
-  const e=new Error('CLOUD_RESULT_TIMEOUT');
-  if(lastErr)e.cause=lastErr;
-  throw e;
 }
 function cloudToken(){ try{return localStorage.getItem('misbarCloudTokenV1')||''}catch(e){return''} }
 function saveCloudToken(t){ try{if(t)localStorage.setItem('misbarCloudTokenV1',t);else localStorage.removeItem('misbarCloudTokenV1')}catch(e){} }
@@ -259,25 +217,45 @@ function updateCloudBadge(text){
   if(!b){b=document.createElement('span');b.id='misbarCloudBadge';b.style.cssText='font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px;background:#eef6f8;color:#31576d;margin-inline:6px';const chip=document.querySelector('.user-chip');if(chip)chip.appendChild(b)}
   if(b)b.textContent='☁️ '+text;
 }
-async function hydrateFromCloud(snapshot){cloudApplying=true;try{applyCloudSnapshot(snapshot||{});localStorage.setItem('misbarCloudHydratedV1','1')}finally{cloudApplying=false}}
+function clearCloudSyncedData(){
+  const skip=new Set([USERS_KEY,SESSION_KEY,LAST_EMAIL_KEY,SAVED_PASSWORD_KEY,SIGNED_OUT_KEY,'misbarCloudTokenV1','misbarCloudHydratedV1']);
+  try{
+    const keys=[];
+    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith('misbarZayed')||k.startsWith('misbar_'))&&!skip.has(k))keys.push(k)}
+    keys.forEach(k=>localStorage.removeItem(k));
+  }catch(e){console.warn('Could not clear previous account data',e)}
+}
+async function hydrateFromCloud(snapshot){cloudApplying=true;try{clearCloudSyncedData();applyCloudSnapshot(snapshot||{});localStorage.setItem('misbarCloudHydratedV1','1')}finally{cloudApplying=false}}
 async function performLogin(e){
   if(e)e.preventDefault();
-  const email=$('#loginEmail').value.trim().toLowerCase(),password=$('#loginPassword').value,status=$('#loginStatus');
+  const email=$('#loginEmail').value.trim().toLowerCase(),password=$('#loginPassword').value,status=$('#loginStatus'),btn=$('#loginSubmit');
   if(status){status.style.color='#8a3b12';status.textContent=''}
   if(!email||!password){if(status)status.textContent='أدخل البريد الإلكتروني وكلمة المرور.';return}
+  if(btn?.dataset.busy==='1')return;
+  if(btn){btn.dataset.busy='1';btn.disabled=true;btn.textContent='جارٍ الدخول...'}
   try{
-    if(status){status.style.color='#315f86';status.textContent='جارٍ التحقق من الحساب السحابي...';}
+    if(status)status.textContent='جارٍ التحقق من الحساب السحابي...';
     const passwordHash=await misbarPasswordHash(password);
     const res=await cloudPost('login',{email,passwordHash});
-    if(!res.ok){if(status)status.textContent='بيانات الدخول غير صحيحة. إذا كان هذا أول تفعيل لحساب صاحبة المنصة استخدمي زر الاستعادة.';return}
+    if(!res||!res.ok){if(status)status.textContent='بيانات الدخول غير صحيحة أو الحساب غير مفعّل.';return}
     saveCloudToken(res.token);
-    const authUser=normalizeAuthenticatedUser(res.user,email);
-    clearUserScopedCache();
-    const pulled=await cloudGet('pull',{token:res.token});if(pulled&&pulled.ok)await hydrateFromCloud(pulled.snapshot);
-    const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email),user={...authUser,passwordHash};if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
+    if(status)status.textContent='تم التحقق. جارٍ تحميل بيانات الحساب...';
+    const pulled=await cloudGet('pull',{token:res.token});
+    if(!pulled||!pulled.ok)throw new Error('CLOUD_PULL_FAILED');
+    await hydrateFromCloud(pulled.snapshot||{});
+    const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email),user={...res.user,passwordHash};
+    if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
     try{localStorage.removeItem(SIGNED_OUT_KEY);localStorage.setItem(LAST_EMAIL_KEY,email);if($('#rememberLogin')?.checked)savePersistentSession(user)}catch(_){ }
-    updateCloudBadge('متصل');enterApp(user);scheduleCloudPush();
-  }catch(err){console.error('MISBAR login cloud error',err);if(status){status.style.color='#b42318';status.textContent='تعذر وصول رد السحابة. أغلقي نافذة الدخول وافتحيها ثم حاولي مرة أخرى.';}}
+    updateCloudBadge('متصل');
+    enterApp(user);
+    scheduleCloudPush();
+  }catch(err){
+    console.error('MISBAR login failed',err);
+    saveCloudToken('');
+    if(status)status.textContent='تعذر إكمال تسجيل الدخول السحابي. أعيدي المحاولة مرة واحدة.';
+  }finally{
+    if(btn){btn.dataset.busy='0';btn.disabled=false;btn.textContent='دخول المنصة'}
+  }
 }
 async function directAdminLogin(){
   const code=window.prompt('أدخل رمز إدارة المدرسة:');if(code===null)return;const status=$('#loginStatus');
@@ -338,30 +316,51 @@ $('#logoutBtn').onclick=()=>{
   history.replaceState({},'',location.pathname);window.scrollTo({top:0,behavior:'auto'});
 };
 
-async function prepareRememberedLogin(){
+function prepareRememberedLogin(){
+  // Visitor links and explicit logout must always stay on the public landing page.
   const visitorMode=new URLSearchParams(location.search).get('visitor')==='1';
   let explicitlySignedOut=false;
   try{ explicitlySignedOut=localStorage.getItem(SIGNED_OUT_KEY)==='1'; }catch(err){}
+  // Restore an existing remembered account only when the user has not explicitly signed out.
   try{
     const session=(!visitorMode&&!explicitlySignedOut)?loadPersistentSession():null;
-    const token=cloudToken();
-    if(session?.email && token){
+    if(session?.email){
       const email=String(session.email).trim().toLowerCase();
-      const me=await cloudGet('me',{token});
-      if(me&&me.ok&&me.user){
-        const user=normalizeAuthenticatedUser(me.user,email);
-        clearUserScopedCache();
-        const pulled=await cloudGet('pull',{token});
-        if(pulled&&pulled.ok)await hydrateFromCloud(pulled.snapshot);
-        const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email);
-        if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
-        enterApp(user);updateCloudBadge('متصل');return;
+      const user=loadUsers().find(u=>String(u.email||'').trim().toLowerCase()===email);
+      if(user){
+        enterApp(user);
+        return;
       }
     }
   }catch(err){ console.error('Session restore failed',err); }
-  restorePublicLanding();publicSite.hidden=false;publicSite.style.display='';publicNav.hidden=false;publicActions.hidden=false;
-}
 
+  // No valid remembered session: show the public landing page normally.
+  restorePublicLanding();
+  publicSite.hidden=false;
+  publicSite.style.display='';
+  publicNav.hidden=false;
+  publicActions.hidden=false;
+  appShell.hidden=true;
+  appShell.style.display='none';
+  userChip.hidden=true;
+  $('#appTopbar').style.display='none';
+  document.documentElement.classList.remove('app-open');
+  document.body.classList.remove('app-mode');
+  document.body.style.overflow='';
+  if(location.hash && location.hash.startsWith('#page-')){
+    history.replaceState({},'',location.pathname);
+  }
+  window.scrollTo(0,0);
+  if(visitorMode){
+    setTimeout(()=>{
+      try{
+        if(typeof renderVisitorPreviewV38==='function') renderVisitorPreviewV38();
+        else if(typeof renderVisitorPreview==='function') renderVisitorPreview();
+        const d=document.getElementById('visitorDialog'); if(d&&!d.open)d.showModal();
+      }catch(err){console.error(err)}
+    },180);
+  }
+}
 setTimeout(prepareRememberedLogin,0);
 function setupVisitorQr(){
   const base='https://muna280068-maker.github.io/zayed-misbar/?visitor=1';
@@ -625,40 +624,28 @@ function ensureDefaultAssessment(){
   try{
     const ctx=contextKey();
     let all=loadAssessments();
-    const wanted=[
-      ['التشخيص الأولي','diagnostic'],
-      ['التكويني 1','formative'],['التكويني 2','formative'],['التكويني 3','formative'],['التكويني 4','formative'],['التكويني 5','formative']
-    ];
-    let changed=false;
-    // Rename the legacy first diagnostic so old links/data remain attached to the same assessment id.
-    all.forEach(a=>{if(a.context===ctx && a.type==='التشخيص الأول'){a.type='التشخيص الأولي';changed=true;}});
     let list=all.filter(a=>a.context===ctx);
-    wanted.forEach(([type,kind],idx)=>{
-      if(!list.some(a=>a.type===type)){
-        const id=idx===0?defaultAssessmentIdForContext(ctx):('F'+(idx)+'_'+Math.abs([...ctx].reduce((h,c)=>((h<<5)-h)+c.charCodeAt(0)|0,0)));
-        const a={id,context:ctx,type,max:10,date:new Date().toISOString().slice(0,10),status:'not_started',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true,kind,sequence:idx};
-        all.push(a);list.push(a);changed=true;
+    if(!list.length){
+      const id=defaultAssessmentIdForContext(ctx);
+      const a={id,context:ctx,type:'التشخيص الأولي',max:10,date:new Date().toISOString().slice(0,10),status:'in_progress',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true};
+      all.push(a);
+      saveAssessments(all);
+      const check=loadAssessments().find(x=>x.id===id&&x.context===ctx);
+      if(!check)throw new Error('تعذر إنشاء سجل التشخيص الافتراضي');
+      list=[check];
+      // Migrate scores created by V89-V92 under the temporary DIRECT_DIAGNOSTIC key.
+      const store=loadAllScores(), oldKey=ctx+'|DIRECT_DIAGNOSTIC', newKey=ctx+'|'+id;
+      if(store[oldKey]&&!store[newKey]){
+        store[newKey]={...safeObject(store[oldKey]),migratedFrom:'DIRECT_DIAGNOSTIC'};
+        saveAllScores(store);
       }
-    });
-    // V21 migration: this section no longer uses /100. Preserve percentages by scaling legacy /100 scores to /10.
-    const store=loadAllScores(); let scoresChanged=false;
-    list.forEach(a=>{
-      const key=ctx+'|'+a.id, saved=store[key];
-      if(Number(a.max)!==10){
-        const oldMax=Math.max(1,Number(a.max)||100);
-        if(saved?.rows?.length){saved.rows=safeArray(saved.rows).map(r=>({...r,score:Math.max(0,Math.min(10,Math.round((Number(r.score)||0)/oldMax*100)/10))}));saved.max=10;store[key]=saved;scoresChanged=true;}
-        a.max=10;changed=true;
-      } else if(saved && Number(saved.max)!==10){saved.max=10;store[key]=saved;scoresChanged=true;}
-    });
-    if(changed)saveAssessments(all);
-    if(scoresChanged)saveAllScores(store);
-    list=all.filter(a=>a.context===ctx).sort((a,b)=>{
-      const order=x=>wanted.findIndex(([t])=>t===x.type);
-      const ai=order(a),bi=order(b);return (ai<0?99:ai)-(bi<0?99:bi);
-    });
-    if(!activeAssessmentId||!list.some(a=>a.id===activeAssessmentId))activeAssessmentId=list[0]?.id||'';
+    }
+    if(!activeAssessmentId||!list.some(a=>a.id===activeAssessmentId))activeAssessmentId=list[0].id;
     return list;
-  }catch(err){console.error('Measurement journey creation failed',err);return currentContextAssessments();}
+  }catch(err){
+    console.error('Default assessment creation failed',err);
+    return currentContextAssessments();
+  }
 }
 function assessmentUiStatus(a,saved){if(a.locked)return['معتمد','locked'];if(!saved||!saved.rows?.length)return['لم يبدأ','draft'];const total=rosterForCurrentClass().length||roster.length,entered=saved.rows.length;if(entered<total)return[`جارٍ الإدخال ${entered}/${total}`,'progress'];return['مكتمل','done']}
 function renderAssessmentCards(){if(!$('#assessmentCards'))return;const list=ensureDefaultAssessment();$('#assessmentContext').textContent=`${subjectFilter.value} • الصف ${gradeArabicName(gradeFilter.value)} • ${classFilter.value}`;const box=$('#assessmentCards');if(!list.length){box.innerHTML='<div class="assessment-empty">لا توجد اختبارات لهذه الشعبة بعد.</div>';return}const scores=loadAllScores();box.innerHTML=list.map(a=>{const saved=scores[assessmentKey(a.id)],st=assessmentUiStatus(a,saved),skills=safeArray(a.skills).map(s=>`<span>${s}</span>`).join('');return `<article class="assessment-card ${a.locked?'locked-card':''}"><div class="assessment-meta"><span>${subjectFilter.value}</span><span>${classFilter.value}</span><span>من ${a.max}</span></div><h4>${a.type}</h4><small>${a.date||'بدون تاريخ'}</small><span class="assessment-status ${st[1]}">${st[0]}</span>${skills?`<div class="assessment-skills">${skills}</div>`:''}<div class="card-actions"><button class="btn ghost small open-assessment" data-id="${a.id}">فتح</button><button class="btn primary small score-assessment" data-id="${a.id}">${a.locked?'عرض النتائج':'إدخال الدرجات'}</button></div></article>`}).join('');$$('.open-assessment,.score-assessment').forEach(b=>b.onclick=()=>{activeAssessmentId=b.dataset.id;showView('scores');prepareScores()})}
@@ -695,7 +682,7 @@ function persistVisibleScoresNow(){
     const first=sels[0], key=first.dataset.scoreKey||assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC');
     const rows=scoreRowsFromDom();
     const all=loadAllScores(), existing=safeObject(all[key]);
-    const max=Number(first.dataset.max||100)||100;
+    const max=Number(first.dataset.max||10)||10;
     if(rows.length){
       all[key]={...existing,rows,max,savedAt:new Date().toISOString(),autoSaved:true,
         subject:first.dataset.subject||'',grade:first.dataset.grade||'',className:first.dataset.className||'',
@@ -724,7 +711,7 @@ function saveSingleScoreImmediate(sel){
     const draft=loadScoreDraft(key);Object.entries(draft).forEach(([n,v])=>map.set(n,+v));
     if(sel.value==='')map.delete(name);else map.set(name,+sel.value);
     const rows=[...map.entries()].filter(([,score])=>Number.isFinite(score)).map(([name,score])=>({name,score}));
-    const max=Math.max(1,Number(a.max)||100);
+    const max=Math.max(1,Number(a.max)||10);
     if(sel.value!=='' && (+sel.value<0 || +sel.value>max)){sel.value='';throw new Error('score out of range');}
     all[key]={...existing,rows,max,savedAt:new Date().toISOString(),autoSaved:true,
       subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,
@@ -743,7 +730,7 @@ function renderScores(){
   if(!list.length){tb.innerHTML='<tr><td colspan="5">تعذر تجهيز الاختبار التشخيصي.</td></tr>';return;}
   if(!activeAssessmentId||!list.some(a=>a.id===activeAssessmentId))activeAssessmentId=list[0].id;
   const a=list.find(x=>x.id===activeAssessmentId)||list[0];
-  const max=Math.max(1,Number(a.max)||100),all=loadAllScores(),locked=!!a.locked,key=assessmentKey(a.id),saved=all[key],draft=loadScoreDraft(key);
+  const max=Math.max(1,Number(a.max)||10),all=loadAllScores(),locked=!!a.locked,key=assessmentKey(a.id),saved=all[key],draft=loadScoreDraft(key);
   const savedMap=saved?Object.fromEntries(safeArray(saved.rows).map(r=>[r.name,r.score])):{};Object.assign(savedMap,draft);
   tb.innerHTML='';
   roster.forEach((name,i)=>{
@@ -761,86 +748,7 @@ function renderScores(){
   updateLevels();
   if($('#saveScores')){$('#saveScores').textContent=locked?'فتح للتعديل':'حفظ واعتماد';$('#saveScores').classList.toggle('warn',locked)}
   if($('#savedNote'))$('#savedNote').innerHTML=locked?'<span class="locked-note">النتائج معتمدة ومقفلة ضد التعديل غير المقصود.</span>':'';
-  renderScoreMatrix();
 }
-
-// V22: approved all-measurements matrix view.
-function matrixAssessmentList(){
-  const list=ensureDefaultAssessment();
-  const order=['التشخيص الأولي','تكويني 1','تكويني 2','تكويني 3','تكويني 4','تكويني 5'];
-  return list.slice().sort((a,b)=>order.indexOf(a.type)-order.indexOf(b.type)).slice(0,6);
-}
-function matrixScoreMap(a){
-  const key=assessmentKey(a.id),all=loadAllScores(),saved=safeObject(all[key]),draft=loadScoreDraft(key);
-  const map=Object.fromEntries(safeArray(saved.rows).map(r=>[String(r.name),Number(r.score)]));
-  Object.entries(draft).forEach(([n,v])=>{if(v!==''&&Number.isFinite(Number(v)))map[n]=Number(v)});
-  return map;
-}
-function matrixWeakestSkill(name,list,maps){
-  let low=Infinity, label='—';
-  list.forEach((a,i)=>{const v=maps[i]?.[name];if(Number.isFinite(v)&&v<low){low=v;label=(safeArray(a.skills)[0]||a.type||'—')}});
-  return label;
-}
-function matrixRowStats(name,list,maps){
-  const vals=list.map((a,i)=>maps[i]?.[name]).filter(v=>Number.isFinite(v));
-  if(!vals.length)return{avg:null,level:'',levelCls:'',trend:'—',trendCls:'flat'};
-  const avg=vals.reduce((x,y)=>x+y,0)/vals.length;
-  const [level,levelCls]=scoreLevel(avg,10);
-  let trend='→',trendCls='flat';
-  if(vals.length>1){const d=vals[vals.length-1]-vals[0];if(d>=1){trend='↗';trendCls='up'}else if(d<=-1){trend='↘';trendCls='down'}}
-  return{avg,level,levelCls,trend,trendCls};
-}
-function renderScoreMatrix(){
-  const tb=document.querySelector('#scoreMatrixTable tbody');if(!tb)return;
-  const list=matrixAssessmentList();
-  if(!list.length){tb.innerHTML='<tr><td colspan="13">لا توجد قياسات بعد.</td></tr>';return;}
-  const maps=list.map(matrixScoreMap);
-  tb.innerHTML='';
-  roster.forEach((name,i)=>{
-    const st=matrixRowStats(name,list,maps),weak=matrixWeakestSkill(name,list,maps);
-    const cells=list.map((a,ai)=>{
-      const val=maps[ai]?.[name];
-      const opts=['<option value="">—</option>'].concat(Array.from({length:11},(_,x)=>`<option value="${x}" ${Number.isFinite(val)&&Number(val)===x?'selected':''}>${x}</option>`)).join('');
-      return `<td><select class="matrix-score-select" data-assessment-id="${a.id}" data-student-name="${String(name).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" ${a.locked?'disabled':''}>${opts}</select></td>`;
-    }).join('');
-    const tr=document.createElement('tr');
-    tr.dataset.student=name;
-    tr.innerHTML=`<td>${i+1}</td><td class="student-name"><button type="button" class="student-name-link" data-student="${String(name).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${name}</button></td>${cells}<td class="matrix-average">${st.avg==null?'—':st.avg.toFixed(1)}</td><td><span class="matrix-level ${st.levelCls}">${st.level||'—'}</span></td><td class="matrix-weak">${weak}</td><td><span class="matrix-trend ${st.trendCls}">${st.trend}</span></td><td><select class="matrix-action-select"><option>تحديد إجراء</option><option>دعم فردي</option><option>مجموعة علاجية</option><option>إثراء</option><option>متابعة</option></select></td>`;
-    tb.appendChild(tr);
-  });
-  $$('#scoreMatrixTable .student-name-link').forEach(b=>b.onclick=()=>openStudentProfile(b.dataset.student));
-}
-function saveMatrixScoreImmediate(sel){
-  try{
-    const id=sel.dataset.assessmentId,name=sel.dataset.studentName;
-    const list=ensureDefaultAssessment(),a=list.find(x=>x.id===id);
-    if(!a||!name)return false;
-    const key=assessmentKey(a.id),all=loadAllScores(),existing=safeObject(all[key]);
-    const map=new Map(safeArray(existing.rows).map(r=>[String(r.name),Number(r.score)]));
-    if(sel.value==='')map.delete(name);else map.set(name,Number(sel.value));
-    const rows=[...map.entries()].filter(([,v])=>Number.isFinite(v)).map(([name,score])=>({name,score}));
-    all[key]={...existing,rows,max:10,savedAt:new Date().toISOString(),autoSaved:true,subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,teacherEmail:currentUser.email||'',teacherName:currentUser.name||'',skills:safeArray(a.skills)};
-    saveAllScores(all);
-    localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
-    scheduleCloudPush();
-    const note=$('#savedNote');if(note)note.textContent=`✓ تم حفظ درجة ${name} تلقائيًا`;
-    return true;
-  }catch(err){console.error('Matrix score save failed',err);return false;}
-}
-document.addEventListener('change',function(e){
-  const sel=e.target?.closest?.('#scoreMatrixTable select.matrix-score-select');
-  if(!sel)return;
-  saveMatrixScoreImmediate(sel);
-  renderScoreMatrix();
-},true);
-setTimeout(()=>{
-  const clear=document.getElementById('clearMatrixVisual');
-  if(clear)clear.onclick=()=>{if(!confirm('هل تريدين مسح الدرجات الظاهرة لهذه الشعبة؟'))return;const list=matrixAssessmentList(),all=loadAllScores();list.forEach(a=>{const k=assessmentKey(a.id);if(all[k])all[k]={...all[k],rows:[],savedAt:new Date().toISOString()};localStorage.removeItem(scoreDraftKey(k))});saveAllScores(all);renderScores();};
-  const exp=document.getElementById('exportMatrixVisual');
-  if(exp)exp.onclick=()=>document.getElementById('exportTeacherExcel')?.click();
-  const settings=document.querySelector('.visual-settings');if(settings)settings.onclick=()=>{alert('قسم الإعدادات سيحتوي إعدادات الحساب والعرض.');};
-},0);
-
 // Capture score changes at document level so saving survives any table re-render.
 document.addEventListener('change',function(e){
   const sel=e.target?.closest?.('#scoreTable select.score-select');
@@ -900,6 +808,31 @@ function prepareScores(){
 }
 function refreshAssessmentUI(){if(!subjectFilter||!gradeFilter||!classFilter)return;currentUser.subject=subjectFilter.value||currentUser.subject;syncRosterFromClass();syncSubjectMaxUI();cleanupDuplicateAssessments();renderAssessmentCards();if($('#view-scores').classList.contains('active'))prepareScores()}
 $('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);$('#newAssessmentMax').value='10';const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';const defaultSkills=assessmentSkillsForSubject(subjectFilter.value);renderAssessmentSkillChoices(defaultSkills);$('#assessmentDialog').showModal()};
+function migrateAssessmentScaleToTen(){
+  const marker='misbarScale10MigrationV28';
+  try{if(localStorage.getItem(marker)==='1')return}catch(_){}
+  try{
+    const assessments=loadAssessments();
+    const scores=loadAllScores();
+    let changed=false;
+    assessments.forEach(a=>{
+      const oldMax=Number(a.max||10)||10;
+      if(oldMax!==10 && !a.weekly){
+        const key=String(a.context||'')+'|'+a.id;
+        const sv=scores[key];
+        if(sv&&Array.isArray(sv.rows)){
+          sv.rows=sv.rows.map(r=>({...r,score:Math.max(0,Math.min(10,Math.round((Number(r.score)||0)/oldMax*10)))}));
+          sv.max=10; changed=true;
+        }
+        a.max=10; changed=true;
+      }
+      if(a.type==='التشخيص الأول')a.type='التشخيص الأولي';
+    });
+    if(changed){saveAssessments(assessments);saveAllScores(scores)}
+    localStorage.setItem(marker,'1');
+  }catch(e){console.warn('Scale migration skipped',e)}
+}
+migrateAssessmentScaleToTen();
 function repairStoredPlatformData(){
   try{
     saveAssessments(loadAssessments());
@@ -958,7 +891,7 @@ window.createDiagnosticAssessmentNow=function(event){
 };
 
 $('#goScoresBtn').onclick=()=>{showView('scores');prepareScores()};
-$('#assessmentSelect').addEventListener('change',()=>{activeAssessmentId=$('#assessmentSelect').value;const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);if(a)$('#maxScoreSelect').value=String(Number(a.max)||10);prepareScores()});
+$('#assessmentSelect').addEventListener('change',()=>{activeAssessmentId=$('#assessmentSelect').value;const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);if(a)$('#maxScoreSelect').value=String(subjectMaxScore(subjectFilter.value));prepareScores()});
 $('#maxScoreSelect').addEventListener('change',()=>{syncSubjectMaxUI();renderScores()});
 if($('#useDemoRoster')) $('#useDemoRoster').remove();
 $('#rosterFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{const text=String(reader.result||'').replace(/^\uFEFF/,'');const names=text.split(/\r?\n/).map(line=>line.split(',')[0].trim()).filter(Boolean).filter(x=>!/^name|اسم|student/i.test(x));if(!names.length){alert('لم أتمكن من قراءة أسماء من الملف. استخدمي CSV أو TXT ويكون الاسم في العمود الأول.');return}roster=names.slice(0,200);persistCurrentRoster();renderScores();updateOverviewStudentCount();};reader.readAsText(f,'UTF-8')});
@@ -1265,13 +1198,13 @@ function startRemeasure(interventionId){
   const item=all.find(i=>String(i.id)===String(interventionId));
   if(!item){alert('لم يتم العثور على الإجراء');return;}
 
-  const scoreText=prompt('أدخلي درجة إعادة القياس من 100');
+  const scoreText=prompt('أدخلي درجة إعادة القياس من 10');
   if(scoreText===null) return;
 
   const score=Number(scoreText);
 
-if(!Number.isFinite(score) || score<0 || score>100){
-    alert('أدخلي درجة صحيحة من 0 إلى 100');
+if(!Number.isFinite(score) || score<0 || score>10){
+    alert('أدخلي درجة صحيحة من 0 إلى 10');
     return;
 }
   
@@ -1283,11 +1216,11 @@ if(!Number.isFinite(score) || score<0 || score>100){
     id:assessmentId,
     type:'إعادة القياس',
     date:new Date().toISOString(),
-    max:100,
+    max:10,
     rows:(item.students||[]).map(name=>({
       name:name,
       score:score,
-      max:100
+      max:10
     }))
   };
 
@@ -1571,7 +1504,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 ['leaderSubject','leaderMode','leaderCycle'].forEach(id=>$('#'+id)?.addEventListener('change',renderLeadership));
 $('#exportLeadershipCsv')?.addEventListener('click',exportLeadershipCsv); $('#printLeadership')?.addEventListener('click',()=>window.print());
 
-function renderVisitorPreview(){const ev=loadEvidence().filter(e=>e.privacy==='معتمد للزوار');$('#visitorEvidenceCount').textContent=ev.length;$('#visitorEvidenceList').innerHTML=ev.length?ev.slice(-6).reverse().map(e=>`<div><b>${e.type||'دليل وشاهد'}</b><small>${e.subject||''} • ${e.className||''} • ${new Date(e.createdAt).toLocaleDateString('ar-AE')}</small></div>`).join(''):'<div>لا توجد أدلة معتمدة للنشر بعد.</div>';const ints=loadInterventions().filter(i=>safeArray(i.evidenceIds).some(id=>ev.some(e=>e.id===id)));$('#visitorInterventions').textContent=ints.length;$('#visitorMastery').textContent='—';if($('#visitorImprovement'))$('#visitorImprovement').textContent='—'}
+function renderVisitorPreview(){const ev=loadEvidence().filter(e=>e.privacy==='معتمد للزوار');$('#visitorEvidenceCount').textContent=ev.length;$('#visitorEvidenceList').innerHTML=ev.length?ev.slice(-6).reverse().map(e=>`<div><b>${e.type||'دليل وشاهد'}</b><small>${e.subject||''} • ${e.className||''} • ${new Date(e.createdAt).toLocaleDateString('ar-AE')}</small></div>`).join(''):'<div>لا توجد أدلة معتمدة للنشر بعد.</div>';const ints=loadInterventions().filter(i=>safeArray(i.evidenceIds).some(id=>ev.some(e=>e.id===id)));$('#visitorInterventions').textContent=ints.length;$('#visitorMastery').textContent='—';$('#visitorImprovement').textContent='—'}
 $('#visitorPreviewBtn').onclick=()=>{renderVisitorPreview();$('#visitorDialog').showModal()};
 $('#saifAnalyzeGaps').onclick=()=>{const lv=studentLevelsFromLatest();saifDialog.showModal();if(!lv.assessment){$('#saifResponse').textContent='لا توجد نتائج محفوظة لهذه الشعبة حتى الآن. احفظي درجات الاختبار التشخيصي أولًا.';return}const entered=lv.all.length, mastery=entered?Math.round(lv.good.length/entered*100):0;$('#saifResponse').textContent=`حللت نتائج ${entered} طالب/طالبة. نسبة الإتقان ${mastery}%. يحتاج ${lv.medium.length} إلى دعم، و${lv.danger.length} إلى تدخل علاجي مكثف. يمكنك اختيار الإجراء مباشرة من بطاقات الفجوات دون كتابة.`;speak($('#saifResponse').textContent)};
 
