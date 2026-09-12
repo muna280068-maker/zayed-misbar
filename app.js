@@ -28,6 +28,7 @@ const ASSESSMENTS_KEY='misbarZayedAssessmentsV12';
 const SCORES_KEY='misbarZayedScoresV12';
 const INTERVENTIONS_KEY='misbarZayedInterventionsV15';
 const EVIDENCE_KEY='misbarZayedEvidenceV15';
+const SUPPORT_KEY='misbarZayedSupportPlansV36';
 // V62 — تنظيف نهائي لمرة واحدة: يحذف جميع بيانات التجارب السابقة من هذا المتصفح/الجهاز.
 // بعد تنفيذ هذا التنظيف مرة واحدة، تبدأ المنصة ببيانات فارغة وتحفظ البيانات الحقيقية الجديدة بشكل طبيعي.
 (function cleanPreviousMisbarExperimentsOnce(){
@@ -361,11 +362,17 @@ async function prepareRememberedLogin(){
         const me=await cloudGet('me',{token});
         if(me&&me.ok&&me.user){
           const email=String(me.user.email||session.email).trim().toLowerCase();
-          const pulled=await cloudGet('pull',{token});
-          if(pulled&&pulled.ok)await hydrateFromCloud(pulled.snapshot||{});
           const users=loadUsers(),i=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email);
           const user={...me.user};if(i>=0)users[i]=user;else users.push(user);saveUsers(users);savePersistentSession(user);
-          enterApp(user);updateCloudBadge('متصل ومحفوظ');cacheAccountSnapshot(user.email);return;
+          restoreAccountSnapshot(email);
+          enterApp(user);updateCloudBadge('متصل • جارٍ تحديث البيانات');
+          cloudGet('pull',{token}).then(async pulled=>{
+            if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');
+            await hydrateFromCloud(pulled.snapshot||{});
+            try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }
+            updateCloudBadge('متصل ومحفوظ');cacheAccountSnapshot(user.email);
+          }).catch(err=>{console.warn('Remembered session pull failed',err);updateCloudBadge('متصل • البيانات المحفوظة على الجهاز')});
+          return;
         }
       }
     }catch(err){console.warn('Cloud session restore failed',err)}
@@ -382,6 +389,8 @@ async function prepareRememberedLogin(){
   if(location.hash&&location.hash.startsWith('#page-'))history.replaceState({},'',location.pathname);window.scrollTo(0,0);
   if(visitorMode)setTimeout(()=>{try{if(typeof renderVisitorPreviewV38==='function')renderVisitorPreviewV38();else if(typeof renderVisitorPreview==='function')renderVisitorPreview();const d=document.getElementById('visitorDialog');if(d&&!d.open)d.showModal()}catch(err){console.error(err)}},180);
 }
+// Start the hidden cloud bridge while the landing screen is drawing so login does not wait for it later.
+setTimeout(()=>ensureCloudBridge(8000).catch(()=>{}),0);
 setTimeout(()=>prepareRememberedLogin(),0);
 function setupVisitorQr(){
   const base='https://muna280068-maker.github.io/zayed-misbar/?visitor=1';
@@ -1456,7 +1465,6 @@ function studentSeries(name){
 }
 function studentInterventionsFor(name){return contextInterventions().filter(i=>(i.students||[]).includes(name))}
 function drawStudentProgress(points){const box=$('#studentProgressChart');if(!box)return;if(!points.length){box.innerHTML='<div class="empty-inline">لا توجد نتائج محفوظة لهذا الطالب/الطالبة بعد.</div>';return}const W=760,H=270,pad=48,maxX=Math.max(points.length-1,1),x=i=>pad+i*(W-pad*2)/maxX,y=v=>H-pad-(v/100)*(H-pad*2);let grid='';[0,20,40,60,80,100].forEach(v=>{grid+=`<line x1="${pad}" y1="${y(v)}" x2="${W-pad}" y2="${y(v)}" stroke="#dce9ee"/><text x="${pad-10}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="#6a7d86">${v}%</text>`});const poly=points.map((p,i)=>`${x(i)},${y(p.pct)}`).join(' ');const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.pct)}" r="6" fill="#0b6070"/><text x="${x(i)}" y="${y(p.pct)-12}" text-anchor="middle" font-size="12" font-weight="700" fill="#0b6070">${p.pct}%</text><text x="${x(i)}" y="${H-18}" text-anchor="middle" font-size="12" fill="#506974">${p.label}</text><title>${p.label}: ${p.raw} = ${p.pct}%</title>`).join('');box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="منحنى المستوى الأكاديمي">${grid}<line x1="${pad}" y1="${y(80)}" x2="${W-pad}" y2="${y(80)}" stroke="#9ebf8c" stroke-dasharray="6 6"/><polyline points="${poly}" fill="none" stroke="#0b6070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`}
-const SUPPORT_KEY='misbarZayedSupportPlansV36';
 function loadSupportPlans(){try{return safeObject(JSON.parse(localStorage.getItem(SUPPORT_KEY)||'{}'))}catch{return{}}}
 function saveSupportPlans(v){localStorage.setItem(SUPPORT_KEY,JSON.stringify(v))}
 function supportKey(name){return `${contextKey()}|${name}`}
@@ -2471,4 +2479,4 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
   document.getElementById('exportMatrixVisual')?.addEventListener('click',()=>document.getElementById('exportTeacherExcel')?.click());
 })();
 
-window.MISBAR_BUILD='FINAL-RELEASE-2026-09-12-V102';
+window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-12-V103';
