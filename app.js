@@ -542,7 +542,22 @@ try{
 function loadRosterOverrides(){try{return safeObject(JSON.parse(localStorage.getItem(ROSTER_OVERRIDES_KEY)||'{}'))}catch{return {}}}
 function saveRosterOverrides(v){localStorage.setItem(ROSTER_OVERRIDES_KEY,JSON.stringify(v));scheduleCloudPush()}
 function rosterClassKey(){return classFilter?.value||''}
-function rosterForCurrentClass(){const k=rosterClassKey(),o=loadRosterOverrides();if(Array.isArray(o[k]))return [...o[k]];if(Array.isArray(BUILTIN_ROSTERS[k]))return [...BUILTIN_ROSTERS[k]];return []}
+function rosterLooksCorrupted(list){
+  if(!Array.isArray(list)||!list.length)return false;
+  const sample=list.slice(0,5).join(' ');
+  return /^PK\x03\x04/.test(sample)||/\[Content_Types\]\.xml|_rels\/\.rels|xl\/workbook\.xml/i.test(sample)||sample.includes('\uFFFD');
+}
+function rosterForCurrentClass(){
+  const k=rosterClassKey(),o=loadRosterOverrides();
+  if(Array.isArray(o[k])){
+    if(!rosterLooksCorrupted(o[k]))return [...o[k]];
+    delete o[k];
+    localStorage.setItem(ROSTER_OVERRIDES_KEY,JSON.stringify(o));
+    scheduleCloudPush();
+  }
+  if(Array.isArray(BUILTIN_ROSTERS[k]))return [...BUILTIN_ROSTERS[k]];
+  return [];
+}
 let roster=[];
 function syncRosterFromClass(){roster=rosterForCurrentClass();if($('#view-scores')?.classList.contains('active'))renderScores();updateOverviewStudentCount()}
 function updateOverviewStudentCount(){
@@ -795,6 +810,9 @@ function autoSaveCurrentScores(){
 }
 
 function prepareScores(){
+  // Always refresh the visible table from the roster assigned to the selected class.
+  // This also picks up a roster immediately after importing it.
+  roster=rosterForCurrentClass();
   populateAssessmentSelect();
   const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);
   if(a){
@@ -904,7 +922,64 @@ $('#goScoresBtn').onclick=()=>{showView('scores');prepareScores()};
 $('#assessmentSelect').addEventListener('change',()=>{activeAssessmentId=$('#assessmentSelect').value;const a=currentContextAssessments().find(x=>x.id===activeAssessmentId);if(a)$('#maxScoreSelect').value=String(subjectMaxScore(subjectFilter.value));prepareScores()});
 $('#maxScoreSelect').addEventListener('change',()=>{syncSubjectMaxUI();renderScores()});
 if($('#useDemoRoster')) $('#useDemoRoster').remove();
-$('#rosterFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{const text=String(reader.result||'').replace(/^\uFEFF/,'');const names=text.split(/\r?\n/).map(line=>line.split(',')[0].trim()).filter(Boolean).filter(x=>!/^name|اسم|student/i.test(x));if(!names.length){alert('لم أتمكن من قراءة أسماء من الملف. استخدمي CSV أو TXT ويكون الاسم في العمود الأول.');return}roster=names.slice(0,200);persistCurrentRoster();renderScores();updateOverviewStudentCount();};reader.readAsText(f,'UTF-8')});
+function loadXlsxLibrary(){
+  if(window.XLSX)return Promise.resolve(window.XLSX);
+  return new Promise((resolve,reject)=>{
+    const old=document.querySelector('script[data-misbar-xlsx]');
+    if(old){old.addEventListener('load',()=>resolve(window.XLSX),{once:true});old.addEventListener('error',reject,{once:true});return;}
+    const s=document.createElement('script');
+    s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+    s.async=true;s.dataset.misbarXlsx='1';
+    s.onload=()=>window.XLSX?resolve(window.XLSX):reject(new Error('XLSX unavailable'));
+    s.onerror=()=>reject(new Error('تعذر تحميل قارئ Excel'));
+    document.head.appendChild(s);
+  });
+}
+function namesFromRosterRows(rows){
+  const clean=safeArray(rows).map(r=>safeArray(r).map(v=>String(v??'').trim()));
+  const headerIndex=clean.findIndex(r=>r.some(v=>/^(اسم|الاسم|اسم الطالب|اسم الطالبة|الطالب|الطالبة|student(?: name)?|name)$/i.test(v)));
+  let nameCol=0,start=0;
+  if(headerIndex>=0){
+    nameCol=clean[headerIndex].findIndex(v=>/^(اسم|الاسم|اسم الطالب|اسم الطالبة|الطالب|الطالبة|student(?: name)?|name)$/i.test(v));
+    start=headerIndex+1;
+  }else{
+    const width=Math.max(1,...clean.map(r=>r.length));
+    let best=-1;
+    for(let c=0;c<width;c++){
+      const score=clean.reduce((n,r)=>{const v=r[c]||'';return n+(/[\u0600-\u06FF]/.test(v)?3:/[A-Za-z]/.test(v)&&!/^\d+$/.test(v)?1:0)},0);
+      if(score>best){best=score;nameCol=c;}
+    }
+  }
+  const seen=new Set();
+  return clean.slice(start).map(r=>(r[nameCol]||'').replace(/\s+/g,' ').trim())
+    .filter(v=>v&&!/^(اسم|الاسم|اسم الطالب|اسم الطالبة|الطالب|الطالبة|student(?: name)?|name)$/i.test(v))
+    .filter(v=>!/^\d+(?:\.\d+)?$/.test(v)&&!/^PK\x03\x04/.test(v)&&!/[<>]{1,}|\[Content_Types\]\.xml/i.test(v))
+    .filter(v=>{const key=v.toLocaleLowerCase();if(seen.has(key))return false;seen.add(key);return true;})
+    .slice(0,200);
+}
+function parseDelimitedRoster(text){
+  const lines=String(text||'').replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);
+  const sep=lines.some(x=>x.includes('\t'))?'\t':lines.some(x=>x.includes(';'))?';':',';
+  return namesFromRosterRows(lines.map(line=>line.split(sep).map(v=>v.replace(/^\s*["']|["']\s*$/g,'').trim())));
+}
+$('#rosterFile').addEventListener('change',async e=>{
+  const input=e.target,f=input.files[0];if(!f)return;
+  try{
+    let names=[];
+    if(/\.xlsx?$/i.test(f.name)){
+      const XLSX=await loadXlsxLibrary();
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      names=namesFromRosterRows(XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false}));
+    }else names=parseDelimitedRoster(await f.text());
+    if(!names.length)throw new Error('لم أجد عمودًا يحتوي أسماء الطالبات في الملف.');
+    roster=names;persistCurrentRoster();prepareScores();updateOverviewStudentCount();
+    alert(`تم استيراد ${names.length} اسمًا بنجاح للشعبة ${classFilter.value}.`);
+  }catch(err){
+    console.error('Roster import failed',err);
+    alert('تعذر استيراد الأسماء: '+(err?.message||'تأكدي من ملف Excel أو CSV.'));
+  }finally{input.value='';}
+});
 $('#manageRosterBtn').onclick=()=>{syncRosterFromClass();renderRosterManager();$('#rosterDialog').showModal()};
 $('#closeRosterDialog').onclick=()=>$('#rosterDialog').close();
 $('#addStudentBtn').onclick=()=>{const n=prompt('اكتب/اكتبي اسم الطالب/الطالبة:');if(n&&n.trim()){roster.push(n.trim());persistCurrentRoster();renderRosterManager();renderScores();updateOverviewStudentCount()}};
