@@ -153,17 +153,42 @@ function cloudJsonp(params={}, timeoutMs=15000){
 async function cloudGet(action,data={}){
   return await cloudJsonp({action,...data});
 }
+function cloudSubmitForm(action, requestId, data={}){
+  // A normal hidden HTML form is more reliable than cross-origin fetch for
+  // Google Apps Script Web Apps in browsers that block/hold redirected no-cors POSTs.
+  // The response is intentionally ignored; cloudPost reads the result by JSONP.
+  const frameName='misbar_cloud_post_'+requestId;
+  const iframe=document.createElement('iframe');
+  iframe.name=frameName; iframe.setAttribute('aria-hidden','true');
+  iframe.style.cssText='position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:-9999px;border:0';
+  const form=document.createElement('form');
+  form.method='POST'; form.action=MISBAR_CLOUD_URL; form.target=frameName;
+  form.style.display='none';
+  const payload={action,requestId,...data};
+  Object.entries(payload).forEach(([k,v])=>{
+    const input=document.createElement('input'); input.type='hidden'; input.name=k;
+    input.value=typeof v==='string'?v:JSON.stringify(v); form.appendChild(input);
+  });
+  document.body.appendChild(iframe); document.body.appendChild(form);
+  try{ form.submit(); }catch(err){ form.remove(); iframe.remove(); throw err; }
+  setTimeout(()=>{try{form.remove()}catch(_){}},500);
+  setTimeout(()=>{try{iframe.remove()}catch(_){}},30000);
+}
 async function cloudPost(action, data={}){
   const requestId=cloudRequestId();
-  const body=new URLSearchParams({action,requestId,...Object.fromEntries(Object.entries(data).map(([k,v])=>[k,typeof v==='string'?v:JSON.stringify(v)]))});
-  await fetch(MISBAR_CLOUD_URL,{method:'POST',body,mode:'no-cors',redirect:'follow'});
+  cloudSubmitForm(action,requestId,data);
   const started=Date.now();
-  while(Date.now()-started<15000){
-    const res=await cloudJsonp({action:'result',requestId},5000);
-    if(res&&res.ready)return res.result||{ok:false,error:'EMPTY_RESULT'};
-    await new Promise(r=>setTimeout(r,450));
+  let lastErr=null;
+  while(Date.now()-started<20000){
+    try{
+      const res=await cloudJsonp({action:'result',requestId},4000);
+      if(res&&res.ready)return res.result||{ok:false,error:'EMPTY_RESULT'};
+    }catch(err){ lastErr=err; }
+    await new Promise(r=>setTimeout(r,550));
   }
-  throw new Error('CLOUD_RESULT_TIMEOUT');
+  const e=new Error('CLOUD_RESULT_TIMEOUT');
+  if(lastErr)e.cause=lastErr;
+  throw e;
 }
 function cloudToken(){ try{return localStorage.getItem('misbarCloudTokenV1')||''}catch(e){return''} }
 function saveCloudToken(t){ try{if(t)localStorage.setItem('misbarCloudTokenV1',t);else localStorage.removeItem('misbarCloudTokenV1')}catch(e){} }
@@ -195,7 +220,7 @@ async function performLogin(e){
   if(status){status.style.color='#8a3b12';status.textContent=''}
   if(!email||!password){if(status)status.textContent='أدخل البريد الإلكتروني وكلمة المرور.';return}
   try{
-    if(status)status.textContent='جارٍ التحقق من الحساب السحابي...';
+    if(status){status.style.color='#315f86';status.textContent='جارٍ التحقق من الحساب السحابي...';}
     const passwordHash=await misbarPasswordHash(password);
     const res=await cloudPost('login',{email,passwordHash});
     if(!res.ok){if(status)status.textContent='بيانات الدخول غير صحيحة. إذا كان هذا أول تفعيل لحساب صاحبة المنصة استخدمي زر الاستعادة.';return}
@@ -203,7 +228,7 @@ async function performLogin(e){
     const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email),user={...res.user,passwordHash};if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
     try{localStorage.removeItem(SIGNED_OUT_KEY);localStorage.setItem(LAST_EMAIL_KEY,email);if($('#rememberLogin')?.checked)savePersistentSession(user)}catch(_){ }
     updateCloudBadge('متصل');enterApp(user);scheduleCloudPush();
-  }catch(err){console.error(err);if(status)status.textContent='تعذر الاتصال بالسحابة. تحققي من الإنترنت ثم أعيدي المحاولة.'}
+  }catch(err){console.error('MISBAR login cloud error',err);if(status){status.style.color='#b42318';status.textContent='تعذر وصول رد السحابة. أغلقي نافذة الدخول وافتحيها ثم حاولي مرة أخرى.';}}
 }
 async function directAdminLogin(){
   const code=window.prompt('أدخل رمز إدارة المدرسة:');if(code===null)return;const status=$('#loginStatus');
