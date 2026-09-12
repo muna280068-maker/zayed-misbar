@@ -609,6 +609,14 @@ body.app-mode .panel,body.app-mode .assessment-card,body.app-mode .control-card,
 @media(max-width:1100px){body.app-mode #appShell{grid-template-columns:185px minmax(0,1fr)!important}body.app-mode .workspace-head{grid-template-columns:1fr 1fr!important;grid-template-areas:'intro access' 'subject filters'!important}body.app-mode .v14-header{background-size:cover!important}}
 @media(max-width:820px){body.app-mode #appShell{grid-template-columns:1fr!important;overflow:auto!important}body.app-mode .sidebar{display:none!important}body.app-mode .workspace{grid-column:1!important}body.app-mode .workspace-head{grid-template-columns:1fr!important;grid-template-areas:'intro' 'access' 'subject' 'filters'!important}body.app-mode .kpi-grid{grid-template-columns:repeat(2,1fr)!important}body.app-mode .dashboard-grid{grid-template-columns:1fr!important}}
 </style>
+
+<style id="misbar-final-layout-fix">
+body.app-mode .dashboard-filters{grid-template-columns:minmax(220px,1.45fr) minmax(135px,.9fr) minmax(155px,1fr)!important;gap:12px!important;width:100%!important;overflow:visible!important}
+body.app-mode .subject-filter-wrap{min-width:220px!important;overflow:visible!important}
+body.app-mode .subject-popup-btn{min-width:220px!important;width:100%!important;overflow:visible!important;text-overflow:clip!important;white-space:nowrap!important;padding-inline:14px!important}
+body.app-mode #subjectFilter{min-width:220px!important}
+@media(max-width:900px){body.app-mode .dashboard-filters{grid-template-columns:1fr!important}body.app-mode .subject-filter-wrap,body.app-mode .subject-popup-btn,body.app-mode #subjectFilter{min-width:0!important;width:100%!important}}
+</style>
 </head>
 <body class="misbar-v22">
 <!-- ZAYED MISBAR V85 LEADERSHIP SIX SUBJECTS HARD FIX: logout/session + 6 subjects + visible visitor QR -->
@@ -1137,7 +1145,7 @@ body:not(.app-mode) .approved-cover{
 }
 </style>
 <!-- MISBAR V1.5 UI + Parent Report functional scripts -->
-<script defer="defer" src="app.js?v=20260912-28"></script>
+<script defer="defer" src="app.js?v=20260912-release-final"></script>
 <style id="misbar-v18-exact-approved-layout">
 /* Exact approved dashboard visual rebuild — 2026-09-12 */
 body.app-mode{background:#f4f9fd!important;color:#123f72!important}
