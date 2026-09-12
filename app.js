@@ -134,65 +134,71 @@ const MISBAR_CLOUD_URL='https://script.google.com/macros/s/AKfycbwIoQz55Ocv24PHi
 function cloudRequestId(){
   try{return crypto.randomUUID().replace(/-/g,'')+Date.now().toString(36)}catch(_){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2)}
 }
-function cloudJsonp(params={}, timeoutMs=15000){
-  return new Promise((resolve,reject)=>{
-    const cb='__misbar_cb_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
-    const q=new URLSearchParams();
-    Object.entries(params).forEach(([k,v])=>q.set(k,typeof v==='string'?v:JSON.stringify(v)));
-    q.set('callback',cb);
-    const s=document.createElement('script');
+// FINAL V100: جسر RPC عبر iframe تابع لـ Apps Script. هذا يلغي مشكلة CORS/redirect بين GitHub وApps Script.
+let __misbarBridgeFrame=null,__misbarBridgeReady=null;
+const __misbarRpcPending=new Map();
+function ensureCloudBridge(timeoutMs=15000){
+  if(__misbarBridgeReady)return __misbarBridgeReady;
+  __misbarBridgeReady=new Promise((resolve,reject)=>{
+    const frame=document.createElement('iframe');
+    __misbarBridgeFrame=frame; frame.id='misbarCloudBridge'; frame.style.display='none'; frame.setAttribute('aria-hidden','true');
     let done=false;
-    const clean=()=>{if(done)return;done=true;try{delete window[cb]}catch(_){window[cb]=undefined}try{s.remove()}catch(_){}};
-    const timer=setTimeout(()=>{clean();reject(new Error('CLOUD_TIMEOUT'))},timeoutMs);
-    window[cb]=(payload)=>{clearTimeout(timer);clean();resolve(payload)};
-    s.onerror=()=>{clearTimeout(timer);clean();reject(new Error('CLOUD_JSONP_FAILED'))};
-    s.src=MISBAR_CLOUD_URL+'?'+q.toString();
-    document.head.appendChild(s);
+    const timer=setTimeout(()=>{if(!done){done=true;reject(new Error('BRIDGE_TIMEOUT'))}},timeoutMs);
+    const onMsg=(ev)=>{
+      if(ev.source!==frame.contentWindow)return;
+      const d=ev.data||{};
+      if(d.type==='MISBAR_RPC_READY'){
+        if(!done){done=true;clearTimeout(timer);resolve(frame)}
+        return;
+      }
+      if(d.type==='MISBAR_RPC_RESPONSE'&&d.id){
+        const q=__misbarRpcPending.get(d.id); if(!q)return;
+        __misbarRpcPending.delete(d.id); clearTimeout(q.timer); q.resolve(d.result||{ok:false,error:'EMPTY_RESULT'});
+      }
+    };
+    window.addEventListener('message',onMsg);
+    frame.src=MISBAR_CLOUD_URL+'?bridge=1&v=2';
+    document.body.appendChild(frame);
+  });
+  return __misbarBridgeReady;
+}
+async function bridgeRpc(payload,timeoutMs=20000){
+  const frame=await ensureCloudBridge(Math.min(timeoutMs,15000));
+  const id=cloudRequestId();
+  return await new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{__misbarRpcPending.delete(id);reject(new Error('RPC_TIMEOUT'))},timeoutMs);
+    __misbarRpcPending.set(id,{resolve,reject,timer});
+    frame.contentWindow.postMessage({type:'MISBAR_RPC_REQUEST',id,payload},'*');
   });
 }
-async function cloudGet(action,data={}){
-  return await cloudJsonp({action,...data});
+// توافق احتياطي في حال منع المتصفح iframe: JSONP للقراءة + POST form للكتابة.
+function cloudJsonp(params={}, timeoutMs=15000){
+  return new Promise((resolve,reject)=>{
+    const cb='__misbar_cb_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2),q=new URLSearchParams();
+    Object.entries(params).forEach(([k,v])=>q.set(k,typeof v==='string'?v:JSON.stringify(v)));q.set('callback',cb);
+    const sc=document.createElement('script');let done=false;
+    const clean=()=>{if(done)return;done=true;try{delete window[cb]}catch(_){window[cb]=undefined}try{sc.remove()}catch(_){}};
+    const timer=setTimeout(()=>{clean();reject(new Error('CLOUD_TIMEOUT'))},timeoutMs);
+    window[cb]=(payload)=>{clearTimeout(timer);clean();resolve(payload)}; sc.onerror=()=>{clearTimeout(timer);clean();reject(new Error('CLOUD_JSONP_FAILED'))};
+    sc.src=MISBAR_CLOUD_URL+'?'+q.toString();document.head.appendChild(sc);
+  });
 }
-async function cloudPost(action, data={}){
-  const requestId=cloudRequestId();
-  const frameName='misbar_post_'+requestId;
-  let iframe=null, form=null;
+async function legacyCloudPost(action,data={}){
+  const requestId=cloudRequestId(),frameName='misbar_post_'+requestId;let iframe=null,form=null;
   try{
-    iframe=document.createElement('iframe');
-    iframe.name=frameName;
-    iframe.style.display='none';
-    iframe.setAttribute('aria-hidden','true');
-    document.body.appendChild(iframe);
-
-    form=document.createElement('form');
-    form.method='POST';
-    form.action=MISBAR_CLOUD_URL;
-    form.target=frameName;
-    form.style.display='none';
-    const payload={action,requestId,...data};
-    Object.entries(payload).forEach(([k,v])=>{
-      const input=document.createElement('input');
-      input.type='hidden'; input.name=k;
-      input.value=typeof v==='string'?v:JSON.stringify(v);
-      form.appendChild(input);
-    });
-    document.body.appendChild(form);
-    form.submit();
-
-    const started=Date.now();
-    let lastErr=null;
-    while(Date.now()-started<25000){
-      try{
-        const res=await cloudJsonp({action:'result',requestId},5000);
-        if(res&&res.ready)return res.result||{ok:false,error:'EMPTY_RESULT'};
-      }catch(err){ lastErr=err; }
-      await new Promise(r=>setTimeout(r,450));
-    }
-    throw lastErr||new Error('CLOUD_RESULT_TIMEOUT');
-  }finally{
-    try{form&&form.remove()}catch(_){}
-    try{iframe&&iframe.remove()}catch(_){}
-  }
+    iframe=document.createElement('iframe');iframe.name=frameName;iframe.style.display='none';document.body.appendChild(iframe);
+    form=document.createElement('form');form.method='POST';form.action=MISBAR_CLOUD_URL;form.target=frameName;form.style.display='none';
+    const payload={action,requestId,...data};Object.entries(payload).forEach(([k,v])=>{const input=document.createElement('input');input.type='hidden';input.name=k;input.value=typeof v==='string'?v:JSON.stringify(v);form.appendChild(input)});
+    document.body.appendChild(form);form.submit();
+    const started=Date.now();while(Date.now()-started<18000){try{const r=await cloudJsonp({action:'result',requestId},4000);if(r&&r.ready)return r.result||{ok:false,error:'EMPTY_RESULT'}}catch(_){} await new Promise(r=>setTimeout(r,450));}
+    throw new Error('CLOUD_RESULT_TIMEOUT');
+  }finally{try{form&&form.remove()}catch(_){}try{iframe&&iframe.remove()}catch(_){}}
+}
+async function cloudGet(action,data={}){
+  try{return await bridgeRpc({action,...data},18000)}catch(err){console.warn('Bridge GET fallback',err);return await cloudJsonp({action,...data},12000)}
+}
+async function cloudPost(action,data={}){
+  try{return await bridgeRpc({action,...data},22000)}catch(err){console.warn('Bridge POST fallback',err);return await legacyCloudPost(action,data)}
 }
 function cloudToken(){ try{return localStorage.getItem('misbarCloudTokenV1')||''}catch(e){return''} }
 function saveCloudToken(t){ try{if(t)localStorage.setItem('misbarCloudTokenV1',t);else localStorage.removeItem('misbarCloudTokenV1')}catch(e){} }
@@ -304,11 +310,28 @@ $('#rememberLogin').addEventListener('change',()=>{
     try{ localStorage.removeItem(LAST_EMAIL_KEY); localStorage.removeItem(SAVED_PASSWORD_KEY); clearPersistentSession(); }catch(err){}
   }
 });
-$('#logoutBtn').onclick=()=>{
+$('#logoutBtn').onclick=async()=>{
+  // احفظ لقطة الحساب محليًا أولًا ثم حاول مزامنتها قبل إنهاء الجلسة.
+  const token=cloudToken();
   try{
+    const em=currentUser?.email||loadPersistentSession()?.email;
+    if(em)cacheAccountSnapshot(em);
+    if(token&&navigator.onLine){
+      await Promise.race([pushCloudNow(),new Promise(r=>setTimeout(()=>r(false),4500))]);
+    }
+  }catch(_){}
+  // ألغِ الجلسة السحابية دون تعطيل الخروج إذا تعذر الاتصال.
+  try{if(token)cloudPost('logout',{token}).catch(()=>{})}catch(_){}
+  try{
+    saveCloudToken('');
     clearPersistentSession();
+    localStorage.removeItem('misbarCloudHydratedV1');
     localStorage.setItem(SIGNED_OUT_KEY,'1');
-  }catch(err){}
+    cloudApplying=true;
+    clearCloudSyncedData();
+    cloudApplying=false;
+  }catch(err){cloudApplying=false}
+  currentUser=null;
   document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});
   appShell.hidden=true;appShell.style.display='none';userChip.hidden=true;$('#appTopbar').style.display='none';
   restorePublicLanding();publicSite.hidden=false;publicSite.style.display='';publicNav.hidden=false;publicActions.hidden=false;
@@ -316,52 +339,39 @@ $('#logoutBtn').onclick=()=>{
   history.replaceState({},'',location.pathname);window.scrollTo({top:0,behavior:'auto'});
 };
 
-function prepareRememberedLogin(){
-  // Visitor links and explicit logout must always stay on the public landing page.
+async function prepareRememberedLogin(){
   const visitorMode=new URLSearchParams(location.search).get('visitor')==='1';
-  let explicitlySignedOut=false;
-  try{ explicitlySignedOut=localStorage.getItem(SIGNED_OUT_KEY)==='1'; }catch(err){}
-  // Restore an existing remembered account only when the user has not explicitly signed out.
-  try{
-    const session=(!visitorMode&&!explicitlySignedOut)?loadPersistentSession():null;
-    if(session?.email){
-      const email=String(session.email).trim().toLowerCase();
-      const user=loadUsers().find(u=>String(u.email||'').trim().toLowerCase()===email);
-      if(user){
-        enterApp(user);
-        return;
+  let explicitlySignedOut=false;try{explicitlySignedOut=localStorage.getItem(SIGNED_OUT_KEY)==='1'}catch(_){ }
+  if(!visitorMode&&!explicitlySignedOut){
+    try{
+      const session=loadPersistentSession(),token=cloudToken();
+      if(session?.email&&token){
+        updateCloudBadge('جارٍ التحقق');
+        const me=await cloudGet('me',{token});
+        if(me&&me.ok&&me.user){
+          const email=String(me.user.email||session.email).trim().toLowerCase();
+          const pulled=await cloudGet('pull',{token});
+          if(pulled&&pulled.ok)await hydrateFromCloud(pulled.snapshot||{});
+          const users=loadUsers(),i=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email);
+          const user={...me.user};if(i>=0)users[i]=user;else users.push(user);saveUsers(users);savePersistentSession(user);
+          enterApp(user);updateCloudBadge('متصل ومحفوظ');cacheAccountSnapshot(user.email);return;
+        }
       }
-    }
-  }catch(err){ console.error('Session restore failed',err); }
-
-  // No valid remembered session: show the public landing page normally.
-  restorePublicLanding();
-  publicSite.hidden=false;
-  publicSite.style.display='';
-  publicNav.hidden=false;
-  publicActions.hidden=false;
-  appShell.hidden=true;
-  appShell.style.display='none';
-  userChip.hidden=true;
-  $('#appTopbar').style.display='none';
-  document.documentElement.classList.remove('app-open');
-  document.body.classList.remove('app-mode');
-  document.body.style.overflow='';
-  if(location.hash && location.hash.startsWith('#page-')){
-    history.replaceState({},'',location.pathname);
+    }catch(err){console.warn('Cloud session restore failed',err)}
+    // إذا تعذر الإنترنت فقط، نسمح بفتح النسخة المحلية للحساب المحفوظ ولا نفقد البيانات.
+    try{
+      const session=loadPersistentSession();
+      if(session?.email&&!navigator.onLine){
+        const email=String(session.email).trim().toLowerCase(),user=loadUsers().find(u=>String(u.email||'').trim().toLowerCase()===email);
+        if(user){restoreAccountSnapshot(email);enterApp(user);updateCloudBadge('دون اتصال • سيزامن لاحقًا');return;}
+      }
+    }catch(_){ }
   }
-  window.scrollTo(0,0);
-  if(visitorMode){
-    setTimeout(()=>{
-      try{
-        if(typeof renderVisitorPreviewV38==='function') renderVisitorPreviewV38();
-        else if(typeof renderVisitorPreview==='function') renderVisitorPreview();
-        const d=document.getElementById('visitorDialog'); if(d&&!d.open)d.showModal();
-      }catch(err){console.error(err)}
-    },180);
-  }
+  restorePublicLanding();publicSite.hidden=false;publicSite.style.display='';publicNav.hidden=false;publicActions.hidden=false;appShell.hidden=true;appShell.style.display='none';userChip.hidden=true;$('#appTopbar').style.display='none';document.documentElement.classList.remove('app-open');document.body.classList.remove('app-mode');document.body.style.overflow='';
+  if(location.hash&&location.hash.startsWith('#page-'))history.replaceState({},'',location.pathname);window.scrollTo(0,0);
+  if(visitorMode)setTimeout(()=>{try{if(typeof renderVisitorPreviewV38==='function')renderVisitorPreviewV38();else if(typeof renderVisitorPreview==='function')renderVisitorPreview();const d=document.getElementById('visitorDialog');if(d&&!d.open)d.showModal()}catch(err){console.error(err)}},180);
 }
-setTimeout(prepareRememberedLogin,0);
+setTimeout(()=>prepareRememberedLogin(),0);
 function setupVisitorQr(){
   const base='https://muna280068-maker.github.io/zayed-misbar/?visitor=1';
   const embeddedQr='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADBUlEQVR4nO2cS26jQBCGvxqQvGykOUCO0r7aHCk3gKP4AJHoZSTQP4t+GM+sMslgBxerpvEnF/LvelG2iQ8f04+PM+CQQw455JBDDh0TsnL01NO+7ZnZObXVXcxzaH8oSpLmsqmR1aS5E1ES0EnKq7uY59D+UCoOwGxYDcIChAX9GlYDit+4m3kO7Qb1f27E15MsXk4ywgx59RXv5NA3habsI95NI6vZOa8exjyH/jdUfUQQkADCDKQBg5NsGuacPWw7WQ9+Tw59ATSZmdkAxEuPnelEnK+nay417mWeQ3v7iK0DCAvAaoJ30/TybsWD3MM8h3aHyFVlnIFcZM5dCRNjUD2uVyVpfPB7cugzUFEEQSJqQSO1C1FUAsSZzQVXxKEhytceIM6dchdCWjZS0RiKQNxHHB+qHzydNF7FMFMFQlc8SHuxK+LQEDVVWIoEohZK/AhlL69KYHFFHByqX/vQZKGlXGl5hNRk4Yo4PLTJI3LuSFg2ZUbJIzYxxRVxcKhGjZlNmIBrXVFTiBw/XBGHhzaKoOmgpJI10cxdq1yRuiKODuWepQEIVoM0AKlfthdSjybraobx4Pfk0Gegm7ZD27stLoqPmL36fAaoRY2u5QxdSTSl29DhPcungsK7Qapzlmc6MQ2rSXM9zS+5k3kO7QbduoKbJxwtqdx4EPcRzwLFS5+HJDSmHkg9ZnbKrQimAYC1TlN9j3ty6BO1BgRhhLcyLjG9LL1Ig0EACG8m0kkWx33Nc2h3qCoiDYh0ElGridTDdO4WYO2BnjyIu7d5Du0OtSdd17Z1Kzzn8kijjkt4rfEM0KZDBXSLSsGx9kxD9hEG6WduTmlv8xy6FxRrK9typdkmb3NSGZa8svN9zHNo9+ozz11fZ6jmejn3LIHc1vSe5fNB8XKS2YvKQMRkZjWtWP2XwE8A/fUrv2nAyBVG6GTxdQCSoTxft7N5Du0O1ajRHm5s5yzhOjGDT+c/B9Qmb4GWT+YZqjJG11rZ8hmqZ4DM/5nMIYcccsghhxz6R+g3l1yLQS1QcfcAAAAASUVORK5CYII=';
@@ -2096,78 +2106,35 @@ window.addEventListener('load',()=>setTimeout(enforceCleanOverview,150));
 ;
 
 
-/* ===== MISBAR extracted script 5: misbar-password-recovery-v63 ===== */
-
-/* V63 — استعادة/تغيير كلمة المرور للحسابات المحلية */
+/* ===== MISBAR FINAL password recovery: cloud email OTP ===== */
 (function(){
-  const css=document.createElement('style');
-  css.textContent=`
-    .misbar-pass-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    .misbar-pass-link{border:0;background:transparent;color:#0d4f78;font-weight:800;cursor:pointer;padding:6px 2px;text-decoration:underline;text-underline-offset:3px}
-    .misbar-reset-box{border:1px solid #d8e2e8;border-radius:16px;padding:16px;background:#fff;direction:rtl;text-align:right;max-width:520px}
-    .misbar-reset-box label{display:block;font-weight:800;margin:10px 0 5px}.misbar-reset-box input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #bdcbd3;border-radius:10px}
-    .misbar-reset-actions{display:flex;gap:8px;justify-content:flex-start;margin-top:14px;flex-wrap:wrap}
-  `; document.head.appendChild(css);
-
-  function el(id){return document.getElementById(id)}
-  function users(){ try{return typeof loadUsers==='function'?loadUsers():[]}catch(e){return[]} }
-  function persist(arr){ if(typeof saveUsers==='function') saveUsers(arr); }
-  async function hash(v){ return typeof misbarPasswordHash==='function'?await misbarPasswordHash(v):String(v); }
-
+  const el=id=>document.getElementById(id);
+  const css=document.createElement('style');css.textContent=`
+    .misbar-pass-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.misbar-pass-link{border:0;background:transparent;color:#0d4f78;font-weight:800;cursor:pointer;padding:6px 2px;text-decoration:underline;text-underline-offset:3px}
+    .misbar-reset-box{border:1px solid #d8e2e8;border-radius:16px;padding:18px;background:#fff;direction:rtl;text-align:right;width:min(520px,92vw)}.misbar-reset-box label{display:block;font-weight:800;margin:10px 0 5px}.misbar-reset-box input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #bdcbd3;border-radius:10px}.misbar-reset-actions{display:flex;gap:8px;justify-content:flex-start;margin-top:14px;flex-wrap:wrap}.misbar-reset-code{letter-spacing:5px;text-align:center;font-size:20px;font-weight:900}
+  `;document.head.appendChild(css);
   const loginFields=el('loginFields');
-  if(loginFields && !el('forgotPasswordBtn')){
-    const row=document.createElement('div'); row.className='misbar-pass-actions';
-    row.innerHTML='<button type="button" class="misbar-pass-link" id="forgotPasswordBtn">نسيت كلمة المرور؟ استعادة / تغيير</button>';
-    const submit=el('loginSubmit'); loginFields.insertBefore(row, submit);
-  }
-
-  const dlg=document.createElement('dialog'); dlg.id='passwordRecoveryDialog'; dlg.dir='rtl';
-  dlg.innerHTML=`<form method="dialog" class="misbar-reset-box" id="passwordRecoveryForm">
-    <h3 style="margin-top:0">استعادة / تغيير كلمة المرور</h3>
-    <p class="note">لصاحبة المنصة: استخدمي الاسترداد فقط عند التفعيل الأول أو عند الحاجة لإعادة تهيئة الحساب السحابي.</p>
-    <label>البريد الإلكتروني</label><input id="recoveryEmail" type="email" autocomplete="username" placeholder="name@school.ae" required>
-    <label>كلمة المرور الجديدة</label><input id="recoveryNewPassword" type="password" autocomplete="new-password" placeholder="6 أحرف على الأقل" minlength="6" required>
-    <label>تأكيد كلمة المرور الجديدة</label><input id="recoveryConfirmPassword" type="password" autocomplete="new-password" placeholder="أعيدي كتابة كلمة المرور" minlength="6" required>
+  if(loginFields&&!el('forgotPasswordBtn')){const row=document.createElement('div');row.className='misbar-pass-actions';row.innerHTML='<button type="button" class="misbar-pass-link" id="forgotPasswordBtn">نسيت كلمة المرور؟ استعادتها بالبريد الإلكتروني</button>';const submit=el('loginSubmit');loginFields.insertBefore(row,submit)}
+  const old=el('passwordRecoveryDialog');if(old)old.remove();
+  const dlg=document.createElement('dialog');dlg.id='passwordRecoveryDialog';dlg.dir='rtl';dlg.innerHTML=`<form method="dialog" class="misbar-reset-box" onsubmit="return false">
+    <h3 style="margin-top:0">استعادة كلمة المرور</h3><p class="note">سيصل رمز تحقق إلى البريد الإلكتروني المسجل. الرمز صالح لمدة 10 دقائق.</p>
+    <label>البريد الإلكتروني المسجل</label><input id="recoveryEmail" type="email" autocomplete="username" required>
+    <div class="misbar-reset-actions"><button type="button" class="btn ghost" id="sendRecoveryCode">إرسال رمز التحقق</button></div>
+    <div id="recoveryCodeArea" hidden><label>رمز التحقق</label><input id="recoveryCode" class="misbar-reset-code" inputmode="numeric" maxlength="6" placeholder="000000">
+    <label>كلمة المرور الجديدة</label><input id="recoveryNewPassword" type="password" autocomplete="new-password" minlength="6">
+    <label>تأكيد كلمة المرور</label><input id="recoveryConfirmPassword" type="password" autocomplete="new-password" minlength="6"></div>
     <div id="recoveryStatus" class="note" style="margin-top:10px;color:#8a3b12"></div>
-    <div class="misbar-reset-actions"><button type="button" class="btn primary" id="doPasswordReset">حفظ كلمة المرور الجديدة</button><button type="button" class="btn ghost" id="cancelPasswordReset">إلغاء</button></div>
-  </form>`;
-  document.body.appendChild(dlg);
-
-  function openReset(){
-    const email=(el('loginEmail')?.value||localStorage.getItem('misbarZayedLastEmailV1')||'').trim().toLowerCase();
-    el('recoveryEmail').value=email; el('recoveryNewPassword').value=''; el('recoveryConfirmPassword').value=''; el('recoveryStatus').textContent='';
-    dlg.showModal(); setTimeout(()=>el(email?'recoveryNewPassword':'recoveryEmail')?.focus(),50);
-  }
-  el('forgotPasswordBtn')?.addEventListener('click',openReset);
-  el('cancelPasswordReset')?.addEventListener('click',()=>dlg.close());
-  el('doPasswordReset')?.addEventListener('click',async()=>{
-    const email=el('recoveryEmail').value.trim().toLowerCase(), p1=el('recoveryNewPassword').value, p2=el('recoveryConfirmPassword').value, st=el('recoveryStatus');
-    st.style.color='#8a3b12'; st.textContent='';
-    if(!email){st.textContent='أدخلي البريد الإلكتروني المسجل.';return}
-    if(p1.length<6){st.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل.';return}
-    if(p1!==p2){st.textContent='كلمتا المرور غير متطابقتين.';return}
-    const arr=users(), i=arr.findIndex(u=>String(u.email||'').trim().toLowerCase()===email);
-    if(i<0){st.textContent='لا يوجد حساب بهذا البريد على هذا الجهاز. يمكنك إنشاء حساب جديد.';return}
-    arr[i]={...arr[i],passwordHash:await hash(p1)}; delete arr[i].password; persist(arr);
-    try{localStorage.setItem('misbarZayedLastEmailV1',email);localStorage.removeItem('misbarZayedSavedPasswordV1');localStorage.removeItem('misbarZayedPersistentSessionV1')}catch(e){}
-    st.style.color='#176b42'; st.textContent='تم تغيير كلمة المرور بنجاح. يمكنك تسجيل الدخول الآن.';
-    if(el('loginEmail')) el('loginEmail').value=email;
-    setTimeout(()=>{dlg.close(); if(el('loginPassword')){el('loginPassword').value='';el('loginPassword').focus()}},900);
-  });
-
-  // تغيير كلمة المرور من داخل الحساب لمن هو مسجل الدخول بالفعل.
-  function addInAppButton(){
-    const logout=el('logoutBtn'); if(!logout||el('changePasswordInsideBtn')) return;
-    const b=document.createElement('button'); b.type='button'; b.id='changePasswordInsideBtn'; b.className='btn ghost'; b.textContent='تغيير كلمة المرور';
-    b.addEventListener('click',()=>{try{if(typeof currentUser!=='undefined'&&currentUser?.email){localStorage.setItem('misbarZayedLastEmailV1',currentUser.email)}}catch(e){} openReset()});
-    logout.parentNode.insertBefore(b,logout);
-  }
-  addInAppButton();
-  new MutationObserver(addInAppButton).observe(document.body,{childList:true,subtree:true});
+    <div class="misbar-reset-actions"><button type="button" class="btn primary" id="doPasswordReset" hidden>حفظ كلمة المرور الجديدة</button><button type="button" class="btn ghost" id="cancelPasswordReset">إلغاء</button></div>
+  </form>`;document.body.appendChild(dlg);
+  function openReset(){const email=(el('loginEmail')?.value||localStorage.getItem(LAST_EMAIL_KEY)||'').trim().toLowerCase();el('recoveryEmail').value=email;el('recoveryCode').value='';el('recoveryNewPassword').value='';el('recoveryConfirmPassword').value='';el('recoveryCodeArea').hidden=true;el('doPasswordReset').hidden=true;el('recoveryStatus').textContent='';dlg.showModal();setTimeout(()=>el(email?'sendRecoveryCode':'recoveryEmail')?.focus(),50)}
+  el('forgotPasswordBtn')?.addEventListener('click',openReset);el('cancelPasswordReset').onclick=()=>dlg.close();
+  el('sendRecoveryCode').onclick=async()=>{const email=el('recoveryEmail').value.trim().toLowerCase(),st=el('recoveryStatus'),btn=el('sendRecoveryCode');if(!email){st.textContent='أدخلي البريد الإلكتروني المسجل.';return}btn.disabled=true;st.style.color='#174f86';st.textContent='جارٍ إرسال رمز التحقق...';try{const r=await cloudPost('requestPasswordReset',{email});if(!r?.ok)throw new Error(r?.error||'SEND_FAILED');el('recoveryCodeArea').hidden=false;el('doPasswordReset').hidden=false;st.style.color='#176b42';st.textContent='إذا كان البريد مسجلاً فسيصل رمز التحقق خلال لحظات. افحصي البريد غير الهام أيضًا.';setTimeout(()=>el('recoveryCode')?.focus(),100)}catch(err){st.style.color='#8a3b12';st.textContent='تعذر إرسال الرمز الآن. حاولي مرة أخرى بعد قليل.'}finally{btn.disabled=false}};
+  el('doPasswordReset').onclick=async()=>{const email=el('recoveryEmail').value.trim().toLowerCase(),code=el('recoveryCode').value.trim(),p1=el('recoveryNewPassword').value,p2=el('recoveryConfirmPassword').value,st=el('recoveryStatus'),btn=el('doPasswordReset');st.style.color='#8a3b12';if(!/^\d{6}$/.test(code)){st.textContent='أدخلي رمز التحقق المكون من 6 أرقام.';return}if(p1.length<6){st.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل.';return}if(p1!==p2){st.textContent='كلمتا المرور غير متطابقتين.';return}btn.disabled=true;st.textContent='جارٍ حفظ كلمة المرور الجديدة...';try{const passwordHash=await misbarPasswordHash(p1),r=await cloudPost('resetPassword',{email,code,passwordHash});if(!r?.ok){const m={BAD_RESET_CODE:'رمز التحقق غير صحيح.',RESET_EXPIRED:'انتهت صلاحية الرمز. أرسلي رمزًا جديدًا.',RESET_LOCKED:'تم تجاوز عدد المحاولات. أرسلي رمزًا جديدًا.'};st.textContent=m[r?.error]||'تعذر تغيير كلمة المرور.';return}try{localStorage.setItem(LAST_EMAIL_KEY,email);clearPersistentSession();saveCloudToken('')}catch(_){}if(el('loginEmail'))el('loginEmail').value=email;st.style.color='#176b42';st.textContent='تم تغيير كلمة المرور بنجاح. سجّلي الدخول بالكلمة الجديدة.';setTimeout(()=>{dlg.close();if(el('loginPassword')){el('loginPassword').value='';el('loginPassword').focus()}},1000)}catch(err){st.textContent='تعذر الاتصال بالسحابة.'}finally{btn.disabled=false}};
+  function addInAppButton(){const logout=el('logoutBtn');if(!logout||el('changePasswordInsideBtn'))return;const b=document.createElement('button');b.type='button';b.id='changePasswordInsideBtn';b.className='btn ghost';b.textContent='تغيير كلمة المرور';b.onclick=async()=>{const p1=prompt('اكتبي كلمة المرور الجديدة (6 أحرف على الأقل):');if(p1===null)return;if(String(p1).length<6){alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل.');return}const p2=prompt('أعيدي كتابة كلمة المرور الجديدة:');if(p2===null||p1!==p2){alert('كلمتا المرور غير متطابقتين.');return}try{const passwordHash=await misbarPasswordHash(p1),r=await cloudPost('changePassword',{token:cloudToken(),passwordHash});if(!r?.ok)throw new Error(r?.error||'FAILED');clearPersistentSession();saveCloudToken('');alert('تم تغيير كلمة المرور. سجّلي الدخول مرة أخرى بالكلمة الجديدة.');location.reload()}catch(err){alert('تعذر تغيير كلمة المرور الآن.')}};logout.parentNode.insertBefore(b,logout)}
+  addInAppButton();new MutationObserver(addInAppButton).observe(document.body,{childList:true,subtree:true});
 })();
 
 ;
-
 
 /* ===== MISBAR extracted script 6: v98-remeasure-script ===== */
 
@@ -2310,3 +2277,17 @@ document.addEventListener('DOMContentLoaded',()=>{
 })();
 
 ;
+
+
+/* ===== MISBAR FINAL V100 — account cache + resilient sync ===== */
+function accountCacheKey(email){return 'mzAccountCacheV100::'+String(email||'').trim().toLowerCase()}
+function cacheAccountSnapshot(email){try{if(!email)return;localStorage.setItem(accountCacheKey(email),JSON.stringify({at:Date.now(),snapshot:cloudSnapshot()}))}catch(e){console.warn('local account cache failed',e)}}
+function restoreAccountSnapshot(email){try{const raw=localStorage.getItem(accountCacheKey(email));if(!raw)return false;const x=JSON.parse(raw);if(!x?.snapshot)return false;cloudApplying=true;clearCloudSyncedData();applyCloudSnapshot(x.snapshot);cloudApplying=false;return true}catch(e){cloudApplying=false;return false}}
+async function hydrateFromCloud(snapshot){cloudApplying=true;try{clearCloudSyncedData();applyCloudSnapshot(snapshot||{});localStorage.setItem('misbarCloudHydratedV1','1');try{const em=currentUser?.email||loadPersistentSession()?.email;if(em)cacheAccountSnapshot(em)}catch(_){}}finally{cloudApplying=false}}
+async function pushCloudNow(){
+  const token=cloudToken();if(!token||cloudApplying)return false;
+  const snap=cloudSnapshot();try{const em=currentUser?.email||loadPersistentSession()?.email;if(em){try{localStorage.setItem(accountCacheKey(em),JSON.stringify({at:Date.now(),snapshot:snap,pending:true}))}catch(_){}}const res=await cloudPost('push',{token,snapshot:snap});if(res?.ok){if(em){try{localStorage.setItem(accountCacheKey(em),JSON.stringify({at:Date.now(),snapshot:snap,pending:false,revision:res.revision||0}))}catch(_){}}updateCloudBadge('متصل ومحفوظ');return true}updateCloudBadge('تعذر الحفظ • محفوظ على الجهاز');return false}catch(e){updateCloudBadge('دون اتصال • محفوظ على الجهاز');return false}
+}
+window.addEventListener('online',()=>{try{scheduleCloudPush()}catch(_){}});
+window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loadPersistentSession()?.email;if(em)cacheAccountSnapshot(em)}catch(_){}});
+window.MISBAR_BUILD='FINAL-RELEASE-2026-09-12';
