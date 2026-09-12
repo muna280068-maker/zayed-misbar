@@ -749,7 +749,7 @@ body.app-mode #subjectFilter{min-width:220px!important}
 </div>
 <div class="view" id="view-scores">
 <div class="panel">
-<div class="panel-head"><div><span class="eyebrow">رحلة القياس الأكاديمي</span><h3 id="scoreTitle">التشخيص الأولي</h3><p class="hint">تشخيص أولي ثم 5 اختبارات تكوينية، وكل قياس من 10 درجات.</p><div class="saved-note" id="savedNote"></div></div><div class="roster-actions"><label class="btn ghost small file-btn">استيراد قائمة الطالبات<input accept=".csv,.txt,text/csv,text/plain" id="rosterFile" type="file"/></label><button class="btn ghost small" id="manageRosterBtn">إدارة الطالبات</button><button class="btn ghost small" id="exportTeacherExcel" type="button">تصدير Excel الخاص بي</button><button class="btn primary small" id="saveScores">حفظ واعتماد</button></div></div>
+<div class="panel-head"><div><span class="eyebrow">رحلة القياس الأكاديمي</span><h3 id="scoreTitle">التشخيص الأولي</h3><p class="hint">تشخيص أولي ثم 5 اختبارات تكوينية، وكل قياس من 10 درجات.</p><div class="saved-note" id="savedNote"></div></div><div class="roster-actions"><label class="btn ghost small file-btn">استيراد قائمة الطالبات<input accept=".xlsx,.xls,.csv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/plain" id="rosterFile" type="file"/></label><button class="btn ghost small" id="manageRosterBtn">إدارة الطالبات</button><button class="btn ghost small" id="exportTeacherExcel" type="button">تصدير Excel الخاص بي</button><button class="btn primary small" id="saveScores">حفظ واعتماد</button></div></div>
 <p class="hint">اختاري الدرجة لكل طالب/طالبة؛ تُحفظ محليًا فورًا وتُزامَن تلقائيًا مع سحابة مِسبار زايد. ويمكن استخدام «حفظ واعتماد» لاعتماد النتائج وقفلها، ثم تظهر البيانات نفسها عند تسجيل الدخول من أي جهاز أو نافذة أخرى. يُحسب المستوى تلقائيًا: 80% فأعلى متقن، 60–79% يحتاج دعماً، وأقل من 60% أولوية تدخل علاجي.</p>
 <div class="measurement-journey"><span class="journey-step diagnostic">التشخيص الأولي <b>/10</b></span><span>←</span><span class="journey-step">تكويني 1 <b>/10</b></span><span>←</span><span class="journey-step">تكويني 2 <b>/10</b></span><span>←</span><span class="journey-step">تكويني 3 <b>/10</b></span><span>←</span><span class="journey-step">تكويني 4 <b>/10</b></span><span>←</span><span class="journey-step">تكويني 5 <b>/10</b></span></div>
 <div class="score-matrix-wrap" id="scoreMatrixWrap">
@@ -1146,7 +1146,7 @@ body:not(.app-mode) .approved-cover{
 }
 </style>
 <!-- MISBAR V1.5 UI + Parent Report functional scripts -->
-<script defer="defer" src="app.js?v=20260912-release-final"></script>
+<script defer="defer" src="app.js?v=20260912-roster-excel-fix"></script>
 <style id="misbar-v18-exact-approved-layout">
 /* Exact approved dashboard visual rebuild — 2026-09-12 */
 body.app-mode{background:#f4f9fd!important;color:#123f72!important}
