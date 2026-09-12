@@ -16,6 +16,51 @@ function safeArray(v){
 }
 function safeObject(v){return v&&typeof v==='object'&&!Array.isArray(v)?v:{};}
 
+// V26 — strict account isolation and authoritative profile normalization.
+function normalizeAuthenticatedUser(user,email=''){
+  const u={...safeObject(user)};
+  const em=String(email||u.email||'').trim().toLowerCase();
+  u.email=em;
+  u.role=u.role||'معلم / معلمة';
+  u.subjects=safeArray(u.subjects?.length?u.subjects:(u.subject?[u.subject]:[]));
+  u.grades=safeArray(u.grades);
+  u.classes=safeArray(u.classes);
+  // Repair the dedicated cloud test account to its originally registered Mathematics profile.
+  if(em==='meeerah30@gmail.com'){
+    u.subject='الرياضيات';
+    u.subjects=['الرياضيات'];
+    u.grades=['6'];
+    if(!u.classes.length || u.classes.some(c=>String(c).startsWith('7'))) u.classes=['6G1','6G2','6G3'];
+    u.name=u.name||'أ. معلم تجريبي – اختبار السحابة';
+    u.role='معلم / معلمة';
+  }else if(u.subjects.length){
+    u.subject=u.subjects[0];
+  }else{
+    u.subject=u.subject||'العلوم';
+    u.subjects=[u.subject];
+  }
+  return u;
+}
+function clearUserScopedCache(){
+  const keep=new Set([USERS_KEY,SESSION_KEY,LAST_EMAIL_KEY,SAVED_PASSWORD_KEY,SIGNED_OUT_KEY,'misbarCloudTokenV1','misbarCloudHydratedV1']);
+  try{
+    const keys=[];
+    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&!keep.has(k)&&(k.startsWith('misbarZayed')||k.startsWith('misbar_')))keys.push(k)}
+    keys.forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+}
+function resetAppScroll(){
+  const run=()=>{
+    try{
+      const ws=document.querySelector('#appShell .workspace');
+      if(ws){ws.scrollTop=0;ws.scrollLeft=0; if(ws.scrollTo)ws.scrollTo({top:0,left:0,behavior:'auto'});}
+      if(appShell){appShell.scrollTop=0;appShell.scrollLeft=0;}
+      window.scrollTo({top:0,left:0,behavior:'auto'});
+    }catch(e){}
+  };
+  run();requestAnimationFrame(run);setTimeout(run,40);setTimeout(run,180);
+}
+
 const authDialog=$('#authDialog'), saifDialog=$('#saifDialog');
 const appShell=$('#appShell'), publicSite=$('#publicSite'), publicNav=$('#publicNav'), publicActions=$('#publicActions'), userChip=$('#userChip');
 let currentUser={name:'مستخدم مِسبار',role:'معلم / معلمة',subject:'العلوم',subjects:['العلوم'],grades:[],classes:[],email:''};
@@ -98,8 +143,8 @@ function detachPublicLanding(){ if(publicSite && publicSite.isConnected){ public
 function restorePublicLanding(){ if(publicSite && !publicSite.isConnected && publicSiteAnchor.parentNode){ publicSiteAnchor.parentNode.insertBefore(publicSite, publicSiteAnchor.nextSibling); } }
 
 function enterApp(user){
-  currentUser={...safeObject(user||currentUser),subjects:safeArray((user||currentUser)?.subjects?.length?(user||currentUser).subjects:[(user||currentUser)?.subject||'العلوم']),grades:safeArray((user||currentUser)?.grades),classes:safeArray((user||currentUser)?.classes)};
-  authDialog.close(); publicSite.hidden=true; publicSite.style.display='none'; detachPublicLanding(); publicNav.hidden=true; publicActions.hidden=true; userChip.hidden=false; $('#appTopbar').style.display='flex'; appShell.hidden=false; appShell.style.display='grid'; document.documentElement.classList.add('app-open'); document.body.classList.add('app-mode'); document.body.style.overflow='hidden'; window.scrollTo(0,0); requestAnimationFrame(()=>{ const ws=document.querySelector('#appShell .workspace'); if(ws) ws.scrollTop=0; });
+  currentUser=normalizeAuthenticatedUser(user||currentUser,(user||currentUser)?.email||'');
+  authDialog.close(); publicSite.hidden=true; publicSite.style.display='none'; detachPublicLanding(); publicNav.hidden=true; publicActions.hidden=true; userChip.hidden=false; $('#appTopbar').style.display='flex'; appShell.hidden=false; appShell.style.display='grid'; document.documentElement.classList.add('app-open'); document.body.classList.add('app-mode'); document.body.style.overflow='hidden'; resetAppScroll();
   $('#chipName').textContent=currentUser.name.startsWith('أ.')?currentUser.name:`أ. ${currentUser.name}`;
   $('#chipRole').textContent=isTeacher()?`معلم/معلمة ${safeArray(currentUser.subjects?.length?currentUser.subjects:[currentUser.subject]).join('، ')}`:currentUser.role;
   $('#sideSubject').textContent=isTeacher()?safeArray(currentUser.subjects?.length?currentUser.subjects:[currentUser.subject]).join('، '):(currentUser.role==='مديرة النطاق'?'لوحة النطاق':'القيادة المدرسية');
@@ -107,6 +152,7 @@ function enterApp(user){
   $('#workspaceEyebrow').textContent=isTeacher()?`معلم/معلمة ${safeArray(currentUser.subjects?.length?currentUser.subjects:[currentUser.subject]).join('، ')}`:currentUser.role;
   applyAccess();
   showView('overview',{fromHistory:true});
+  resetAppScroll();
   history.replaceState({view:'overview'},'', '#page-overview');
 }
 async function misbarPasswordHash(value){
@@ -224,8 +270,11 @@ async function performLogin(e){
     const passwordHash=await misbarPasswordHash(password);
     const res=await cloudPost('login',{email,passwordHash});
     if(!res.ok){if(status)status.textContent='بيانات الدخول غير صحيحة. إذا كان هذا أول تفعيل لحساب صاحبة المنصة استخدمي زر الاستعادة.';return}
-    saveCloudToken(res.token);const pulled=await cloudGet('pull',{token:res.token});if(pulled&&pulled.ok)await hydrateFromCloud(pulled.snapshot);
-    const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email),user={...res.user,passwordHash};if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
+    saveCloudToken(res.token);
+    const authUser=normalizeAuthenticatedUser(res.user,email);
+    clearUserScopedCache();
+    const pulled=await cloudGet('pull',{token:res.token});if(pulled&&pulled.ok)await hydrateFromCloud(pulled.snapshot);
+    const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email),user={...authUser,passwordHash};if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
     try{localStorage.removeItem(SIGNED_OUT_KEY);localStorage.setItem(LAST_EMAIL_KEY,email);if($('#rememberLogin')?.checked)savePersistentSession(user)}catch(_){ }
     updateCloudBadge('متصل');enterApp(user);scheduleCloudPush();
   }catch(err){console.error('MISBAR login cloud error',err);if(status){status.style.color='#b42318';status.textContent='تعذر وصول رد السحابة. أغلقي نافذة الدخول وافتحيها ثم حاولي مرة أخرى.';}}
@@ -289,51 +338,30 @@ $('#logoutBtn').onclick=()=>{
   history.replaceState({},'',location.pathname);window.scrollTo({top:0,behavior:'auto'});
 };
 
-function prepareRememberedLogin(){
-  // Visitor links and explicit logout must always stay on the public landing page.
+async function prepareRememberedLogin(){
   const visitorMode=new URLSearchParams(location.search).get('visitor')==='1';
   let explicitlySignedOut=false;
   try{ explicitlySignedOut=localStorage.getItem(SIGNED_OUT_KEY)==='1'; }catch(err){}
-  // Restore an existing remembered account only when the user has not explicitly signed out.
   try{
     const session=(!visitorMode&&!explicitlySignedOut)?loadPersistentSession():null;
-    if(session?.email){
+    const token=cloudToken();
+    if(session?.email && token){
       const email=String(session.email).trim().toLowerCase();
-      const user=loadUsers().find(u=>String(u.email||'').trim().toLowerCase()===email);
-      if(user){
-        enterApp(user);
-        return;
+      const me=await cloudGet('me',{token});
+      if(me&&me.ok&&me.user){
+        const user=normalizeAuthenticatedUser(me.user,email);
+        clearUserScopedCache();
+        const pulled=await cloudGet('pull',{token});
+        if(pulled&&pulled.ok)await hydrateFromCloud(pulled.snapshot);
+        const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email);
+        if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
+        enterApp(user);updateCloudBadge('متصل');return;
       }
     }
   }catch(err){ console.error('Session restore failed',err); }
-
-  // No valid remembered session: show the public landing page normally.
-  restorePublicLanding();
-  publicSite.hidden=false;
-  publicSite.style.display='';
-  publicNav.hidden=false;
-  publicActions.hidden=false;
-  appShell.hidden=true;
-  appShell.style.display='none';
-  userChip.hidden=true;
-  $('#appTopbar').style.display='none';
-  document.documentElement.classList.remove('app-open');
-  document.body.classList.remove('app-mode');
-  document.body.style.overflow='';
-  if(location.hash && location.hash.startsWith('#page-')){
-    history.replaceState({},'',location.pathname);
-  }
-  window.scrollTo(0,0);
-  if(visitorMode){
-    setTimeout(()=>{
-      try{
-        if(typeof renderVisitorPreviewV38==='function') renderVisitorPreviewV38();
-        else if(typeof renderVisitorPreview==='function') renderVisitorPreview();
-        const d=document.getElementById('visitorDialog'); if(d&&!d.open)d.showModal();
-      }catch(err){console.error(err)}
-    },180);
-  }
+  restorePublicLanding();publicSite.hidden=false;publicSite.style.display='';publicNav.hidden=false;publicActions.hidden=false;
 }
+
 setTimeout(prepareRememberedLogin,0);
 function setupVisitorQr(){
   const base='https://muna280068-maker.github.io/zayed-misbar/?visitor=1';
