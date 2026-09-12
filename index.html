@@ -368,7 +368,113 @@ body.app-mode th{background:#eef6fd!important;color:#315f84!important}body.app-m
 body.app-mode .workspace:after{background:linear-gradient(180deg,#f8fbff,#fffaf0)!important;color:#174c7b!important}
 @media(max-width:1000px){body.app-mode #appShell{grid-template-columns:1fr!important}.v14-header{grid-template-columns:1fr!important}.v14-saif{min-width:0!important}}
 </style>
-<meta content="FINAL-2026-09-12-EXTJS-1" name="misbar-build"/></head>
+<meta content="VISUAL-V17-APPROVED-2026-09-12" name="misbar-build"/>
+<style id="misbar-approved-visual-v17">
+/* === MISBAR V17: approved visual dashboard === */
+:root{--misbar-purple:#8e5bb6;--misbar-purple2:#b07bd2;--misbar-blue:#1457a6;--misbar-deep:#0b3f77;--misbar-soft:#f7fbff;--misbar-line:#dbe8f3;--misbar-green:#13945c;--misbar-shadow:0 10px 28px rgba(33,78,117,.08)}
+html.app-open,body.app-mode{height:100%!important;overflow:hidden!important;background:#f7fbff!important}
+body.app-mode #appTopbar{display:none!important;height:0!important}
+body.app-mode main{height:100vh!important;overflow:hidden!important;margin:0!important;padding:0!important}
+body.app-mode #appShell{display:grid!important;grid-template-columns:286px minmax(0,1fr)!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;background:#f7fbff!important;overflow:hidden!important;z-index:999!important;direction:rtl!important}
+body.app-mode #appShell .sidebar{grid-column:1!important;background:linear-gradient(180deg,#bb8ad6 0%,#9564bd 42%,#7750aa 100%)!important;color:#0c417d!important;padding:20px 14px 24px!important;border-left:1px solid rgba(84,47,135,.16)!important;box-shadow:-6px 0 20px rgba(75,42,110,.07)!important;height:100vh!important;overflow:auto!important;scrollbar-width:thin!important}
+body.app-mode #appShell .workspace{grid-column:2!important;background:linear-gradient(180deg,#f6fbff 0,#fbfdff 48%,#f8fbff 100%)!important;padding:18px 22px 28px!important;height:100vh!important;overflow:auto!important;scrollbar-width:thin!important}
+/* brand area */
+body.app-mode .v14-appbrand{display:flex!important;align-items:center!important;gap:12px!important;padding:6px 8px 20px!important;margin:0 0 8px!important;border-bottom:1px solid rgba(74,40,116,.20)!important;text-align:right!important}
+body.app-mode .v14-logo{width:54px!important;height:54px!important;min-width:54px!important;border-radius:18px!important;background:linear-gradient(145deg,#62b0ef,#7e57c8)!important;color:#fff!important;display:grid!important;place-items:center!important;font-size:0!important;box-shadow:0 7px 18px rgba(72,69,161,.2)!important}
+body.app-mode .v14-logo:before{content:'◈';font-size:29px!important;color:#fff!important;font-weight:900!important}
+body.app-mode .v14-brandtext b{display:block!important;color:#103f78!important;font-size:22px!important;font-weight:900!important;line-height:1.1!important}
+body.app-mode .v14-brandtext span{display:block!important;color:#6f5ba8!important;font-size:10px!important;letter-spacing:2px!important;margin-top:6px!important}
+body.app-mode .v14-brandtext small{display:block!important;color:#9b6b10!important;font-weight:900!important;font-size:13px!important;margin-top:6px!important}
+body.app-mode .sidebar-title{background:rgba(255,255,255,.82)!important;border:1px solid rgba(255,255,255,.72)!important;border-radius:18px!important;padding:14px 16px!important;margin:12px 0 14px!important;box-shadow:0 8px 18px rgba(92,55,126,.08)!important;text-align:right!important}
+body.app-mode .sidebar-title span{color:#8b74a4!important;font-size:12px!important;font-weight:800!important}
+body.app-mode .sidebar-title b{color:#fff!important;font-size:23px!important;font-weight:900!important;text-shadow:0 1px 1px rgba(79,43,111,.15)!important}
+/* sidebar buttons: high contrast, matching approved mock */
+body.app-mode .side-link{position:relative!important;width:100%!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:11px!important;background:rgba(255,255,255,.46)!important;color:#153f78!important;border:1px solid rgba(255,255,255,.52)!important;border-radius:18px!important;padding:13px 14px!important;margin:8px 0!important;font-size:15px!important;font-weight:900!important;text-align:right!important;box-shadow:0 5px 14px rgba(77,42,114,.07)!important;transition:.18s ease!important}
+body.app-mode .side-link:hover{background:rgba(255,255,255,.67)!important;transform:translateX(-2px)!important}
+body.app-mode .side-link.active{background:#fff!important;color:#1166b3!important;border-color:#dceafa!important;box-shadow:0 8px 22px rgba(52,72,132,.15)!important;transform:none!important}
+body.app-mode .side-link:before{width:27px!important;height:27px!important;min-width:27px!important;border-radius:9px!important;background:rgba(255,255,255,.52)!important;display:grid!important;place-items:center!important;font-size:15px!important;color:#0a59a0!important}
+body.app-mode .side-link[data-view="overview"]:before{content:'⌂'}
+body.app-mode .side-link[data-view="assessments"]:before{content:'▣'}
+body.app-mode .side-link[data-view="scores"]:before{content:'▥'}
+body.app-mode .side-link[data-view="gaps"]:before{content:'◎'}
+body.app-mode .side-link[data-view="interventions"]:before{content:'⚙'}
+body.app-mode .side-link[data-view="evidence"]:before{content:'▧'}
+body.app-mode .side-link[data-view="remeasure"]:before{content:'↗'}
+body.app-mode .side-link[data-view="weekly"]:before{content:'▦'}
+body.app-mode .side-link[data-view="impact"]:before{content:'✦'}
+body.app-mode .side-link[data-view="student"]:before{content:'♙'}
+body.app-mode .side-link[data-view="reports"]:before{content:'≡'}
+body.app-mode .side-link[data-view="recognition"]:before{content:'♛'}
+body.app-mode .side-link[data-view="leadership"]:before{content:'◇'}
+body.app-mode .side-link.saif-side{background:rgba(54,45,104,.18)!important;color:#fff!important;border-color:rgba(255,255,255,.2)!important}
+/* visual hero */
+body.app-mode .v14-header{min-height:150px!important;display:grid!important;grid-template-columns:220px minmax(0,1fr) 170px!important;align-items:center!important;gap:18px!important;position:relative!important;overflow:hidden!important;padding:18px 28px!important;border:1px solid #d6e6f2!important;border-radius:28px!important;background:
+ radial-gradient(circle at 18% 105%,rgba(61,161,113,.15),transparent 29%),
+ radial-gradient(circle at 84% 110%,rgba(68,148,202,.16),transparent 29%),
+ linear-gradient(180deg,#eef8ff 0%,#ffffff 94%)!important;
+ box-shadow:var(--misbar-shadow)!important;margin-bottom:16px!important}
+body.app-mode .v14-header:before{content:'👨🏻‍🏫';grid-column:3!important;grid-row:1!important;font-size:78px!important;line-height:1!important;filter:drop-shadow(0 8px 10px rgba(38,91,129,.12))!important;justify-self:center!important;z-index:2!important}
+body.app-mode .v14-header:after{content:'بالميثاق نبلغ الآفاق';position:absolute!important;right:48px!important;bottom:16px!important;transform:rotate(-5deg)!important;color:#875312!important;font-size:14px!important;font-weight:900!important;z-index:2!important}
+body.app-mode .v14-header-title{grid-column:2!important;grid-row:1!important;text-align:center!important;z-index:2!important}
+body.app-mode .v14-header-title h1{margin:0!important;color:#0e437c!important;font-size:35px!important;font-weight:1000!important;line-height:1.25!important;letter-spacing:-.5px!important}
+body.app-mode .v14-header-title p{margin:12px 0 0!important;color:#113f77!important;font-size:18px!important;font-weight:900!important}
+body.app-mode .v14-saif{grid-column:1!important;grid-row:1!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;background:rgba(255,255,255,.82)!important;border:1px solid #d9e9f5!important;border-radius:22px!important;padding:15px 18px!important;box-shadow:0 8px 20px rgba(58,104,144,.08)!important;min-width:0!important;z-index:2!important}
+body.app-mode .v14-saif .bot{order:-1!important;width:50px!important;height:50px!important;border-radius:16px!important;background:linear-gradient(145deg,#eaf4ff,#efe7ff)!important;display:grid!important;place-items:center!important;font-size:30px!important}
+body.app-mode .v14-saif b{display:block!important;color:#123f75!important;font-size:18px!important;font-weight:1000!important}
+body.app-mode .v14-saif small{display:block!important;color:#547395!important;font-size:13px!important;margin-top:4px!important;white-space:nowrap!important}
+/* account / filters block */
+body.app-mode .workspace-head{display:grid!important;grid-template-columns:1.12fr 1fr auto!important;grid-template-areas:'intro access filters'!important;align-items:center!important;gap:18px!important;background:#fff!important;border:1px solid #d9e7f2!important;border-radius:26px!important;padding:20px 24px!important;margin:0 0 14px!important;box-shadow:0 8px 24px rgba(44,84,119,.06)!important;min-height:136px!important}
+body.app-mode .workspace-head>div:first-child{grid-area:intro!important;text-align:right!important;min-width:245px!important}
+body.app-mode .workspace-head .eyebrow{display:block!important;color:#3b78ae!important;font-weight:900!important;font-size:13px!important;margin-bottom:9px!important}
+body.app-mode .workspace-head h2{margin:0!important;color:#0d437c!important;font-size:29px!important;font-weight:1000!important;line-height:1.45!important}
+body.app-mode .access-banner{grid-area:access!important;min-width:320px!important;max-width:560px!important;background:linear-gradient(180deg,#f0f8ff,#eaf5ff)!important;border:1px solid #cfe2f2!important;border-radius:18px!important;padding:18px 18px!important;color:#285a85!important;font-size:14px!important;line-height:1.9!important;box-shadow:none!important}
+body.app-mode .access-banner:before{content:'💡  حساب المعلم/المعلمة';display:block!important;color:#1d67ad!important;font-size:15px!important;font-weight:1000!important;margin-bottom:4px!important}
+body.app-mode .subject-filter-wrap{grid-area:filters!important;align-self:center!important;min-width:150px!important}
+body.app-mode .filters{grid-area:filters!important;align-self:end!important;justify-self:end!important;display:flex!important;gap:10px!important;transform:translateY(34px)!important;margin-left:170px!important}
+body.app-mode .subject-filter-wrap label{display:block!important;color:#173f70!important;font-size:12px!important;font-weight:900!important;margin:0 4px 7px!important}
+body.app-mode .subject-popup-btn,body.app-mode .filters select{height:54px!important;background:#fff!important;border:1.5px solid #cfe1ef!important;border-radius:14px!important;color:#153f77!important;font-size:16px!important;font-weight:900!important;padding:0 17px!important;min-width:142px!important;box-shadow:0 3px 10px rgba(62,97,130,.03)!important}
+body.app-mode .subject-popup-btn{width:100%!important;display:flex!important;align-items:center!important;justify-content:space-between!important}
+/* sync strip */
+body.app-mode .v14-syncstrip{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:16px!important;background:linear-gradient(90deg,#eefbf5,#f5fffa)!important;border:1px solid #c9ead8!important;border-radius:16px!important;padding:13px 18px!important;margin:0 0 16px!important;color:#178953!important;font-size:13px!important;font-weight:900!important;box-shadow:none!important}
+body.app-mode .v14-syncstrip span:first-child:before{content:'✓';display:inline-grid!important;place-items:center!important;width:22px!important;height:22px!important;border-radius:50%!important;background:#14a568!important;color:#fff!important;margin-left:8px!important}
+/* content */
+body.app-mode .view{padding:0 0 26px!important;overflow:visible!important;height:auto!important;min-height:0!important}
+body.app-mode .kpi-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important;margin:0 0 18px!important}
+body.app-mode .kpi{position:relative!important;min-height:148px!important;border:1px solid #d9e7f2!important;border-radius:22px!important;padding:24px 24px 19px!important;box-shadow:0 7px 20px rgba(41,77,110,.05)!important;overflow:hidden!important}
+body.app-mode .kpi:nth-child(1){background:linear-gradient(145deg,#f2f9ff,#ffffff)!important}
+body.app-mode .kpi:nth-child(2){background:linear-gradient(145deg,#f0fbf5,#ffffff)!important}
+body.app-mode .kpi:nth-child(3){background:linear-gradient(145deg,#f8f3ff,#ffffff)!important}
+body.app-mode .kpi:nth-child(4){background:linear-gradient(145deg,#fff3f6,#ffffff)!important;border-right:1px solid #f1d8e0!important}
+body.app-mode .kpi:before{position:absolute!important;left:22px!important;top:22px!important;width:50px!important;height:50px!important;border-radius:50%!important;display:grid!important;place-items:center!important;font-size:22px!important;background:rgba(255,255,255,.72)!important}
+body.app-mode .kpi:nth-child(1):before{content:'♟';color:#2b79c3;background:#e5f1ff!important}
+body.app-mode .kpi:nth-child(2):before{content:'▤';color:#199660;background:#e2f7ec!important}
+body.app-mode .kpi:nth-child(3):before{content:'▥';color:#7354d1;background:#eee8ff!important}
+body.app-mode .kpi:nth-child(4):before{content:'◎';color:#ef4d79;background:#ffe6ee!important}
+body.app-mode .kpi span{color:#66819a!important;font-size:13px!important;font-weight:800!important}
+body.app-mode .kpi strong{display:block!important;color:#0e477e!important;font-size:38px!important;line-height:1.1!important;margin:18px 0 8px!important;font-weight:1000!important}
+body.app-mode .kpi small{color:#667f95!important;font-size:12px!important}
+body.app-mode .kpi.warn span{color:#d93d66!important}
+body.app-mode .dashboard-grid{display:grid!important;grid-template-columns:minmax(0,2.2fr) minmax(280px,.72fr)!important;gap:16px!important;direction:rtl!important}
+body.app-mode .panel{background:#fff!important;border:1px solid #d9e6ef!important;border-radius:22px!important;padding:24px!important;box-shadow:0 7px 21px rgba(34,75,109,.05)!important;color:#153f70!important}
+body.app-mode .panel-head h3{color:#0f477e!important;font-size:24px!important;font-weight:1000!important}
+body.app-mode .alert-panel{background:linear-gradient(155deg,#fff,#fbfdff)!important;border-color:#d9e6ef!important}
+body.app-mode .bar-chart{display:grid!important;gap:13px!important;margin-top:14px!important}
+body.app-mode .bar-chart>div{display:grid!important;grid-template-columns:90px 1fr 38px!important;gap:12px!important;align-items:center!important;color:#194a78!important;font-weight:800!important}
+body.app-mode .bar-chart i{height:16px!important;border-radius:999px!important;background:#edf3f7!important;border:1px solid #dbe7ef!important;box-shadow:inset 0 1px 2px rgba(20,61,92,.04)!important}
+body.app-mode .bar-chart i:after{content:'';display:block!important;width:var(--v,0%)!important;height:100%!important;border-radius:inherit!important;background:linear-gradient(90deg,#65b6e7,#785bc7)!important}
+body.app-mode #explainChart{border:1px solid #cfe1ef!important;border-radius:12px!important;background:#fff!important;color:#145b9b!important;font-weight:900!important;padding:8px 13px!important}
+body.app-mode .alert-panel:before{content:'🤖  سيف يلاحظ';display:block!important;color:#1960a0!important;font-size:15px!important;font-weight:1000!important;margin-bottom:14px!important}
+body.app-mode .workspace:after{content:'مِسبار زايد • بالميثاق نبلغ الآفاق';display:block!important;text-align:center!important;margin:22px 0 8px!important;padding:20px!important;border-radius:20px!important;background:linear-gradient(90deg,#f4fbff,#fffaf1,#f2fbf5)!important;color:#174d7e!important;font-size:16px!important;font-weight:900!important;border:1px solid #e2ebf1!important}
+/* keep every other page consistent */
+body.app-mode .section-card,body.app-mode .assessment-card,body.app-mode .workflow-card,body.app-mode .table-wrap{border-radius:20px!important;border-color:#d9e7f2!important;box-shadow:0 6px 18px rgba(34,74,108,.05)!important}
+body.app-mode th{background:#eef6fd!important;color:#315f84!important}body.app-mode td{background:#fff!important;color:#183f65!important}
+body.app-mode .btn.primary{background:linear-gradient(135deg,#489bd7,#7b59be)!important;border-color:transparent!important;color:#fff!important}
+body.app-mode .btn.ghost{background:#fff!important;color:#2b6795!important;border-color:#cfe0ed!important}
+@media(max-width:1220px){body.app-mode #appShell{grid-template-columns:245px minmax(0,1fr)!important}body.app-mode .v14-header{grid-template-columns:190px minmax(0,1fr) 130px!important}.v14-header-title h1{font-size:28px!important}body.app-mode .workspace-head{grid-template-columns:1fr 1fr!important;grid-template-areas:'intro access' 'filters filters'!important}.subject-filter-wrap{justify-self:start!important}.filters{grid-area:filters!important;transform:none!important;margin-left:175px!important;justify-self:end!important}}
+@media(max-width:900px){body.app-mode #appShell{grid-template-columns:1fr!important;overflow:auto!important}.sidebar{display:none!important}.workspace{grid-column:1!important}.v14-header{grid-template-columns:1fr!important;min-height:0!important}.v14-header:before,.v14-header:after{display:none!important}.v14-header-title,.v14-saif{grid-column:1!important}.v14-saif{display:none!important}.workspace-head{grid-template-columns:1fr!important;grid-template-areas:'intro' 'access' 'filters'!important}.filters{transform:none!important;margin:0!important;justify-self:stretch!important;flex-wrap:wrap!important}.access-banner{min-width:0!important}.kpi-grid{grid-template-columns:repeat(2,1fr)!important}.dashboard-grid{grid-template-columns:1fr!important}}
+</style>
+
+</head>
 <body>
 <!-- ZAYED MISBAR V85 LEADERSHIP SIX SUBJECTS HARD FIX: logout/session + 6 subjects + visible visitor QR -->
 <header class="topbar" id="appTopbar" style="display:none">
@@ -454,7 +560,7 @@ body.app-mode .workspace:after{background:linear-gradient(180deg,#f8fbff,#fffaf0
 <section class="app-shell" hidden="" id="appShell">
 <aside class="sidebar">
 <div class="sidebar-title"><span>لوحتي</span><b id="sideSubject">العلوم</b></div>
-<button class="side-link active" data-view="overview">نظرة عامة</button>
+<button class="side-link active" data-view="overview">الرئيسية</button>
 <button class="side-link" data-view="assessments">الاختبارات التشخيصية</button>
 <button class="side-link" data-view="scores">إدخال الدرجات</button>
 <button class="side-link" data-view="gaps">فجوات التعلّم</button>
@@ -463,10 +569,10 @@ body.app-mode .workspace:after{background:linear-gradient(180deg,#f8fbff,#fffaf0
 <button class="side-link" data-view="remeasure">إعادة القياس</button>
 <button class="side-link" data-view="weekly">المتابعة الأسبوعية</button>
 <button class="side-link" data-view="impact">سجل الأثر</button>
-<button class="side-link" data-view="student">ملف الطالب/الطالبة</button>
+<button class="side-link" data-view="student">تقرير ولي الأمر</button>
 <button class="side-link leadership-only" data-view="leadership">لوحة القيادة والمقارنات</button>
 <button class="side-link" data-view="reports">التقارير</button>
-<button class="side-link" data-view="recognition">التميز والتقدير</button>
+<button class="side-link" data-view="recognition">الشهادات</button>
 <button class="side-link saif-side" id="sideSaif">اسأل سيف</button>
 </aside>
 <div class="workspace">
