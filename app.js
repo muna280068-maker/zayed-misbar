@@ -1078,26 +1078,44 @@ $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استع
         a.locked=false;a.status='in_progress';a.reopenedAt=new Date().toISOString();
         saveAssessments(ass);renderScores();renderAssessmentCards();return;
       }
-      const matrixRows=matrixRowsForAssessment(activeAssessmentId);
-      const rows=matrixRows===null?scoreRowsFromDom():matrixRows;
-      if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return;}
-      const total=roster.length;
-      if(!confirm(`سيتم حفظ واعتماد ${rows.length} نتيجة من أصل ${total}. ${rows.length<total?'الطلبة دون درجة سيبقون «بانتظار التشخيص».':''}\nهل تريد/تريدين المتابعة؟`))return;
-      const max=Math.max(1,Number(a.max)||100),key=assessmentKey(a.id),all=loadAllScores(),existing=safeObject(all[key]);
-      if(rows.some(r=>!Number.isFinite(+r.score)||+r.score<0||+r.score>max)){alert(`توجد درجة خارج النطاق 0–${max}. صححيها قبل الحفظ.`);return;}
-      all[key]={...existing,rows,max,savedAt:new Date().toISOString(),approvedAt:new Date().toISOString(),autoSaved:false,
-        subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,skills:safeArray(a.skills),
-        teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
-      saveAllScores(all);
-      localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
-      a.status=rows.length===total?'completed':'in_progress';a.locked=true;a.approvedAt=new Date().toISOString();ass[idx]=a;saveAssessments(ass);
-      const verify=loadAllScores()[key];
-      if(!verify||safeArray(verify.rows).length!==rows.length)throw new Error('فشل التحقق من النتائج بعد الحفظ');
+      const matrixIds=[...new Set($$('.matrix-score-select').map(el=>String(el.dataset.assessment||'')).filter(Boolean))];
+      const total=roster.length,all=loadAllScores(),now=new Date().toISOString();
+      let savedCount=0,savedAssessments=0,rows=[];
+      if(matrixIds.length){
+        const pending=matrixIds.map(aid=>({aid,rows:matrixRowsForAssessment(aid)||[]})).filter(x=>x.rows.length);
+        savedCount=pending.reduce((n,x)=>n+x.rows.length,0);savedAssessments=pending.length;
+        if(!savedCount){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return;}
+        if(!confirm(`سيتم حفظ ${savedCount} درجة في ${savedAssessments} اختبار/اختبارات للشعبة الحالية.\nهل تريد/تريدين المتابعة؟`))return;
+        for(const item of pending){
+          const ai=ass.findIndex(x=>x.id===item.aid&&x.context===contextKey());if(ai<0)continue;
+          const ma=ass[ai],max=Math.max(1,Number(ma.max)||(/^التشخيص/.test(String(ma.type||''))?100:10));
+          if(item.rows.some(r=>!Number.isFinite(+r.score)||+r.score<0||+r.score>max))throw new Error(`توجد درجة خارج النطاق 0–${max} في ${ma.type}`);
+          const key=assessmentKey(ma.id),existing=safeObject(all[key]);
+          all[key]={...existing,rows:item.rows,max,savedAt:now,approvedAt:item.rows.length===total?now:existing.approvedAt,autoSaved:false,
+            subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,skills:safeArray(ma.skills),
+            teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
+          localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(item.rows.map(r=>[r.name,r.score]))));
+          ma.status=item.rows.length===total?'completed':'in_progress';ma.locked=item.rows.length===total;if(ma.locked)ma.approvedAt=now;ass[ai]=ma;
+        }
+        rows=pending.find(x=>x.aid===activeAssessmentId)?.rows||pending[0].rows;
+      }else{
+        rows=scoreRowsFromDom();savedCount=rows.length;savedAssessments=rows.length?1:0;
+        if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return;}
+        if(!confirm(`سيتم حفظ واعتماد ${rows.length} نتيجة من أصل ${total}.\nهل تريد/تريدين المتابعة؟`))return;
+        const max=Math.max(1,Number(a.max)||100),key=assessmentKey(a.id),existing=safeObject(all[key]);
+        if(rows.some(r=>!Number.isFinite(+r.score)||+r.score<0||+r.score>max))throw new Error(`توجد درجة خارج النطاق 0–${max}`);
+        all[key]={...existing,rows,max,savedAt:now,approvedAt:now,autoSaved:false,subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,skills:safeArray(a.skills),teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
+        localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries(rows.map(r=>[r.name,r.score]))));
+        a.status=rows.length===total?'completed':'in_progress';a.locked=rows.length===total;a.approvedAt=now;ass[idx]=a;
+      }
+      saveAllScores(all);saveAssessments(ass);
+      const verifyTotal=matrixIds.length?matrixIds.reduce((n,aid)=>n+safeArray(loadAllScores()[assessmentKey(aid)]?.rows).length,0):safeArray(loadAllScores()[assessmentKey(a.id)]?.rows).length;
+      if(verifyTotal<savedCount)throw new Error('فشل التحقق من النتائج بعد الحفظ');
       const note=document.getElementById('savedNote');if(note)note.textContent=`✓ تم الحفظ محليًا • جارٍ المزامنة السحابية`;
       const cloudSaved=await pushCloudNow();
-      if(note)note.textContent=cloudSaved?`✓ تم الحفظ والمزامنة السحابية • ${rows.length} نتيجة`:`⚠️ تم الحفظ محليًا وتعذرت المزامنة السحابية`;
+      if(note)note.textContent=cloudSaved?`✓ تم الحفظ والمزامنة السحابية • ${savedCount} درجة`:`⚠️ تم الحفظ محليًا وتعذرت المزامنة السحابية`;
       renderAssessmentCards();renderScores();updateOverviewStudentCount();
-      alert(cloudSaved?`تم حفظ واعتماد ${rows.length} نتيجة ومزامنتها مع السحابة بنجاح.`:`تم حفظ واعتماد ${rows.length} نتيجة على هذا الجهاز، لكن تعذرت المزامنة السحابية. أعيدي المحاولة عند استقرار الاتصال.`);
+      alert(cloudSaved?`تم حفظ ${savedCount} درجة في ${savedAssessments} اختبار/اختبارات ومزامنتها مع السحابة بنجاح.`:`تم حفظ ${savedCount} درجة على هذا الجهاز، لكن تعذرت المزامنة السحابية. ستبقى نسخة إنقاذ محلية حتى عودة الاتصال.`);
     }catch(err){
       console.error('V93 save/approve failed',err);
       alert('تعذر حفظ واعتماد الدرجات: '+(err?.message||'خطأ غير معروف'));
@@ -2577,4 +2595,30 @@ function applyMixedAssessmentScaleUI(){
   typeSelect?.addEventListener('change',sync);sync();
 }
 applyMixedAssessmentScaleUI();
-window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V108-ATOMIC-SCORE-SAVE';
+/* ===== MISBAR V109 — emergency score backup + stale-cloud protection ===== */
+const MISBAR_SCORE_BACKUP_PREFIX='mzScoreEmergencyV109::';
+function v109ScoreEmail(){return String(currentUser?.email||loadPersistentSession()?.email||'').trim().toLowerCase()}
+function v109LatestScoreTime(store){
+  let latest=0;Object.values(safeObject(store)).forEach(v=>{const t=Date.parse(v?.savedAt||v?.approvedAt||'')||0;if(t>latest)latest=t});return latest;
+}
+function v109ReadBackup(email){try{return safeObject(JSON.parse(localStorage.getItem(MISBAR_SCORE_BACKUP_PREFIX+email)||'{}'))}catch(_){return{}}}
+function v109WriteBackup(scores,at=Date.now()){
+  const email=v109ScoreEmail();if(!email)return;try{localStorage.setItem(MISBAR_SCORE_BACKUP_PREFIX+email,JSON.stringify({at:Number(at)||Date.now(),scores:safeObject(scores)}))}catch(_){ }
+}
+const v109BaseSaveAllScores=saveAllScores;
+saveAllScores=function(v){
+  try{const at=Date.now();localStorage.setItem('misbar_scoreModifiedAt',String(at));v109WriteBackup(v,at)}catch(_){ }
+  return v109BaseSaveAllScores(v);
+};
+const v109BaseHydrateFromCloud=hydrateFromCloud;
+hydrateFromCloud=async function(snapshot){
+  const email=v109ScoreEmail(),backup=email?v109ReadBackup(email):{},remoteScores=parseJsonSafeV109(snapshot?.[SCORES_KEY]),remoteAt=Math.max(Number(snapshot?.misbar_scoreModifiedAt||0),v109LatestScoreTime(remoteScores));
+  await v109BaseHydrateFromCloud(snapshot||{});
+  if(backup?.scores&&Object.keys(backup.scores).length&&Number(backup.at||0)>remoteAt){
+    localStorage.setItem(SCORES_KEY,JSON.stringify(backup.scores));localStorage.setItem('misbar_scoreModifiedAt',String(backup.at));scoreMutationSerial++;
+    setTimeout(()=>{try{pushCloudNow()}catch(_){}},0);
+  }else if(Object.keys(remoteScores).length)v109WriteBackup(remoteScores,remoteAt||Date.now());
+};
+function parseJsonSafeV109(v){try{return safeObject(JSON.parse(v||'{}'))}catch(_){return{}}}
+(()=>{try{const email=v109ScoreEmail(),scores=loadAllScores(),at=v109LatestScoreTime(scores);if(email&&at&&!v109ReadBackup(email).at)v109WriteBackup(scores,at)}catch(_){}})();
+window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V109-CHUNKED-CLOUD-SCORE-RECOVERY';
