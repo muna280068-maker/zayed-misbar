@@ -692,7 +692,7 @@ function ensureDefaultAssessment(){
     let list=all.filter(a=>a.context===ctx);
     if(!list.length){
       const id=defaultAssessmentIdForContext(ctx);
-      const a={id,context:ctx,type:'التشخيص الأولي',max:10,date:new Date().toISOString().slice(0,10),status:'in_progress',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true};
+      const a={id,context:ctx,type:'التشخيص الأولي',max:100,date:new Date().toISOString().slice(0,10),status:'in_progress',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true};
       all.push(a);
       saveAssessments(all);
       const check=loadAssessments().find(x=>x.id===id&&x.context===ctx);
@@ -713,7 +713,26 @@ function ensureDefaultAssessment(){
   }
 }
 function assessmentUiStatus(a,saved){if(a.locked)return['معتمد','locked'];if(!saved||!saved.rows?.length)return['لم يبدأ','draft'];const total=rosterForCurrentClass().length||roster.length,entered=saved.rows.length;if(entered<total)return[`جارٍ الإدخال ${entered}/${total}`,'progress'];return['مكتمل','done']}
-function renderAssessmentCards(){if(!$('#assessmentCards'))return;const list=ensureDefaultAssessment();$('#assessmentContext').textContent=`${subjectFilter.value} • الصف ${gradeArabicName(gradeFilter.value)} • ${classFilter.value}`;const box=$('#assessmentCards');if(!list.length){box.innerHTML='<div class="assessment-empty">لا توجد اختبارات لهذه الشعبة بعد.</div>';return}const scores=loadAllScores();box.innerHTML=list.map(a=>{const saved=scores[assessmentKey(a.id)],st=assessmentUiStatus(a,saved),skills=safeArray(a.skills).map(s=>`<span>${s}</span>`).join('');return `<article class="assessment-card ${a.locked?'locked-card':''}"><div class="assessment-meta"><span>${subjectFilter.value}</span><span>${classFilter.value}</span><span>من ${a.max}</span></div><h4>${a.type}</h4><small>${a.date||'بدون تاريخ'}</small><span class="assessment-status ${st[1]}">${st[0]}</span>${skills?`<div class="assessment-skills">${skills}</div>`:''}<div class="card-actions"><button class="btn ghost small open-assessment" data-id="${a.id}">فتح</button><button class="btn primary small score-assessment" data-id="${a.id}">${a.locked?'عرض النتائج':'إدخال الدرجات'}</button></div></article>`}).join('');$$('.open-assessment,.score-assessment').forEach(b=>b.onclick=()=>{activeAssessmentId=b.dataset.id;showView('scores');prepareScores()})}
+function expectedAssessmentMax(a){const type=String(a?.type||'');if(a?.weekly||type.startsWith('اختبار قصير'))return Number(a?.max)||10;return /^التشخيص/.test(type)?100:10}
+function repairCurrentAssessmentScales(){
+  const ctx=contextKey(),all=loadAssessments(),scores=loadAllScores();let changed=false,scoresChanged=false;
+  all.forEach(a=>{
+    if(a.context!==ctx)return;
+    const expected=expectedAssessmentMax(a),oldMax=Number(a.max)||expected;
+    if(oldMax===expected)return;
+    const key=String(a.context||'')+'|'+a.id,saved=scores[key];
+    if(saved&&Array.isArray(saved.rows)&&oldMax>0){saved.rows=saved.rows.map(r=>({...r,score:Math.max(0,Math.min(expected,Math.round((Number(r.score)||0)/oldMax*expected)))}));saved.max=expected;scoresChanged=true}
+    a.max=expected;changed=true;
+  });
+  if(changed)saveAssessments(all);if(scoresChanged)saveAllScores(scores);
+  return all.filter(a=>a.context===ctx);
+}
+let lastAssessmentCardsContext='';
+function renderAssessmentCards(){if(!$('#assessmentCards'))return;ensureDefaultAssessment();const ctx=contextKey(),list=repairCurrentAssessmentScales();lastAssessmentCardsContext=ctx;$('#assessmentContext').textContent=`${subjectFilter.value} • الصف ${gradeArabicName(gradeFilter.value)} • ${classFilter.value}`;const box=$('#assessmentCards');if(!list.length){box.innerHTML='<div class="assessment-empty">لا توجد اختبارات لهذه الشعبة بعد.</div>';return}const scores=loadAllScores();box.innerHTML=list.map(a=>{const max=expectedAssessmentMax(a),saved=scores[assessmentKey(a.id)],st=assessmentUiStatus(a,saved),skills=safeArray(a.skills).map(s=>`<span>${s}</span>`).join('');return `<article class="assessment-card ${a.locked?'locked-card':''}"><div class="assessment-meta"><span>${subjectFilter.value}</span><span>${classFilter.value}</span><span>من ${max}</span></div><h4>${a.type}</h4><small>${a.date||'بدون تاريخ'}</small><span class="assessment-status ${st[1]}">${st[0]}</span>${skills?`<div class="assessment-skills">${skills}</div>`:''}<div class="card-actions"><button class="btn ghost small open-assessment" data-id="${a.id}">فتح</button><button class="btn primary small score-assessment" data-id="${a.id}">${a.locked?'عرض النتائج':'إدخال الدرجات'}</button></div></article>`}).join('');$$('.open-assessment,.score-assessment').forEach(b=>b.onclick=()=>{activeAssessmentId=b.dataset.id;showView('scores');prepareScores()})}
+// بعض المتصفحات تعيد قيمة القوائم بعد تحميل الصفحة من دون إطلاق حدث change.
+// راقب سياق شاشة الاختبارات فقط كي لا تظهر بطاقات شعبة سابقة.
+setInterval(()=>{try{if(document.body.classList.contains('app-mode')&&$('#view-assessments')?.classList.contains('active')&&lastAssessmentCardsContext!==contextKey())refreshAssessmentUI()}catch(_){}},500);
+window.addEventListener('pageshow',()=>setTimeout(()=>{try{if(document.body.classList.contains('app-mode'))refreshAssessmentUI()}catch(_){}},250));
 function populateAssessmentSelect(){
   const list=ensureDefaultAssessment(),sel=$('#assessmentSelect');
   if(!list.length){
@@ -2527,4 +2546,4 @@ function applyMixedAssessmentScaleUI(){
   typeSelect?.addEventListener('change',sync);sync();
 }
 applyMixedAssessmentScaleUI();
-window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V106-FAST-SESSION';
+window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V107-CONTEXT-SCALE-GUARD';
