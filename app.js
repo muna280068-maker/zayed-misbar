@@ -257,8 +257,10 @@ async function performLogin(e){
     restoreAccountSnapshot(email);
     updateCloudBadge('متصل • جارٍ تحديث البيانات');
     enterApp(user);
+    const pullStartedAt=scoreMutationSerial;
     cloudGet('pull',{token:res.token}).then(async pulled=>{
       if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');
+      if(scoreMutationSerial!==pullStartedAt){await pushCloudNow();updateCloudBadge('متصل ومحفوظ');return;}
       await hydrateFromCloud(pulled.snapshot||{});
       try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }
       updateCloudBadge('متصل ومحفوظ');
@@ -367,12 +369,14 @@ async function prepareRememberedLogin(){
           enterApp(cachedUser);
           updateCloudBadge(navigator.onLine?'متصل • جارٍ تحديث البيانات':'دون اتصال • سيزامن لاحقًا');
           if(navigator.onLine){
+            const pullStartedAt=scoreMutationSerial;
             cloudGet('me',{token}).then(async me=>{
               if(!me?.ok||!me.user)throw new Error('SESSION_INVALID');
               const users=loadUsers(),i=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email),user={...me.user};
               if(i>=0)users[i]=user;else users.push(user);saveUsers(users);savePersistentSession(user);currentUser=user;
               const pulled=await cloudGet('pull',{token});
               if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');
+              if(scoreMutationSerial!==pullStartedAt){await pushCloudNow();updateCloudBadge('متصل ومحفوظ');return;}
               await hydrateFromCloud(pulled.snapshot||{});
               try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }
               updateCloudBadge('متصل ومحفوظ');cacheAccountSnapshot(email);
@@ -389,7 +393,8 @@ async function prepareRememberedLogin(){
         if(me&&me.ok&&me.user){
           const user={...me.user},users=loadUsers();users.push(user);saveUsers(users);savePersistentSession(user);
           enterApp(user);updateCloudBadge('متصل • جارٍ تحديث البيانات');
-          cloudGet('pull',{token}).then(async pulled=>{if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');await hydrateFromCloud(pulled.snapshot||{});try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }updateCloudBadge('متصل ومحفوظ');cacheAccountSnapshot(email)}).catch(err=>{console.warn('Remembered session pull failed',err);updateCloudBadge('متصل • البيانات المحفوظة على الجهاز')});
+          const pullStartedAt=scoreMutationSerial;
+          cloudGet('pull',{token}).then(async pulled=>{if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');if(scoreMutationSerial!==pullStartedAt){await pushCloudNow();updateCloudBadge('متصل ومحفوظ');return;}await hydrateFromCloud(pulled.snapshot||{});try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }updateCloudBadge('متصل ومحفوظ');cacheAccountSnapshot(email)}).catch(err=>{console.warn('Remembered session pull failed',err);updateCloudBadge('متصل • البيانات المحفوظة على الجهاز')});
           return;
         }
       }
@@ -641,7 +646,8 @@ let activeAssessmentId='';
 function loadAssessments(){try{const v=JSON.parse(localStorage.getItem(ASSESSMENTS_KEY)||'[]');return safeArray(v).map(a=>({...safeObject(a),skills:safeArray(a?.skills),max:Number(a?.max)||100}))}catch{return[]}}
 function saveAssessments(v){localStorage.setItem(ASSESSMENTS_KEY,JSON.stringify(v));scheduleCloudPush()}
 function loadAllScores(){try{const raw=safeObject(JSON.parse(localStorage.getItem(SCORES_KEY)||'{}'));const out={};Object.entries(raw).forEach(([k,v])=>{const o=safeObject(v);out[k]={...o,rows:safeArray(o.rows).map(r=>safeObject(r))};});return out}catch{return{}}}
-function saveAllScores(v){localStorage.setItem(SCORES_KEY,JSON.stringify(v));scheduleCloudPush()}
+let scoreMutationSerial=0;
+function saveAllScores(v){scoreMutationSerial++;localStorage.setItem(SCORES_KEY,JSON.stringify(v));scheduleCloudPush()}
 function contextKey(){return [currentUser.email||'demo',subjectFilter?.value||currentUser.subject,gradeFilter?.value||'',classFilter?.value||''].join('|')}
 function assessmentKey(id){return contextKey()+'|'+id}
 function currentContextAssessments(){
@@ -759,17 +765,23 @@ function scoreRowsFromDom(){
   });
   return rows;
 }
+function matrixRowsForAssessment(aid){
+  const controls=$$('.matrix-score-select').filter(el=>String(el.dataset.assessment||'')===String(aid||''));
+  if(!controls.length)return null;
+  return controls.filter(el=>el.value!=='').map(el=>({name:String(el.dataset.student||'').trim(),score:Number(el.value)})).filter(r=>r.name&&Number.isFinite(r.score));
+}
 function persistVisibleScoresNow(){
   try{
     const sels=$$('#scoreTable tbody select.score-select');
-    if(!sels.length)return false;
-    const first=sels[0], key=first.dataset.scoreKey||assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC');
-    const rows=scoreRowsFromDom();
+    const matrixRows=matrixRowsForAssessment(activeAssessmentId),matrixControl=$$('.matrix-score-select').find(el=>String(el.dataset.assessment||'')===String(activeAssessmentId||''));
+    if(!sels.length&&matrixRows===null)return false;
+    const first=matrixControl||sels[0], key=assessmentKey(activeAssessmentId||'DIRECT_DIAGNOSTIC');
+    const rows=matrixRows===null?scoreRowsFromDom():matrixRows;
     const all=loadAllScores(), existing=safeObject(all[key]);
-    const max=Number(first.dataset.max||10)||10;
+    const a=currentContextAssessments().find(x=>x.id===activeAssessmentId),max=Number(first?.dataset.max||a?.max||10)||10;
     if(rows.length){
       all[key]={...existing,rows,max,savedAt:new Date().toISOString(),autoSaved:true,
-        subject:first.dataset.subject||'',grade:first.dataset.grade||'',className:first.dataset.className||'',
+        subject:first?.dataset.subject||subjectFilter.value||'',grade:first?.dataset.grade||gradeFilter.value||'',className:first?.dataset.className||classFilter.value||'',
         teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
     }else if(existing?.rows?.length){
       // Do not erase previously saved results merely because the UI is being redrawn/left.
@@ -1066,7 +1078,8 @@ $('#resetRosterBtn').onclick=()=>{const k=rosterClassKey();if(!confirm('استع
         a.locked=false;a.status='in_progress';a.reopenedAt=new Date().toISOString();
         saveAssessments(ass);renderScores();renderAssessmentCards();return;
       }
-      const rows=scoreRowsFromDom();
+      const matrixRows=matrixRowsForAssessment(activeAssessmentId);
+      const rows=matrixRows===null?scoreRowsFromDom():matrixRows;
       if(!rows.length){alert('أدخل/أدخلي درجة واحدة على الأقل قبل الحفظ.');return;}
       const total=roster.length;
       if(!confirm(`سيتم حفظ واعتماد ${rows.length} نتيجة من أصل ${total}. ${rows.length<total?'الطلبة دون درجة سيبقون «بانتظار التشخيص».':''}\nهل تريد/تريدين المتابعة؟`))return;
@@ -2419,9 +2432,26 @@ function accountCacheKey(email){return 'mzAccountCacheV100::'+String(email||'').
 function cacheAccountSnapshot(email){try{if(!email)return;localStorage.setItem(accountCacheKey(email),JSON.stringify({at:Date.now(),snapshot:cloudSnapshot()}))}catch(e){console.warn('local account cache failed',e)}}
 function restoreAccountSnapshot(email){try{const raw=localStorage.getItem(accountCacheKey(email));if(!raw)return false;const x=JSON.parse(raw);if(!x?.snapshot)return false;cloudApplying=true;clearCloudSyncedData();applyCloudSnapshot(x.snapshot);cloudApplying=false;return true}catch(e){cloudApplying=false;return false}}
 async function hydrateFromCloud(snapshot){cloudApplying=true;try{clearCloudSyncedData();applyCloudSnapshot(snapshot||{});localStorage.setItem('misbarCloudHydratedV1','1');try{const em=currentUser?.email||loadPersistentSession()?.email;if(em)cacheAccountSnapshot(em)}catch(_){}}finally{cloudApplying=false}}
-async function pushCloudNow(){
-  const token=cloudToken();if(!token||cloudApplying)return false;
-  const snap=cloudSnapshot();try{const em=currentUser?.email||loadPersistentSession()?.email;if(em){try{localStorage.setItem(accountCacheKey(em),JSON.stringify({at:Date.now(),snapshot:snap,pending:true}))}catch(_){}}const res=await cloudPost('push',{token,snapshot:snap});if(res?.ok){if(em){try{localStorage.setItem(accountCacheKey(em),JSON.stringify({at:Date.now(),snapshot:snap,pending:false,revision:res.revision||0}))}catch(_){}}updateCloudBadge('متصل ومحفوظ');return true}updateCloudBadge('تعذر الحفظ • محفوظ على الجهاز');return false}catch(e){updateCloudBadge('دون اتصال • محفوظ على الجهاز');return false}
+let cloudPushPromise=null,cloudPushPending=false;
+function pushCloudNow(){
+  const token=cloudToken();if(!token||cloudApplying)return Promise.resolve(false);
+  cloudPushPending=true;
+  if(cloudPushPromise)return cloudPushPromise;
+  cloudPushPromise=(async()=>{
+    let last=false;
+    while(cloudPushPending){
+      cloudPushPending=false;
+      const snap=cloudSnapshot(),em=currentUser?.email||loadPersistentSession()?.email;
+      try{
+        if(em){try{localStorage.setItem(accountCacheKey(em),JSON.stringify({at:Date.now(),snapshot:snap,pending:true}))}catch(_){}}
+        const res=await cloudPost('push',{token,snapshot:snap});last=!!res?.ok;
+        if(last){if(em){try{localStorage.setItem(accountCacheKey(em),JSON.stringify({at:Date.now(),snapshot:snap,pending:false,revision:res.revision||0}))}catch(_){}}updateCloudBadge('متصل ومحفوظ')}
+        else updateCloudBadge('تعذر الحفظ • محفوظ على الجهاز');
+      }catch(e){last=false;updateCloudBadge('دون اتصال • محفوظ على الجهاز')}
+    }
+    return last;
+  })().finally(()=>{cloudPushPromise=null});
+  return cloudPushPromise;
 }
 window.addEventListener('online',()=>{try{scheduleCloudPush()}catch(_){}});
 window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loadPersistentSession()?.email;if(em)cacheAccountSnapshot(em)}catch(_){}});
@@ -2507,7 +2537,7 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
     if(sel.value==='')map.delete(name);else map.set(name,Number(sel.value));
     const max=Number(sel.dataset.max)||10;
     all[key]={...old,rows:[...map].map(([n,score])=>({name:n,score})),max,savedAt:new Date().toISOString(),autoSaved:true,subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
-    saveAllScores(all);rowSummary(sel.closest('tr'));
+    saveAllScores(all);localStorage.setItem(scoreDraftKey(key),JSON.stringify(Object.fromEntries([...map].map(([n,score])=>[n,score]))));rowSummary(sel.closest('tr'));
     const note=document.querySelector('.matrix-save-note');if(note)note.textContent=`✓ تم حفظ درجة ${name} تلقائيًا`;
   }
   function renderMatrix(){
@@ -2520,7 +2550,8 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
       return `<tr><td>${i+1}</td><td class="student-name">${esc(name)}</td>${cells}<td class="matrix-average">—</td><td class="matrix-level-cell">—</td><td class="matrix-skill-cell">—</td><td class="matrix-trend-cell">—</td><td><button type="button" class="btn ghost small matrix-quick" data-student="${esc(name)}">إجراء</button></td></tr>`;
     }).join('');
     tb.querySelectorAll('tr').forEach(rowSummary);
-    tb.querySelectorAll('.matrix-score-select').forEach(s=>s.addEventListener('change',()=>saveMatrixCell(s)));
+    tb.querySelectorAll('.matrix-diagnostic-input').forEach(s=>s.addEventListener('input',()=>saveMatrixCell(s)));
+    tb.querySelectorAll('.matrix-score-select:not(.matrix-diagnostic-input)').forEach(s=>s.addEventListener('change',()=>saveMatrixCell(s)));
     tb.querySelectorAll('.matrix-quick').forEach(b=>b.addEventListener('click',()=>{activeStudentName=b.dataset.student;showView('interventions')}));
   }
   const originalRenderScores=renderScores;
@@ -2546,4 +2577,4 @@ function applyMixedAssessmentScaleUI(){
   typeSelect?.addEventListener('change',sync);sync();
 }
 applyMixedAssessmentScaleUI();
-window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V107-CONTEXT-SCALE-GUARD';
+window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V108-ATOMIC-SCORE-SAVE';
