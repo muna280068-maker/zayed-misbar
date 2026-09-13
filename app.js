@@ -642,7 +642,9 @@ function assessmentSkillsForSubject(subject){
     'العلوم':['الاستقصاء العلمي','تفسير البيانات','المفاهيم العلمية','التطبيق والاستدلال'],
     'الرياضيات':['الأعداد والعمليات','الجبر','الهندسة والقياس','البيانات والاحتمالات','حل المشكلات'],
     'اللغة العربية':['القراءة والفهم','المفردات','القواعد والتراكيب','الكتابة','الاستماع والتحدث'],
-    'اللغة الإنجليزية':['Reading','Vocabulary','Grammar','Writing','Listening & Speaking']
+    'اللغة الإنجليزية':['Reading','Vocabulary','Grammar','Writing','Listening & Speaking'],
+    'الدراسات الاجتماعية':['الهوية الوطنية','التاريخ','الجغرافيا','المواطنة والمسؤولية'],
+    'التربية الإسلامية':['القرآن الكريم','الحديث الشريف','العقيدة','الفقه','السيرة والقيم']
   }; return map[subject]||['المهارة 1','المهارة 2','المهارة 3'];
 }
 function renderAssessmentSkillChoices(selected=[]){const box=$('#assessmentSkillChoices');if(!box)return;box.innerHTML=assessmentSkillsForSubject(subjectFilter.value).map(s=>`<button type="button" class="${selected.includes(s)?'selected':''}" data-skill="${s}">${s}</button>`).join('');$$('#assessmentSkillChoices button').forEach(b=>b.onclick=()=>b.classList.toggle('selected'))}
@@ -840,14 +842,14 @@ function prepareScores(){
       $('#maxScoreSelect').innerHTML=`<option value="${Number(a.max)||10}">${Number(a.max)||10}</option>`;
       $('#maxScoreSelect').value=String(Number(a.max)||10);
     }else{
-      const expected=10;
+      const expected=/^التشخيص/.test(String(a.type||''))?100:10;
       if(a.max!==expected){
         a.max=expected;
         const all=loadAssessments(),idx=all.findIndex(x=>x.id===a.id);
         if(idx>=0){all[idx].max=expected;saveAssessments(all)}
       }
-      $('#maxScoreSelect').innerHTML='<option value="10">10</option>';
-      $('#maxScoreSelect').value='10';
+      $('#maxScoreSelect').innerHTML=`<option value="${expected}">${expected}</option>`;
+      $('#maxScoreSelect').value=String(expected);
     }
   }
   $('#scoreSubject').value=subjectFilter.value;
@@ -855,9 +857,9 @@ function prepareScores(){
   renderScores();
 }
 function refreshAssessmentUI(){if(!subjectFilter||!gradeFilter||!classFilter)return;currentUser.subject=subjectFilter.value||currentUser.subject;syncRosterFromClass();syncSubjectMaxUI();cleanupDuplicateAssessments();renderAssessmentCards();if($('#view-scores').classList.contains('active'))prepareScores()}
-$('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);$('#newAssessmentMax').value='10';const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';const defaultSkills=assessmentSkillsForSubject(subjectFilter.value);renderAssessmentSkillChoices(defaultSkills);$('#assessmentDialog').showModal()};
+$('#addAssessmentBtn').onclick=()=>{if(classFilter.value==='لا توجد شعبة مسندة'){alert('لا توجد شعبة مسندة لهذا الصف.');return}$('#newAssessmentSubject').value=subjectFilter.value;$('#newAssessmentClass').value=classFilter.value;$('#newAssessmentDate').value=new Date().toISOString().slice(0,10);const existing=currentContextAssessments();const diagNums=existing.map(a=>{const m=String(a.type).match(/التشخيص (الأول|الثاني|الثالث|الرابع|الخامس)/);return m?m[1]:null}).filter(Boolean);$('#newAssessmentType').value=existing.some(a=>a.type==='التشخيص الأول')?'التشخيص الثاني':'التشخيص الأول';$('#newAssessmentMax').value='100';const defaultSkills=assessmentSkillsForSubject(subjectFilter.value);renderAssessmentSkillChoices(defaultSkills);$('#assessmentDialog').showModal()};
 function migrateAssessmentScaleToTen(){
-  const marker='misbarScale10MigrationV28';
+  const marker='misbarMixedAssessmentScaleV105';
   try{if(localStorage.getItem(marker)==='1')return}catch(_){}
   try{
     const assessments=loadAssessments();
@@ -865,14 +867,15 @@ function migrateAssessmentScaleToTen(){
     let changed=false;
     assessments.forEach(a=>{
       const oldMax=Number(a.max||10)||10;
-      if(oldMax!==10 && !a.weekly){
+      const expected=/^التشخيص/.test(String(a.type||''))?100:10;
+      if(oldMax!==expected && !a.weekly){
         const key=String(a.context||'')+'|'+a.id;
         const sv=scores[key];
         if(sv&&Array.isArray(sv.rows)){
-          sv.rows=sv.rows.map(r=>({...r,score:Math.max(0,Math.min(10,Math.round((Number(r.score)||0)/oldMax*10)))}));
-          sv.max=10; changed=true;
+          sv.rows=sv.rows.map(r=>({...r,score:Math.max(0,Math.min(expected,Math.round((Number(r.score)||0)/oldMax*expected)))}));
+          sv.max=expected; changed=true;
         }
-        a.max=10; changed=true;
+        a.max=expected; changed=true;
       }
       if(a.type==='التشخيص الأول')a.type='التشخيص الأولي';
     });
@@ -916,7 +919,8 @@ window.createDiagnosticAssessmentNow=function(event){
       prepareScores();
       return false;
     }
-    const a={id:'A'+Date.now(),context:ctx,type:type,max:10,date:date,status:'not_started',skills:[...skills],locked:false};
+    const max=/^التشخيص/.test(String(type||''))?100:10;
+    const a={id:'A'+Date.now(),context:ctx,type:type,max:max,date:date,status:'not_started',skills:[...skills],locked:false};
     const all=loadAssessments();
     all.push(a);
     saveAssessments(all);
@@ -2059,7 +2063,7 @@ window.addEventListener('load',()=>setTimeout(enforceCleanOverview,150));
           <div class="step"><b>5</b><span>إعادة القياس</span></div><div class="arrow">←</div>
           <div class="step"><b>6</b><span>الأثر</span></div>
         </div>
-        <div class="access-banner">المواد المدرجة: العلوم، الرياضيات، اللغة العربية، اللغة الإنجليزية.</div>
+        <div class="access-banner">المواد المدرجة: العلوم، الرياضيات، اللغة العربية، اللغة الإنجليزية، الدراسات الاجتماعية، التربية الإسلامية.</div>
       </div>`;
     workspace.appendChild(v);
   }
@@ -2422,8 +2426,17 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
     const list=matrixTypes.map((type,i)=>{
       let a=all.find(x=>x.context===ctx&&(i===0?/^التشخيص/.test(String(x.type||'')):String(x.type||'')===type));
       if(!a){
-        a={id:defaultAssessmentIdForContext(ctx)+'_M'+i,context:ctx,type,max:10,date:new Date().toISOString().slice(0,10),status:'in_progress',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true};
+        a={id:defaultAssessmentIdForContext(ctx)+'_M'+i,context:ctx,type,max:i===0?100:10,date:new Date().toISOString().slice(0,10),status:'in_progress',skills:assessmentSkillsForSubject(subjectFilter?.value||currentUser.subject),locked:false,autoCreated:true};
         all.push(a);changed=true;
+      }
+      const expected=i===0?100:10;
+      if(Number(a.max||10)!==expected){
+        const oldMax=Number(a.max||10)||10,allScores=loadAllScores(),key=assessmentKey(a.id),saved=allScores[key];
+        if(saved&&Array.isArray(saved.rows)){
+          saved.rows=saved.rows.map(r=>({...r,score:Math.max(0,Math.min(expected,Math.round((Number(r.score)||0)/oldMax*expected)))}));
+          saved.max=expected;saveAllScores(allScores);
+        }
+        a.max=expected;changed=true;
       }
       return a;
     });
@@ -2438,22 +2451,25 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
     });
   }
   function rowSummary(tr){
-    const vals=[...tr.querySelectorAll('.matrix-score-select')].map(s=>s.value===''?null:Number(s.value));
-    const entered=vals.filter(Number.isFinite),avg=entered.length?entered.reduce((a,b)=>a+b,0)/entered.length:null;
+    const controls=[...tr.querySelectorAll('.matrix-score-select')];
+    const vals=controls.map(s=>s.value===''?null:Number(s.value));
+    const normalized=controls.map((s,i)=>Number.isFinite(vals[i])?vals[i]/(Number(s.dataset.max)||10)*10:null);
+    const entered=normalized.filter(Number.isFinite),avg=entered.length?entered.reduce((a,b)=>a+b,0)/entered.length:null;
     const avgCell=tr.querySelector('.matrix-average'),level=tr.querySelector('.matrix-level-cell'),trend=tr.querySelector('.matrix-trend-cell'),skill=tr.querySelector('.matrix-skill-cell');
     avgCell.textContent=avg===null?'—':avg.toFixed(1);
     if(avg===null){level.innerHTML='—';trend.textContent='—';trend.className='matrix-trend-cell';skill.textContent='—';return;}
     const [label,cls]=scoreLevel(avg,10);level.innerHTML=`<span class="matrix-level ${cls}">${label}</span>`;
-    const first=vals.find(Number.isFinite),last=[...vals].reverse().find(Number.isFinite),delta=Number.isFinite(first)&&Number.isFinite(last)?last-first:0;
+    const first=normalized.find(Number.isFinite),last=[...normalized].reverse().find(Number.isFinite),delta=Number.isFinite(first)&&Number.isFinite(last)?last-first:0;
     trend.textContent=entered.length<2?'—':delta>0?'↑ تحسن':delta<0?'↓ انخفاض':'— ثابت';
     trend.className='matrix-trend-cell matrix-trend '+(delta>0?'up':delta<0?'down':'flat');
-    const lowest=vals.reduce((best,v,i)=>Number.isFinite(v)&&(!best||v<best.v)?{v,i}:best,null);
+    const lowest=normalized.reduce((best,v,i)=>Number.isFinite(v)&&(!best||v<best.v)?{v,i}:best,null);
     skill.textContent=lowest?(['الاستقصاء العلمي','تفسير البيانات','المفاهيم العلمية','التطبيق والاستدلال'][lowest.i%4]||'تحتاج متابعة'):'—';
   }
   function saveMatrixCell(sel){
     const name=sel.dataset.student,aid=sel.dataset.assessment,key=assessmentKey(aid),all=loadAllScores(),old=safeObject(all[key]),map=new Map(safeArray(old.rows).map(r=>[String(r.name),Number(r.score)]));
     if(sel.value==='')map.delete(name);else map.set(name,Number(sel.value));
-    all[key]={...old,rows:[...map].map(([n,score])=>({name:n,score})),max:10,savedAt:new Date().toISOString(),autoSaved:true,subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
+    const max=Number(sel.dataset.max)||10;
+    all[key]={...old,rows:[...map].map(([n,score])=>({name:n,score})),max,savedAt:new Date().toISOString(),autoSaved:true,subject:subjectFilter.value,grade:gradeFilter.value,className:classFilter.value,teacherEmail:currentUser.email||'',teacherName:currentUser.name||''};
     saveAllScores(all);rowSummary(sel.closest('tr'));
     const note=document.querySelector('.matrix-save-note');if(note)note.textContent=`✓ تم حفظ درجة ${name} تلقائيًا`;
   }
@@ -2461,9 +2477,9 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
     const tb=document.querySelector('#scoreMatrixTable tbody');if(!tb)return;
     roster=rosterForCurrentClass();
     if(!roster.length){tb.innerHTML='<tr><td colspan="13" style="padding:22px">لا توجد أسماء لهذه الشعبة. اضغطي «إدارة الطالبات» ثم «استعادة القائمة الأصلية».</td></tr>';return;}
-    const assessments=ensureMatrixAssessments(),maps=matrixMaps(assessments),options=['<option value="">—</option>',...Array.from({length:11},(_,i)=>`<option value="${i}">${i}</option>`)].join('');
+    const assessments=ensureMatrixAssessments(),maps=matrixMaps(assessments);
     tb.innerHTML=roster.map((name,i)=>{
-      const cells=assessments.map((a,j)=>{const v=maps[j].get(name);return `<td><select class="matrix-score-select" data-assessment="${esc(a.id)}" data-student="${esc(name)}" ${a.locked?'disabled':''}>${options.replace(`value="${v}"`,`value="${v}" selected`)}</select></td>`}).join('');
+      const cells=assessments.map((a,j)=>{const v=maps[j].get(name),max=j===0?100:10;if(j===0)return `<td><input class="matrix-score-select matrix-diagnostic-input" type="number" min="0" max="100" step="1" data-max="100" data-assessment="${esc(a.id)}" data-student="${esc(name)}" value="${Number.isFinite(v)?v:''}" ${a.locked?'disabled':''}/></td>`;const options=['<option value="">—</option>',...Array.from({length:max+1},(_,n)=>`<option value="${n}" ${v===n?'selected':''}>${n}</option>`)].join('');return `<td><select class="matrix-score-select" data-max="${max}" data-assessment="${esc(a.id)}" data-student="${esc(name)}" ${a.locked?'disabled':''}>${options}</select></td>`}).join('');
       return `<tr><td>${i+1}</td><td class="student-name">${esc(name)}</td>${cells}<td class="matrix-average">—</td><td class="matrix-level-cell">—</td><td class="matrix-skill-cell">—</td><td class="matrix-trend-cell">—</td><td><button type="button" class="btn ghost small matrix-quick" data-student="${esc(name)}">إجراء</button></td></tr>`;
     }).join('');
     tb.querySelectorAll('tr').forEach(rowSummary);
@@ -2479,4 +2495,18 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
   document.getElementById('exportMatrixVisual')?.addEventListener('click',()=>document.getElementById('exportTeacherExcel')?.click());
 })();
 
-window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-12-V103';
+function applyMixedAssessmentScaleUI(){
+  const hint=document.querySelector('#view-scores .panel-head .hint');
+  if(hint)hint.textContent='الاختبار التشخيصي من 100 درجة، وكل اختبار تكويني من 10 درجات.';
+  const journeyMax=document.querySelector('.measurement-journey .diagnostic b');
+  if(journeyMax)journeyMax.textContent='/100';
+  const diagnosticHead=document.querySelector('#scoreMatrixTable .diag-col b');
+  if(diagnosticHead)diagnosticHead.textContent='/100';
+  const maxSelect=document.getElementById('newAssessmentMax');
+  if(maxSelect)maxSelect.innerHTML='<option value="100">100</option><option value="10">10</option>';
+  const typeSelect=document.getElementById('newAssessmentType');
+  const sync=()=>{if(maxSelect)maxSelect.value=/^التشخيص/.test(String(typeSelect?.value||''))?'100':'10'};
+  typeSelect?.addEventListener('change',sync);sync();
+}
+applyMixedAssessmentScaleUI();
+window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V105';
