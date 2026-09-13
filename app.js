@@ -2547,8 +2547,10 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
     const first=normalized.find(Number.isFinite),last=[...normalized].reverse().find(Number.isFinite),delta=Number.isFinite(first)&&Number.isFinite(last)?last-first:0;
     trend.textContent=entered.length<2?'—':delta>0?'↑ تحسن':delta<0?'↓ انخفاض':'— ثابت';
     trend.className='matrix-trend-cell matrix-trend '+(delta>0?'up':delta<0?'down':'flat');
-    const lowest=normalized.reduce((best,v,i)=>Number.isFinite(v)&&(!best||v<best.v)?{v,i}:best,null);
-    skill.textContent=lowest?(['الاستقصاء العلمي','تفسير البيانات','المفاهيم العلمية','التطبيق والاستدلال'][lowest.i%4]||'تحتاج متابعة'):'—';
+    // درجات هذه المصفوفة تخص اختبارات كاملة، وليست درجات منفصلة للمهارات.
+    // لذلك لا يجوز ربط أقل اختبار باسم مهارة افتراضية؛ تُحدد المهارة الأضعف
+    // فقط عندما تتوافر لاحقًا درجات فعلية موزعة بحسب المهارات.
+    skill.textContent='لم تُحدد بعد';
   }
   function saveMatrixCell(sel){
     const name=sel.dataset.student,aid=sel.dataset.assessment,key=assessmentKey(aid),all=loadAllScores(),old=safeObject(all[key]),map=new Map(safeArray(old.rows).map(r=>[String(r.name),Number(r.score)]));
