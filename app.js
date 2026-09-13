@@ -358,20 +358,38 @@ async function prepareRememberedLogin(){
     try{
       const session=loadPersistentSession(),token=cloudToken();
       if(session?.email&&token){
+        const email=String(session.email).trim().toLowerCase();
+        const cachedUser=loadUsers().find(u=>String(u.email||'').trim().toLowerCase()===email);
+        // V106: افتح الحساب المحفوظ فورًا، ثم تحقق وحدّث السحابة في الخلفية.
+        // لا نخزن كلمة المرور؛ نخزن جلسة آمنة ورمز دخول طويل المدة فقط.
+        if(cachedUser){
+          restoreAccountSnapshot(email);
+          enterApp(cachedUser);
+          updateCloudBadge(navigator.onLine?'متصل • جارٍ تحديث البيانات':'دون اتصال • سيزامن لاحقًا');
+          if(navigator.onLine){
+            cloudGet('me',{token}).then(async me=>{
+              if(!me?.ok||!me.user)throw new Error('SESSION_INVALID');
+              const users=loadUsers(),i=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email),user={...me.user};
+              if(i>=0)users[i]=user;else users.push(user);saveUsers(users);savePersistentSession(user);currentUser=user;
+              const pulled=await cloudGet('pull',{token});
+              if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');
+              await hydrateFromCloud(pulled.snapshot||{});
+              try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }
+              updateCloudBadge('متصل ومحفوظ');cacheAccountSnapshot(email);
+            }).catch(err=>{
+              console.warn('Fast remembered session refresh failed',err);
+              updateCloudBadge('البيانات محفوظة على الجهاز • ستتم المزامنة لاحقًا');
+            });
+          }
+          return;
+        }
+        // جهاز جديد أو ذاكرة محلية ممسوحة: تحقق مرة واحدة قبل فتح الحساب.
         updateCloudBadge('جارٍ التحقق');
         const me=await cloudGet('me',{token});
         if(me&&me.ok&&me.user){
-          const email=String(me.user.email||session.email).trim().toLowerCase();
-          const users=loadUsers(),i=users.findIndex(u=>String(u.email||'').trim().toLowerCase()===email);
-          const user={...me.user};if(i>=0)users[i]=user;else users.push(user);saveUsers(users);savePersistentSession(user);
-          restoreAccountSnapshot(email);
+          const user={...me.user},users=loadUsers();users.push(user);saveUsers(users);savePersistentSession(user);
           enterApp(user);updateCloudBadge('متصل • جارٍ تحديث البيانات');
-          cloudGet('pull',{token}).then(async pulled=>{
-            if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');
-            await hydrateFromCloud(pulled.snapshot||{});
-            try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }
-            updateCloudBadge('متصل ومحفوظ');cacheAccountSnapshot(user.email);
-          }).catch(err=>{console.warn('Remembered session pull failed',err);updateCloudBadge('متصل • البيانات المحفوظة على الجهاز')});
+          cloudGet('pull',{token}).then(async pulled=>{if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');await hydrateFromCloud(pulled.snapshot||{});try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }updateCloudBadge('متصل ومحفوظ');cacheAccountSnapshot(email)}).catch(err=>{console.warn('Remembered session pull failed',err);updateCloudBadge('متصل • البيانات المحفوظة على الجهاز')});
           return;
         }
       }
@@ -2509,4 +2527,4 @@ function applyMixedAssessmentScaleUI(){
   typeSelect?.addEventListener('change',sync);sync();
 }
 applyMixedAssessmentScaleUI();
-window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V105';
+window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V106-FAST-SESSION';
