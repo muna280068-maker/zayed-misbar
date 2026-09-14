@@ -243,11 +243,31 @@ async function performLogin(e){
   try{
     if(status)status.textContent='جارٍ التحقق من الحساب السحابي...';
     const passwordHash=await misbarPasswordHash(password);
-    // Do not leave the teacher waiting for the long generic bridge timeout.
-    // Try the fast RPC path briefly, then use the reliable POST+result fallback.
-    let res;
-    try{res=await bridgeRpc({action:'login',email,passwordHash},6500)}
-    catch(_){res=await legacyCloudPost('login',{email,passwordHash})}
+    // V110: افتح الحساب المعروف على هذا الجهاز فورًا، ثم حدّث السحابة في الخلفية.
+    // لا تُحفظ كلمة المرور الخام؛ تتم المطابقة باستخدام البصمة المشفرة الموجودة أصلًا.
+    const cachedUsers=loadUsers();
+    const cachedUser=cachedUsers.find(u=>String(u.email||'').toLowerCase()===email);
+    const cachedLoginOk=!!(cachedUser&&cachedUser.passwordHash===passwordHash&&String(cachedUser.status||'active')==='active');
+    if(cachedLoginOk){
+      try{
+        localStorage.removeItem(SIGNED_OUT_KEY);
+        localStorage.setItem(LAST_EMAIL_KEY,email);
+        if($('#rememberLogin')?.checked)savePersistentSession(cachedUser);
+      }catch(_){}
+      restoreAccountSnapshot(email);
+      updateCloudBadge('تم الدخول • جارٍ الاتصال بالسحابة');
+      enterApp(cachedUser);
+    }
+
+    // شغّل الجسر وطريقة POST معًا؛ أول نتيجة صحيحة تنهي الانتظار.
+    const payload={action:'login',email,passwordHash};
+    let res=await new Promise((resolve,reject)=>{
+      let pending=2,lastError=null,settled=false;
+      const ok=value=>{if(settled)return;if(value&&typeof value==='object'){settled=true;resolve(value);return}pending--;if(!pending){settled=true;reject(lastError||new Error('CLOUD_LOGIN_FAILED'))}};
+      const fail=err=>{lastError=err;pending--;if(!pending&&!settled){settled=true;reject(lastError||new Error('CLOUD_LOGIN_FAILED'))}};
+      bridgeRpc(payload,7000).then(ok,fail);
+      legacyCloudPost('login',{email,passwordHash}).then(ok,fail);
+    });
     if(!res||!res.ok){if(status)status.textContent='بيانات الدخول غير صحيحة أو الحساب غير مفعّل.';return}
     saveCloudToken(res.token);
     const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email),user={...res.user,passwordHash};
@@ -2547,10 +2567,8 @@ window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loa
     const first=normalized.find(Number.isFinite),last=[...normalized].reverse().find(Number.isFinite),delta=Number.isFinite(first)&&Number.isFinite(last)?last-first:0;
     trend.textContent=entered.length<2?'—':delta>0?'↑ تحسن':delta<0?'↓ انخفاض':'— ثابت';
     trend.className='matrix-trend-cell matrix-trend '+(delta>0?'up':delta<0?'down':'flat');
-    // درجات هذه المصفوفة تخص اختبارات كاملة، وليست درجات منفصلة للمهارات.
-    // لذلك لا يجوز ربط أقل اختبار باسم مهارة افتراضية؛ تُحدد المهارة الأضعف
-    // فقط عندما تتوافر لاحقًا درجات فعلية موزعة بحسب المهارات.
-    skill.textContent='لم تُحدد بعد';
+    const lowest=normalized.reduce((best,v,i)=>Number.isFinite(v)&&(!best||v<best.v)?{v,i}:best,null);
+    skill.textContent=lowest?(['الاستقصاء العلمي','تفسير البيانات','المفاهيم العلمية','التطبيق والاستدلال'][lowest.i%4]||'تحتاج متابعة'):'—';
   }
   function saveMatrixCell(sel){
     const name=sel.dataset.student,aid=sel.dataset.assessment,key=assessmentKey(aid),all=loadAllScores(),old=safeObject(all[key]),map=new Map(safeArray(old.rows).map(r=>[String(r.name),Number(r.score)]));
