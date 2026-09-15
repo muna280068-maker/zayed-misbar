@@ -257,6 +257,29 @@ async function performLogin(e){
       restoreAccountSnapshot(email);
       updateCloudBadge('تم الدخول • جارٍ الاتصال بالسحابة');
       enterApp(cachedUser);
+
+      // V111: الحساب المعروف على هذا الجهاز لا ينتظر خادم Apps Script.
+      // نتحقق من السحابة في الخلفية فقط، حتى لا تعلق نافذة الدخول عند بطء الخدمة.
+      cloudPost('login',{email,passwordHash}).then(res=>{
+        if(!res||!res.ok)return;
+        saveCloudToken(res.token);
+        const users=loadUsers(),idx=users.findIndex(u=>String(u.email||'').toLowerCase()===email),user={...res.user,passwordHash};
+        if(idx>=0)users[idx]=user;else users.push(user);saveUsers(users);
+        const pullStartedAt=scoreMutationSerial;
+        return cloudGet('pull',{token:res.token}).then(async pulled=>{
+          if(!pulled?.ok)throw new Error('CLOUD_PULL_FAILED');
+          if(scoreMutationSerial!==pullStartedAt){await pushCloudNow();return;}
+          await hydrateFromCloud(pulled.snapshot||{});
+          try{syncRosterFromClass();refreshAssessmentUI();}catch(_){ }
+          updateCloudBadge('متصل ومحفوظ');
+          cacheAccountSnapshot(email);
+        });
+      }).catch(err=>{
+        console.warn('Background cached login sync failed',err);
+        updateCloudBadge('دخلت محليًا • ستتم المزامنة لاحقًا');
+      });
+      if(status)status.textContent='تم الدخول. جارٍ تحديث البيانات في الخلفية...';
+      return;
     }
 
     // شغّل الجسر وطريقة POST معًا؛ أول نتيجة صحيحة تنهي الانتظار.
