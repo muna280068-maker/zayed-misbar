@@ -1784,12 +1784,20 @@ function renderReports(){
   $('#reportPreview').innerHTML=blocks.join('');
 }
 function exportDiagnosticRowsForTransfer(){
-  // V86: teacher transfer must not depend on the visible report filters.
-  // Read every saved diagnostic result belonging to the signed-in teacher,
-  // including older/orphaned diagnostic saves whose assessment card was later removed.
+  // V113: export only the current roster for each class and keep one row per student.
+  // Older saved score keys can contain stale students or duplicate diagnostic saves.
   if(!isTeacher())return filteredDiagnosticRows().map(r=>({...r,score:r.pct,max:100}));
   const scoreStore=loadAllScores(), assessments=loadAssessments(), byId=Object.fromEntries(assessments.map(a=>[a.id,a]));
-  const subs=safeArray(currentUser.subjects), cls=safeArray(currentUser.classes), rows=[];
+  const subs=safeArray(currentUser.subjects), cls=safeArray(currentUser.classes), rowsByStudent=new Map();
+  const rosterCache=new Map();
+  const normalName=v=>String(v??'').replace(/\s+/g,' ').trim();
+  const rosterNamesForClass=className=>{
+    if(rosterCache.has(className))return rosterCache.get(className);
+    const overrides=loadRosterOverrides(), custom=Array.isArray(overrides[className])&&!rosterLooksCorrupted(overrides[className])?overrides[className]:null;
+    const source=custom||BUILTIN_ROSTERS[className]||[];
+    const names=new Set(source.map(normalName).filter(Boolean));
+    rosterCache.set(className,names); return names;
+  };
   Object.entries(scoreStore).forEach(([key,sv])=>{
     if(sv?.imported)return;
     const parts=key.split('|'), aid=parts[parts.length-1], a=byId[aid];
@@ -1798,17 +1806,21 @@ function exportDiagnosticRowsForTransfer(){
     if(subs.length&&!subs.includes(subject))return;
     if(cls.length&&!cls.includes(className))return;
     safeArray(sv.rows).forEach(r=>{
-      const score=Number(r.score); if(!r.name||!Number.isFinite(score))return;
-      rows.push({subject,grade,className,cycle:cycleFromGrade(grade),name:r.name,score,max,pct:Math.round(score/max*100)});
+      const name=normalName(r.name),score=Number(r.score); if(!name||!Number.isFinite(score))return;
+      const rosterNames=rosterNamesForClass(className);
+      if(rosterNames.size&&!rosterNames.has(name))return;
+      const row={subject,grade,className,cycle:cycleFromGrade(grade),name,score,max,pct:Math.round(score/max*100)};
+      // The same student may exist under an old assessment key. Keep the latest saved row.
+      rowsByStudent.set(`${className}|${name}`,row);
     });
   });
-  return rows;
+  return [...rowsByStudent.values()];
 }
 function exportFullExcel(){
   const rows=exportDiagnosticRowsForTransfer(),ass=reportAssessments(),ints=reportInterventions(),ev=reportEvidence(),weekly=weeklyRowsForReport(); const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
   const tbl=(title,heads,body,id='')=>`<h2>${title}</h2><table ${id?`id="${id}"`:''} border="1"><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${body||`<tr><td colspan="${heads.length}">لا توجد بيانات</td></tr>`}</tbody></table><br>`;
   const teacherName=esc(currentUser?.name||currentUser?.email||'مستخدم');
-  let body=`<table id="misbarExportMeta" border="1"><tbody><tr><th>نوع الملف</th><td>MISBAR_TEACHER_TRANSFER_V86</td></tr><tr><th>المعلم/المعلمة</th><td>${teacherName}</td></tr><tr><th>تاريخ التصدير</th><td>${new Date().toISOString()}</td></tr></tbody></table><br>`;
+  let body=`<table id="misbarExportMeta" border="1"><tbody><tr><th>نوع الملف</th><td>MISBAR_TEACHER_TRANSFER_V113</td></tr><tr><th>المعلم/المعلمة</th><td>${teacherName}</td></tr><tr><th>تاريخ التصدير</th><td>${new Date().toISOString()}</td></tr></tbody></table><br>`;
   body+=tbl('ملخص النتائج',['المعلم/المعلمة','المادة','الحلقة','الصف','الشعبة','الطالب/الطالبة','الدرجة','الدرجة النهائية','النسبة'],rows.map(r=>`<tr><td>${teacherName}</td><td>${esc(r.subject)}</td><td>${esc(cycleLabel(r.cycle))}</td><td>${esc(r.grade)}</td><td>${esc(r.className)}</td><td>${esc(r.name)}</td><td>${Number.isFinite(Number(r.score))?r.score:r.pct}</td><td>${Number.isFinite(Number(r.max))?r.max:100}</td><td>${r.pct}%</td></tr>`).join(''),'misbarDiagnosticResults');
   body+=tbl('المهارات',['المادة','الشعبة','المهارة','الحالة'],ass.flatMap(a=>safeArray(a.skills).map(s=>`<tr><td>${esc(a.subject)}</td><td>${esc(a.className)}</td><td>${esc(s)}</td><td>${esc(a.status||'')}</td></tr>`)).join(''));
   body+=tbl('الإجراءات',['المادة','الشعبة','الإجراء','الطلبة'],ints.map(i=>`<tr><td>${esc(i.subject)}</td><td>${esc(i.className)}</td><td>${esc(i.action||safeArray(i.actions).join('، ')||'')}</td><td>${esc(safeArray(i.students).join('، '))}</td></tr>`).join(''));
