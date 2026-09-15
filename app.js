@@ -144,7 +144,7 @@ function ensureCloudBridge(timeoutMs=15000){
     const frame=document.createElement('iframe');
     __misbarBridgeFrame=frame; frame.id='misbarCloudBridge'; frame.style.display='none'; frame.setAttribute('aria-hidden','true');
     let done=false;
-    const timer=setTimeout(()=>{if(!done){done=true;reject(new Error('BRIDGE_TIMEOUT'))}},timeoutMs);
+    const timer=setTimeout(()=>{if(!done){done=true;try{frame.remove()}catch(_){}__misbarBridgeFrame=null;__misbarBridgeReady=null;reject(new Error('BRIDGE_TIMEOUT'))}},timeoutMs);
     const onMsg=(ev)=>{
       if(ev.source!==frame.contentWindow)return;
       const d=ev.data||{};
@@ -199,13 +199,25 @@ async function cloudGet(action,data={}){
   try{return await bridgeRpc({action,...data},18000)}catch(err){console.warn('Bridge GET fallback',err);return await cloudJsonp({action,...data},12000)}
 }
 async function cloudPost(action,data={}){
-  try{return await bridgeRpc({action,...data},22000)}catch(err){console.warn('Bridge POST fallback',err);return await legacyCloudPost(action,data)}
+  // V112: شغّل طريقتي الاتصال معًا لتجنب انتظار جسر بطيء قبل بدء البديل.
+  return await new Promise((resolve,reject)=>{
+    let pending=2,lastError=null,settled=false;
+    const accept=value=>{
+      if(settled)return;
+      if(value&&typeof value==='object'&&value.ok){settled=true;resolve(value);return;}
+      if(value&&typeof value==='object')lastError=new Error(value.error||'CLOUD_POST_REJECTED');
+      pending--;if(!pending){settled=true;reject(lastError||new Error('CLOUD_POST_FAILED'))}
+    };
+    const fail=err=>{lastError=err;pending--;if(!pending&&!settled){settled=true;reject(lastError||new Error('CLOUD_POST_FAILED'))}};
+    bridgeRpc({action,...data},12000).then(accept,fail);
+    legacyCloudPost(action,data).then(accept,fail);
+  });
 }
 function cloudToken(){ try{return localStorage.getItem('misbarCloudTokenV1')||''}catch(e){return''} }
 function saveCloudToken(t){ try{if(t)localStorage.setItem('misbarCloudTokenV1',t);else localStorage.removeItem('misbarCloudTokenV1')}catch(e){} }
 function cloudSnapshot(){
   const out={};
-  const skip=new Set([USERS_KEY,SESSION_KEY,LAST_EMAIL_KEY,SAVED_PASSWORD_KEY,SIGNED_OUT_KEY,'misbarCloudTokenV1','misbarCloudHydratedV1']);
+  const skip=new Set([USERS_KEY,SESSION_KEY,LAST_EMAIL_KEY,SAVED_PASSWORD_KEY,SIGNED_OUT_KEY,'misbarCloudTokenV1','misbarCloudHydratedV1','misbar_pending_cloud_sync_v112']);
   try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||skip.has(k))continue;if(k.startsWith('misbarZayed')||k.startsWith('misbar_'))out[k]=localStorage.getItem(k)}}catch(e){}
   return out;
 }
@@ -2494,8 +2506,18 @@ function cacheAccountSnapshot(email){try{if(!email)return;localStorage.setItem(a
 function restoreAccountSnapshot(email){try{const raw=localStorage.getItem(accountCacheKey(email));if(!raw)return false;const x=JSON.parse(raw);if(!x?.snapshot)return false;cloudApplying=true;clearCloudSyncedData();applyCloudSnapshot(x.snapshot);cloudApplying=false;return true}catch(e){cloudApplying=false;return false}}
 async function hydrateFromCloud(snapshot){cloudApplying=true;try{clearCloudSyncedData();applyCloudSnapshot(snapshot||{});localStorage.setItem('misbarCloudHydratedV1','1');try{const em=currentUser?.email||loadPersistentSession()?.email;if(em)cacheAccountSnapshot(em)}catch(_){}}finally{cloudApplying=false}}
 let cloudPushPromise=null,cloudPushPending=false;
+const MISBAR_PENDING_SYNC_KEY='misbar_pending_cloud_sync_v112';
+let misbarRetryTimer=null;
+function markCloudSyncPending(){try{localStorage.setItem(MISBAR_PENDING_SYNC_KEY,String(Date.now()))}catch(_){}}
+function clearCloudSyncPending(){try{localStorage.removeItem(MISBAR_PENDING_SYNC_KEY)}catch(_){}}
+function queueCloudRetry(delay=15000){
+  clearTimeout(misbarRetryTimer);
+  if(!cloudToken())return;
+  misbarRetryTimer=setTimeout(()=>{if(navigator.onLine!==false)pushCloudNow().catch(()=>{});else queueCloudRetry(15000)},delay);
+}
 function pushCloudNow(){
   const token=cloudToken();if(!token||cloudApplying)return Promise.resolve(false);
+  markCloudSyncPending();
   cloudPushPending=true;
   if(cloudPushPromise)return cloudPushPromise;
   cloudPushPromise=(async()=>{
@@ -2506,15 +2528,17 @@ function pushCloudNow(){
       try{
         if(em){try{localStorage.setItem(accountCacheKey(em),JSON.stringify({at:Date.now(),snapshot:snap,pending:true}))}catch(_){}}
         const res=await cloudPost('push',{token,snapshot:snap});last=!!res?.ok;
-        if(last){if(em){try{localStorage.setItem(accountCacheKey(em),JSON.stringify({at:Date.now(),snapshot:snap,pending:false,revision:res.revision||0}))}catch(_){}}updateCloudBadge('متصل ومحفوظ')}
-        else updateCloudBadge('تعذر الحفظ • محفوظ على الجهاز');
-      }catch(e){last=false;updateCloudBadge('دون اتصال • محفوظ على الجهاز')}
+        if(last){clearCloudSyncPending();clearTimeout(misbarRetryTimer);if(em){try{localStorage.setItem(accountCacheKey(em),JSON.stringify({at:Date.now(),snapshot:snap,pending:false,revision:res.revision||0}))}catch(_){}}updateCloudBadge('متصل ومحفوظ')}
+        else{updateCloudBadge('تعذر الحفظ • محفوظ على الجهاز');queueCloudRetry()}
+      }catch(e){last=false;updateCloudBadge('دون اتصال • محفوظ على الجهاز');queueCloudRetry()}
     }
     return last;
   })().finally(()=>{cloudPushPromise=null});
   return cloudPushPromise;
 }
-window.addEventListener('online',()=>{try{scheduleCloudPush()}catch(_){}});
+window.addEventListener('online',()=>{try{pushCloudNow()}catch(_){}});
+document.addEventListener('visibilitychange',()=>{try{if(!document.hidden&&localStorage.getItem(MISBAR_PENDING_SYNC_KEY))pushCloudNow()}catch(_){}});
+setTimeout(()=>{try{if(localStorage.getItem(MISBAR_PENDING_SYNC_KEY))pushCloudNow()}catch(_){}},2500);
 window.addEventListener('beforeunload',()=>{try{const em=currentUser?.email||loadPersistentSession()?.email;if(em)cacheAccountSnapshot(em)}catch(_){}});
 
 // إعدادات الحساب: ربط زر القائمة بنافذة تعرض بيانات المستخدم الحالي.
@@ -2664,4 +2688,4 @@ hydrateFromCloud=async function(snapshot){
 };
 function parseJsonSafeV109(v){try{return safeObject(JSON.parse(v||'{}'))}catch(_){return{}}}
 (()=>{try{const email=v109ScoreEmail(),scores=loadAllScores(),at=v109LatestScoreTime(scores);if(email&&at&&!v109ReadBackup(email).at)v109WriteBackup(scores,at)}catch(_){}})();
-window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-13-V109-CHUNKED-CLOUD-SCORE-RECOVERY';
+window.MISBAR_BUILD='FINAL-DELIVERY-2026-09-15-V112-RESILIENT-AUTO-SYNC';
